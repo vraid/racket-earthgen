@@ -13,6 +13,7 @@
 # irrelevant except maybe for the core repo).
 
 compiled/
+*.exe
 
 # common backups, autosaves, lock files, OS meta-files
 *~
