@@ -14,16 +14,38 @@
 (provide either)
 (provide one-or-both)
 
-(define true? (lambda (a) (eq? true a)))
-(define false? (lambda (a) (not (true? a))))
+(define (true? a)
+  (eq? true a))
 
-(define all andmap)
-(define any ormap)
-(define true-count (lambda (n) (lambda (f ls) (= n (stream-count f ls)))))
-(define one (true-count 1))
-(define none (lambda (f ls) (not (any f ls))))
+(define (false? a)
+  (not (true? a)))
 
-(define both (lambda (f a b) (and (f a) (f b))))
-(define neither (lambda (f a b) (not (or (f a) (f b)))))
-(define either (lambda (f a b) (not (or (both f a b) (neither f a b)))))
-(define one-or-both (lambda (f a b) (or (f a) (f b))))
+(define all 
+  andmap)
+
+(define any 
+  ormap)
+
+(define (true-count n)
+  (lambda (f ls) 
+    (= n (stream-count f ls))))
+
+(define one 
+  (true-count 1))
+
+(define (none f ls)
+  (not (any f ls)))
+
+(define (both f a b)
+  (and (f a) (f b)))
+
+(define (neither f a b)
+  (not (or (f a)
+           (f b))))
+
+(define (either f a b)
+  (not (or (both f a b)
+           (neither f a b))))
+
+(define (one-or-both f a b) 
+  (or (f a) (f b)))
