@@ -26,9 +26,8 @@
 (define any 
   ormap)
 
-(define (true-count n)
-  (lambda (f ls) 
-    (= n (stream-count f ls))))
+(define ((true-count n) f ls)
+  (= n (stream-count f ls))))
 
 (define one 
   (true-count 1))
