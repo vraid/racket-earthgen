@@ -21,7 +21,7 @@
 
 (define vector3-scale flvector-scale)
 
-(define vector3-normal (lambda (a) (if (flsubnormal? (vector3-length a)) a
+(define vector3-normal (lambda (a) (if (zero? (vector3-length a)) a
                                        (vector3-scale a (/ (vector3-length a))))))
 
 (define vector3+ (lambda vecs (foldl flvector+ vector3-identity vecs)))
