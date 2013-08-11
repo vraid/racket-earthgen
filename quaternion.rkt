@@ -16,19 +16,16 @@
 
 (define fl->vector->quaternion (lambda (f v) (list->flvector (cons f (flvector->list v)))))
 
-(define quaternion (lambda (a v) (fl->vector->quaternion (flcos 0.5 a) (vector3-scale v (flsin 0.5 a)))))
+(define quaternion-vector (lambda (q) (vector3 (el q 1) (el q 2) (el q 3))))
 
-(define quaternion-conjugate (lambda (q) (flvector (el q 0)
-                                                   (- (el q 1))
-                                                   (- (el q 2))
-                                                   (- (el q 3)))))
+(define quaternion (lambda (a v) (fl->vector->quaternion (flcos (fl* 0.5 a)) (vector3-scale v (flsin (fl* 0.5 a))))))
+
+(define quaternion-conjugate (lambda (q) (fl->vector->quaternion (el q 0) (vector3- (quaternion-vector q)))))
 
 (define quaternion-length (lambda (q) (flsqrt (flvector-sum (flvector-map (lambda (a) (flexpt a 2.0)) q)))))
 
 (define quaternion-normal (lambda (q) (if (flsubnormal? (quaternion-length q)) q
                                           (flvector-scale (fl/ (quaternion-length q))))))
-
-(define quaternion-vector (lambda (q) (vector3 (el q 1) (el q 2) (el q 3))))
 
 (define vector->quaternion (lambda (v) (fl->vector->quaternion 0.0 v)))
 
