@@ -25,7 +25,7 @@
 (define quaternion-length (lambda (q) (flsqrt (flvector-sum (flvector-map (lambda (a) (flexpt a 2.0)) q)))))
 
 (define quaternion-normal (lambda (q) (if (flsubnormal? (quaternion-length q)) q
-                                          (flvector-scale (fl/ (quaternion-length q))))))
+                                          (flvector-scale q (/ (quaternion-length q))))))
 
 (define vector->quaternion (lambda (v) (fl->vector->quaternion 0.0 v)))
 
