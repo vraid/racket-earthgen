@@ -2,13 +2,13 @@
 (require math/flonum)
 (require "vector3.rkt")
 
+(provide quaternion)
+(provide quaternion*)
+(provide quaternion-vector*)
 (provide quaternion-identity)
 (provide quaternion-inverse)
 (provide quaternion-length)
 (provide quaternion-normal)
-(provide quaternion)
-(provide quaternion*)
-(provide quaternion-vector*)
 
 (define quaternion-identity
   (flvector 1.0 0.0 0.0 0.0))
