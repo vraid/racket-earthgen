@@ -32,10 +32,9 @@
       a
       (vector3-scale a (/ (vector3-length a)))))
 
-(define vector3+
-  (lambda vecs
+(define (vector3+ . vecs)
     (foldl flvector+
-           vector3-identity vecs)))
+           vector3-identity vecs))
 
 (define (vector3- v . vecs)
   (if (empty? vecs) 
@@ -46,10 +45,9 @@
 (define (mult a . n)
   (foldl fl* a n))
 
-(define vector3-map-mult
-  (lambda vecs
+(define (vector3-map-mult . vecs)
     (foldl (lambda (v u) (flvector-map mult v u)) 
-           (vector3 1.0 1.0 1.0) vecs)))
+           (vector3 1.0 1.0 1.0) vecs))
 
 (define (vector3-dot-product v u)
   (flvector-sum
