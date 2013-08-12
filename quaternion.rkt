@@ -68,20 +68,21 @@
   (vector3-map-mult (remap-to-vector q m) 
                     (remap-to-vector r n)))
 
+(define (quaternion-single* r q)
+  (let ([a (vector 0 0 0)] 
+        [b (vector 1 2 3)]
+        [c (vector 2 3 1)]
+        [d (vector 3 1 2)])
+    (fl->vector->quaternion 
+     (row-sum q r)
+     (vector3+ (col q a r b)
+               (col q c r d)
+               (col q b r a)
+               (vector3- (col q d r c))))))
+               
 (define (quaternion* . quats)
-  (foldl 
-   (lambda (r q)
-     (let ([a (vector 0 0 0)] 
-           [b (vector 1 2 3)]
-           [c (vector 2 3 1)]
-           [d (vector 3 1 2)])
-       (fl->vector->quaternion 
-        (row-sum q r)
-        (vector3+ (col q a r b)
-                  (col q c r d)
-                  (col q b r a)
-                  (vector3- (col q d r c))))))
-   quaternion-identity quats))
+  (foldl quaternion-single*
+         quaternion-identity quats))
 
 (define (quaternion-vector* q v)
   (quaternion-vector
