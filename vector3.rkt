@@ -3,7 +3,7 @@
 (require racket/vector)
 
 (provide vector3)
-(provide vector3-identity)
+(provide vector3-zero)
 (provide vector3-scale)
 (provide vector3-length)
 (provide vector3-normal)
@@ -16,7 +16,7 @@
 (define (vector3 a b c)
   (flvector a b c))
 
-(define vector3-identity 
+(define vector3-zero
   (flvector 0.0 0.0 0.0))
 
 (define (vector3-length v)
@@ -34,7 +34,7 @@
 
 (define (vector3+ . vecs)
     (foldl flvector+
-           vector3-identity vecs))
+           vector3-zero vecs))
 
 (define (vector3- v . vecs)
   (if (empty? vecs) 
