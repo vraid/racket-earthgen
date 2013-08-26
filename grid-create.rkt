@@ -204,5 +204,3 @@
   (if (zero? n)
       0-grid
       (subdivided-grid (n-grid (- n 1)))))
-
-(n-grid 8)
