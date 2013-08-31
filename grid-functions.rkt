@@ -2,6 +2,7 @@
 
 (require "utilities.rkt")
 (require "grid-structs.rkt")
+(require racket/fixnum)
 
 (provide tile-edge-count)
 (provide tile-tile)
@@ -62,6 +63,8 @@
 (define (tile-edge-count t)
   (if (> 12 (tile-id t)) 5 6))
 
+(define corner-edge-count 3)
+
 (define (tile-tile-position r t)
   (vector-index (tile-tiles->vector r) t))
 
@@ -93,19 +96,19 @@
     [else 0]))
 
 (define (tile-tile t n)
-  (vector-ref (tile-tiles->vector t) (modulo n (tile-edge-count t))))
+  (vector-ref (tile-tiles->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (tile-corner t n)
-  (vector-ref (tile-corners->vector t) (modulo n (tile-edge-count t))))
+  (vector-ref (tile-corners->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (tile-edge t n)
-  (vector-ref (tile-edges->vector t) (modulo n (tile-edge-count t))))
+  (vector-ref (tile-edges->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (corner-tile c n)
-  (vector-ref (corner-tiles->vector c) (modulo n 3)))
+  (vector-ref (corner-tiles->vector c) (fxmodulo n corner-edge-count)))
 
 (define (corner-corner c n)
-  (vector-ref (corner-corners->vector c) (modulo n 3)))
+  (vector-ref (corner-corners->vector c) (fxmodulo n corner-edge-count)))
 
 (define (corner-edge c n)
-  (vector-ref (corner-edges->vector c) (modulo n 3)))
+  (vector-ref (corner-edges->vector c) (fxmodulo n corner-edge-count)))
