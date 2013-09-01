@@ -1,11 +1,11 @@
 #lang racket
 
-(require "vector3.rkt")
-(require "grid-structs.rkt")
-(require "grid-functions.rkt")
+(require "vector3.rkt"
+         "grid-structs.rkt"
+         "grid-functions.rkt")
 
-(provide n-grid)
-(provide subdivided-grid)
+(provide n-grid
+         subdivided-grid)
 
 (define 0-grid-coordinates
   (let* ([x 0.525731112119133606]

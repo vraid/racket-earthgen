@@ -1,17 +1,17 @@
 #lang racket
-(require math/flonum)
-(require racket/vector)
+(require math/flonum
+         racket/vector)
 
-(provide vector3)
-(provide vector3-zero)
-(provide vector3-scale)
-(provide vector3-length)
-(provide vector3-normal)
-(provide vector3+)
-(provide vector3-)
-(provide vector3-dot-product)
-(provide vector3-cross-product)
-(provide vector3-map-mult)
+(provide vector3
+         vector3-zero
+         vector3-scale
+         vector3-length
+         vector3-normal
+         vector3+
+         vector3-
+         vector3-dot-product
+         vector3-cross-product
+         vector3-map-mult)
 
 (define (vector3 a b c)
   (flvector a b c))

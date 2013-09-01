@@ -1,14 +1,14 @@
 #lang lazy
 
-(require "grid-structs.rkt")
-(require "grid-functions.rkt")
-(require "grid-create.rkt")
+(require "grid-structs.rkt"
+         "grid-functions.rkt"
+         "grid-create.rkt")
 
-(provide grid-list?)
-(provide grid-list-first)
-(provide grid-list-rest)
-(provide make-grid-list)
-(provide n-grid-list)
+(provide grid-list?
+         grid-list-first
+         grid-list-rest
+         make-grid-list
+         n-grid-list)
 
 (struct grid-list
   (first

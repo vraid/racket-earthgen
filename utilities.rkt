@@ -2,8 +2,8 @@
 
 (require racket/vector)
 
-(provide list-index)
-(provide vector-index)
+(provide list-index
+         vector-index)
 
 (define (list-index ls a)
   (define (find-index ls a n)

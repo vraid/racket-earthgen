@@ -1,14 +1,14 @@
 #lang racket
-(require math/flonum)
-(require "vector3.rkt")
+(require math/flonum
+         "vector3.rkt")
 
-(provide quaternion)
-(provide quaternion*)
-(provide quaternion-vector*)
-(provide quaternion-identity)
-(provide quaternion-inverse)
-(provide quaternion-length)
-(provide quaternion-normal)
+(provide quaternion
+         quaternion*
+         quaternion-vector*
+         quaternion-identity
+         quaternion-inverse
+         quaternion-length
+         quaternion-normal)
 
 (define quaternion-identity
   (flvector 1.0 0.0 0.0 0.0))

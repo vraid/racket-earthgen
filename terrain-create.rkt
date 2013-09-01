@@ -1,13 +1,13 @@
 #lang racket
 
-(require "grid-list.rkt")
-(require "grid-functions.rkt")
-(require "grid-structs.rkt")
-(require "pseudo-random-list.rkt")
-(require racket/flonum)
+(require "grid-list.rkt"
+         "grid-functions.rkt"
+         "grid-structs.rkt"
+         "pseudo-random-list.rkt"
+         racket/flonum)
 
-(provide terrain-create)
-(provide terrain-parameters)
+(provide terrain-create
+         terrain-parameters)
 
 (struct terrain-parameters
   (seed

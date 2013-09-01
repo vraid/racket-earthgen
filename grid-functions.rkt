@@ -1,38 +1,38 @@
 #lang racket
 
-(require "utilities.rkt")
-(require "grid-structs.rkt")
-(require racket/fixnum)
+(require "utilities.rkt"
+         "grid-structs.rkt"
+         racket/fixnum)
 
-(provide tile-edge-count)
-(provide tile-tile)
-(provide tile-corner)
-(provide tile-edge)
-(provide tile-tile-position)
-(provide tile-corner-position)
-(provide tile-edge-position)
-
-(provide corner-edge-count)
-(provide corner-tile)
-(provide corner-corner)
-(provide corner-edge)
-(provide corner-tile-position)
-(provide corner-corner-position)
-(provide corner-edge-position)
-
-(provide edge-tile-sign)
-(provide edge-corner-sign)
-
-(provide subdivision-level-tile-count)
-(provide subdivision-level-corner-count)
-(provide subdivision-level-edge-count)
-(provide grid-tile-count)
-(provide grid-corner-count)
-(provide grid-edge-count)
-
-(provide grid-tile)
-(provide grid-corner)
-(provide grid-edge)
+(provide tile-edge-count
+         tile-tile
+         tile-corner
+         tile-edge
+         tile-tile-position
+         tile-corner-position
+         tile-edge-position
+         
+         corner-edge-count
+         corner-tile
+         corner-corner
+         corner-edge
+         corner-tile-position
+         corner-corner-position
+         corner-edge-position
+         
+         edge-tile-sign
+         edge-corner-sign
+         
+         subdivision-level-tile-coun
+         subdivision-level-corner-count
+         subdivision-level-edge-count
+         grid-tile-count
+         grid-corner-count
+         grid-edge-count
+         
+         grid-tile
+         grid-corner
+         grid-edge)
 
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))

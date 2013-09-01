@@ -1,10 +1,10 @@
 #lang racket
 
-(provide pseudo-random-list?)
-(provide pseudo-random-list-numbers)
-(provide pseudo-random-list-next)
-(provide pseudo-random-list-rest)
-(provide make-pseudo-random-list)
+(provide pseudo-random-list?
+         pseudo-random-list-numbers
+         pseudo-random-list-next
+         pseudo-random-list-rest
+         make-pseudo-random-list)
 
 (struct pseudo-random-list
   (numbers

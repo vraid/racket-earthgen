@@ -1,40 +1,40 @@
 #lang racket
 
-(provide tile)
-(provide tile-id)
-(provide tile-tiles)
-(provide tile-corners)
-(provide tile-edges)
-(provide tile-tiles->vector)
-(provide tile-corners->vector)
-(provide tile-edges->vector)
-(provide tile-coordinates)
-
-(provide corner)
-(provide corner-id)
-(provide corner-tiles)
-(provide corner-corners)
-(provide corner-edges)
-(provide corner-tiles->vector)
-(provide corner-corners->vector)
-(provide corner-edges->vector)
-(provide corner-coordinates)
-
-(provide edge)
-(provide edge-id)
-(provide edge-tiles)
-(provide edge-corners)
-(provide edge-tiles->vector)
-(provide edge-corners->vector)
-
-(provide grid)
-(provide grid-subdivision-level)
-(provide grid-tiles)
-(provide grid-corners)
-(provide grid-edges)
-(provide grid-tiles->vector)
-(provide grid-corners->vector)
-(provide grid-edges->vector)
+(provide tile
+         tile-id
+         tile-tiles
+         tile-corners
+         tile-edges
+         tile-tiles->vector
+         tile-corners->vector
+         tile-edges->vector
+         tile-coordinates
+         
+         corner
+         corner-id
+         corner-tiles
+         corner-corners
+         corner-edges
+         corner-tiles->vector
+         corner-corners->vector
+         corner-edges->vector
+         corner-coordinates
+         
+         edge
+         edge-id
+         edge-tiles
+         edge-corners
+         edge-tiles->vector
+         edge-corners->vector
+         
+         grid
+         grid-subdivision-level
+         grid-tiles
+         grid-corners
+         grid-edges
+         grid-tiles->vector
+         grid-corners->vector
+         grid-edges->vector)
 
 (struct tile
   (id
