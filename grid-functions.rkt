@@ -12,6 +12,7 @@
 (provide tile-corner-position)
 (provide tile-edge-position)
 
+(provide corner-edge-count)
 (provide corner-tile)
 (provide corner-corner)
 (provide corner-edge)
