@@ -23,7 +23,7 @@
          edge-tile-sign
          edge-corner-sign
          
-         subdivision-level-tile-coun
+         subdivision-level-tile-count
          subdivision-level-corner-count
          subdivision-level-edge-count
          grid-tile-count
