@@ -6,6 +6,32 @@
          pseudo-random-list-rest
          make-pseudo-random-list)
 
+(define (char-max byte-length)
+  (vector-ref
+   (vector-map (lambda (n) (+ n 1)) ; + 1 to prevent first characters of string->seed from being cancelled out by modulo
+               (vector #x80
+                       #x800
+                       #x10000
+                       #x200000
+                       #x4000000
+                       #x80000000))
+   (- byte-length 1)))
+
+(define seed-max (expt 2 31))
+
+(define (string->seed s)
+  (define (sum n chars)
+    (if (empty? chars)
+        n
+        (sum (modulo
+              (+ (char->integer (first chars))
+                 (* n (char-max
+                       (char-utf-8-length (first chars)))))
+              seed-max)
+             (rest chars))))
+  (sum 0 (string->list s)))
+               
+
 (struct pseudo-random-list
   (numbers
    state)
@@ -27,7 +53,7 @@
    (pseudo-random-list-state r)))
 
 (define (make-pseudo-random-list seed)
-  (random-seed seed)
+  (random-seed (string->seed seed))
   (pseudo-random-list
    null
    (pseudo-random-generator->vector
