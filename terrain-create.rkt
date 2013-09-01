@@ -31,7 +31,7 @@
            [level (grid-subdivision-level grid)]
            [scale (fl* (terrain-parameters-magnitude parameters)
                        (flexpt (terrain-parameters-frequency parameters) (exact->inexact (+ 1 level))))])
-           (if (zero? level)
+           (if (>= 3 level)
                (let* ([random-gen (pseudo-random-list-next
                                    (+ (grid-tile-count grid) (grid-corner-count grid))
                                    (make-pseudo-random-list (terrain-parameters-seed parameters)))]
