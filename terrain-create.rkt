@@ -45,9 +45,11 @@
                      (map (lambda (number)
                             (elevation-from-number number (terrain-parameters-magnitude parameters)))
                           (pseudo-random-list-numbers random-gen)))])
-    (terrain
-     (vector-take tile-count elevation)
-     (vector-drop tile-count elevation))))
+    (list
+     (terrain
+      (vector-take elevation tile-count)
+      (vector-drop elevation tile-count))
+     (pseudo-random-list-rest random-gen))))
 
 (define (terrain-create parameters grids)
   (define (create grids)
