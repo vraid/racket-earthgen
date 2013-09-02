@@ -5,15 +5,32 @@
          "grid-functions.rkt"
          "grid-list.rkt"
          "vector3.rkt"
+         "logic.rkt"
          math/flonum
          sgl/gl)
 
 (define-values (display-width display-height) (get-display-size))
 (define planet (let* ([grids (n-grid-list 8)]
                        [grid (force (grid-list-first (force grids)))]
-                       [parameters (terrain-parameters "seed" 2 3000.0 0.75)]
-                       [terrain (first (terrain-create parameters grids))])
-                  (list grid terrain)))
+                       [parameters (terrain-parameters "earth" 5 3000.0 0.70)]
+                       [continent (first (terrain-create
+                                   (terrain-parameters "earth" 2 2000.0 0.65)
+                                   grids))]
+                       [mountain (first (terrain-create
+                                          (terrain-parameters "mtn" 5 2500.0 0.7)
+                                          grids))]
+                       [final-terrain (terrain
+                                       (vector-map (lambda (n) (let ([continent-elevation (vector-ref (terrain-tile-elevation continent) n)]
+                                                                     [mountain-elevation (- (vector-ref (terrain-tile-elevation mountain) n) 300.0)])
+                                                                 (+ continent-elevation
+                                                                    (if (both true?
+                                                                              (< 0 mountain-elevation)
+                                                                              (< 0 continent-elevation))
+                                                                        mountain-elevation
+                                                                        0))))
+                                                   (build-vector (grid-tile-count grid) identity))
+                                       #f)])
+                  (list grid final-terrain)))
 
 (define (vector3->vertex v)
   (glVertex3d (flvector-ref v 0)
@@ -69,10 +86,13 @@
          [tiles (grid-tiles->vector grid)]
          [corners (grid-corners->vector grid)])
     (for ([tile tiles])
-      (glBegin GL_TRIANGLE_FAN)
-      (tile-color (vector-ref (terrain-tile-elevation terrain) (tile-id tile)))
-      (tile-vertices grid tile)
-      (glEnd))))
+      (if (< 0 (flvector-ref (tile-coordinates tile) 2))
+          (begin
+          (glBegin GL_TRIANGLE_FAN)
+          (tile-color (- (vector-ref (terrain-tile-elevation terrain) (tile-id tile)) 500.0))
+          (tile-vertices grid tile)
+          (glEnd))
+      #f))))
 
 (define frame
   (new frame%
