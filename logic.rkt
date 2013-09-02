@@ -1,18 +1,17 @@
-#lang lazy
+#lang racket
 (require racket/stream)
 
-(provide true?)
-(provide false?)
-
-(provide all)
-(provide any)
-(provide one)
-(provide none)
-
-(provide both)
-(provide neither)
-(provide either)
-(provide one-or-both)
+(provide true?
+         false?
+         all
+         any
+         one
+         none
+         both
+         neither
+         either
+         one-or-both
+         one-or-neither)
 
 (define (true? a)
   (eq? true a))
@@ -21,13 +20,13 @@
   (not (true? a)))
 
 (define all 
-  andmap)
+  stream-andmap)
 
 (define any 
-  ormap)
+  stream-ormap)
 
 (define ((true-count n) f ls)
-  (= n (stream-count f ls))))
+  (= n (stream-count f ls)))
 
 (define one 
   (true-count 1))
@@ -39,8 +38,7 @@
   (and (f a) (f b)))
 
 (define (neither f a b)
-  (not (or (f a)
-           (f b))))
+  (not (one-or-both f a b)))
 
 (define (either f a b)
   (not (or (both f a b)
@@ -48,3 +46,6 @@
 
 (define (one-or-both f a b) 
   (or (f a) (f b)))
+
+(define (one-or-neither f a b)
+  (not (both f a b)))
