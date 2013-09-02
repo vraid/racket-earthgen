@@ -8,6 +8,7 @@
 
 (provide terrain-create
          terrain-parameters
+         terrain
          terrain-tile-elevation
          terrain-corner-elevation)
 
