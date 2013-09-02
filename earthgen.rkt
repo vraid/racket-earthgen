@@ -11,8 +11,8 @@
 (define-values (display-width display-height) (get-display-size))
 (define planet (let* ([grids (n-grid-list 8)]
                        [grid (force (grid-list-first (force grids)))]
-                       [parameters (terrain-parameters "seed" 3000.0 0.75)]
-                       [terrain (terrain-create parameters grids)])
+                       [parameters (terrain-parameters "seed" 2 3000.0 0.75)]
+                       [terrain (first (terrain-create parameters grids))])
                   (list grid terrain)))
 
 (define (vector3->vertex v)
@@ -70,7 +70,7 @@
          [corners (grid-corners->vector grid)])
     (for ([tile tiles])
       (glBegin GL_TRIANGLE_FAN)
-      (tile-color (vector-ref (first terrain) (tile-id tile)))
+      (tile-color (vector-ref (terrain-tile-elevation terrain) (tile-id tile)))
       (tile-vertices grid tile)
       (glEnd))))
 
