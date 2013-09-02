@@ -36,13 +36,13 @@
   (vector3+ (vector3-scale col-one (- 1.0 d)) (vector3-scale col-two d)))
 
 (define water-surface
-  (vector3 0.0 0.0 1.0))
+  (vector3 0.0 0.4 0.8))
 (define water-deep
-  (vector3 0.0 0.0 0.5))
+  (vector3 0.0 0.0 0.3))
 (define land-low
   (vector3 0.5 0.8 0.0))
 (define land-high
-  (vector3 0.2 0.2 0.2))
+  (vector3 0.2 0.2 0.1))
 
 (define (tile-color elevation)
   (let ([col (if (< 0 elevation)
