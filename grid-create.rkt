@@ -28,18 +28,18 @@
 
 (define 0-grid-tile-tiles
   (vector
-   (vector 9 4 1 6 11)
-   (vector 4 8 10 6 0)
-   (vector 11 7 3 5 9)
+   (vector 1 6 11 9 4)
+   (vector 0 4 8 10 6)
+   (vector 3 5 9 11 7)
    (vector 2 7 10 8 5)
-   (vector 9 5 8 1 0)
+   (vector 0 9 5 8 1)
    (vector 2 3 8 4 9)
    (vector 0 1 10 7 11)
-   (vector 11 6 10 3 2)
-   (vector 5 3 10 1 4)
-   (vector 2 5 4 0 11)
-   (vector 3 7 6 1 8)
-   (vector 7 2 9 0 6)))
+   (vector 2 11 6 10 3)
+   (vector 1 4 5 3 10)
+   (vector 0 11 2 5 4)
+   (vector 1 8 3 7 6)
+   (vector 0 6 7 2 9)))
 
 (struct partial-corner
   (id
