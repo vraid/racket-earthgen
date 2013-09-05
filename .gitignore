@@ -15,6 +15,7 @@
 compiled/
 *.exe
 *.1
+*.2
 
 # common backups, autosaves, lock files, OS meta-files
 *~
