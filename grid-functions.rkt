@@ -67,31 +67,31 @@
 (define corner-edge-count 3)
 
 (define (tile-tile-position r t)
-  (vector-index (tile-tiles->vector r) t))
+  (vector-member t (tile-tiles->vector r)))
 
 (define (corner-tile-position c t)
-  (vector-index (corner-tiles->vector c) t))
+  (vector-member t (corner-tiles->vector c)))
 
 (define (tile-corner-position t c)
-  (vector-index (tile-corners->vector t) c))
+  (vector-member c (tile-corners->vector t)))
 
 (define (corner-corner-position r c)
-  (vector-index (corner-corners->vector r) c))
+  (vector-member c (corner-corners->vector r)))
 
 (define (tile-edge-position t e)
-  (vector-index (tile-edges->vector t) e))
+  (vector-member e (tile-edges->vector t)))
 
 (define (corner-edge-position c e)
-  (vector-index (corner-edges->vector c) e))
+  (vector-member e (corner-edges->vector c)))
 
 (define (edge-tile-sign e t)
-  (case (vector-index (edge-tiles->vector e) t)
+  (case (vector-member t (edge-tiles->vector e))
     [(0) 1]
     [(1) (- 1)]
     [else 0]))
 
 (define (edge-corner-sign e c)
-  (case (vector-index (edge-corners->vector e) c)
+  (case (vector-member c (edge-corners->vector e))
     [(0) 1]
     [(1) (- 1)]
     [else 0]))
