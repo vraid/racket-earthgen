@@ -4,7 +4,7 @@
          "grid-functions.rkt"
          "grid-structs.rkt"
          "pseudo-random-list.rkt"
-         racket/flonum)
+         math/flonum)
 
 (provide terrain-create
          terrain-parameters
@@ -27,7 +27,7 @@
 (define (average-elevation tile-elevation corner)
   (fl/ (foldl fl+
             0.0
-            (map (lambda (n) (vector-ref tile-elevation n))
+            (map (lambda (n) (flvector-ref tile-elevation n))
                  (corner-tiles corner)))
        (exact->inexact corner-edge-count)))
 
@@ -35,21 +35,20 @@
   (fl* 2.0 (fl* (fl- number 0.5) scale)))
 
 (define (elevation-from numbers scale n)
-  (elevation-from-number (vector-ref numbers n) scale))
+  (elevation-from-number (flvector-ref numbers n) scale))
 
 (define (terrain-all-random parameters grid)
   (let* ([tile-count (grid-tile-count grid)]
          [random-gen (pseudo-random-list-next
                       (+ tile-count (grid-corner-count grid))
                       (make-pseudo-random-list (terrain-parameters-seed parameters)))]
-         [elevation (list->vector
-                     (map (lambda (number)
-                            (elevation-from-number number (terrain-parameters-magnitude parameters)))
-                          (pseudo-random-list-numbers random-gen)))])
+         [elevation (map (lambda (number)
+                           (elevation-from-number number (terrain-parameters-magnitude parameters)))
+                         (pseudo-random-list-numbers random-gen))])
     (list
      (terrain
-      (vector-take elevation tile-count)
-      (vector-drop elevation tile-count))
+      (list->flvector (take elevation tile-count))
+      (list->flvector (drop elevation tile-count)))
      (pseudo-random-list-rest random-gen))))
 
 (define (terrain-create parameters grids)
@@ -64,14 +63,18 @@
               (let* ([random-gen (pseudo-random-list-next
                                   (+ (grid-tile-count grid) (grid-corner-count grid))
                                   (make-pseudo-random-list (terrain-parameters-seed parameters)))]
-                     [numbers (list->vector (pseudo-random-list-numbers random-gen))]
-                     [tile-elevation (vector-map (lambda (tile) ((lambda (n) (elevation-from numbers (terrain-parameters-magnitude parameters) n))
-                                                                 (tile-id tile)))
-                                                 (grid-tiles->vector grid))]
-                     [corner-elevation (vector-map (lambda (corner) ((lambda (n) (fl+ (average-elevation tile-elevation corner)
-                                                                                      (elevation-from numbers scale (+ n (grid-tile-count grid)))))
-                                                                     (corner-id corner)))
-                                                   (grid-corners->vector grid))])
+                     [numbers (list->flvector (pseudo-random-list-numbers random-gen))]
+                     [tile-elevation (vector->flvector
+                                      (vector-map (lambda (tile)
+                                                    ((lambda (n) (elevation-from numbers (terrain-parameters-magnitude parameters) n))
+                                                     (tile-id tile)))
+                                                  (grid-tiles->vector grid)))]
+                     [corner-elevation (vector->flvector
+                                        (vector-map (lambda (corner)
+                                                      ((lambda (n) (fl+ (average-elevation tile-elevation corner)
+                                                                        (elevation-from numbers scale (+ n (grid-tile-count grid)))))
+                                                       (corner-id corner)))
+                                                    (grid-corners->vector grid)))])
                 (list
                  (terrain
                   tile-elevation
@@ -81,12 +84,17 @@
                      [previous-terrain (first previous)]
                      [random-gen (pseudo-random-list-next (grid-corner-count grid)
                                                           (second previous))]
-                     [numbers (list->vector (pseudo-random-list-numbers random-gen))]
-                     [tile-elevation (vector-append (terrain-tile-elevation previous-terrain) (terrain-corner-elevation previous-terrain))]
-                     [corner-elevation (vector-map (lambda (corner) ((lambda (n) (fl+ (average-elevation tile-elevation corner)
-                                                                                      (elevation-from numbers scale n)))
-                                                                     (corner-id corner)))
-                                                   (grid-corners->vector grid))])
+                     [numbers (list->flvector (pseudo-random-list-numbers random-gen))]
+                     [tile-elevation (list->flvector
+                                      (append
+                                       (flvector->list (terrain-tile-elevation previous-terrain))
+                                       (flvector->list (terrain-corner-elevation previous-terrain))))]
+                     [corner-elevation (vector->flvector 
+                                        (vector-map (lambda (corner)
+                                                      ((lambda (n) (fl+ (average-elevation tile-elevation corner)
+                                                                        (elevation-from numbers scale n)))
+                                                       (corner-id corner)))
+                                                    (grid-corners->vector grid)))])
                 (list
                  (terrain
                   tile-elevation

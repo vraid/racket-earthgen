@@ -14,25 +14,27 @@
 (define-values (display-width display-height) (get-display-size))
 (define planet (let* ([grids (n-grid-list 8)]
                       [grid (force (grid-list-first (force grids)))]
-                      [continent (first (terrain-create
+                      [continent (terrain-elevation-lower
+                                 500.0 (first (terrain-create
                                          (terrain-parameters "earth" 2 2000.0 0.65)
-                                         grids))]
+                                         grids)))]
                       [mountain (terrain-elevation-lower
                                  300.0
                                  (first (terrain-create
                                          (terrain-parameters "mtn" 5 2500.0 0.7)
                                          grids)))]
                       [final-terrain (terrain
-                                      (vector-map (lambda (n) 
-                                                    (let ([continent-elevation (vector-ref (terrain-tile-elevation continent) n)]
-                                                          [mountain-elevation (vector-ref (terrain-tile-elevation mountain) n)])
-                                                      (+ continent-elevation
-                                                         (if (both true?
-                                                                   (< 0 mountain-elevation)
-                                                                   (< 0 continent-elevation))
-                                                             mountain-elevation
-                                                             0))))
-                                                  (build-vector (grid-tile-count grid) identity))
+                                      (vector->flvector
+                                       (vector-map (lambda (n) 
+                                                     (let ([continent-elevation (flvector-ref (terrain-tile-elevation continent) n)]
+                                                           [mountain-elevation (flvector-ref (terrain-tile-elevation mountain) n)])
+                                                       (+ continent-elevation
+                                                          (if (both true?
+                                                                    (fl< 0.0 mountain-elevation)
+                                                                    (fl< -200.0 continent-elevation))
+                                                              mountain-elevation
+                                                              0))))
+                                                   (build-vector (grid-tile-count grid) identity)))
                                       #f)])
                  (list grid final-terrain)))
 
@@ -94,7 +96,7 @@
          [corners (grid-corners->vector grid)])
     (for ([tile tiles])
       (glBegin GL_TRIANGLE_FAN)
-      (tile-color (- (vector-ref (terrain-tile-elevation terrain) (tile-id tile)) 500.0))
+      (tile-color (flvector-ref (terrain-tile-elevation terrain) (tile-id tile)))
       (tile-vertices grid tile)
       (glEnd))
     ))
