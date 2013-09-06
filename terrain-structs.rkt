@@ -8,7 +8,8 @@
          terrain-tile-water-levels
          terrain-tile-elevation
          terrain-corner-elevation
-         terrain-tile-water-level)
+         terrain-tile-water-level
+         terrain-tile-water-depth)
 
 (struct terrain
   (tile-elevations
@@ -24,3 +25,6 @@
 
 (define (terrain-tile-water-level t n)
   (flvector-ref (terrain-tile-water-levels t) n))
+
+(define (terrain-tile-water-depth t n)
+  (fl- (terrain-tile-water-level t n) (terrain-tile-elevation t n)))
