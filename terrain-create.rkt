@@ -1,8 +1,6 @@
 #lang racket
 
-(require "grid-list.rkt"
-         "grid-functions.rkt"
-         "grid-structs.rkt"
+(require "grid.rkt"
          "pseudo-random-list.rkt"
          "terrain-structs.rkt"
          math/flonum)

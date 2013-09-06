@@ -1,9 +1,7 @@
 #lang racket
 (require racket/gui/base
          "terrain.rkt"
-         "grid-structs.rkt"
-         "grid-functions.rkt"
-         "grid-list.rkt"
+         "grid.rkt"
          "vector3.rkt"
          "logic.rkt"
          "math.rkt"
@@ -11,7 +9,7 @@
          sgl/gl)
 
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 5)]
+(define planet (let* ([grids (n-grid-list 8)]
                       [grid (force (grid-list-first (force grids)))]
                       [continent (terrain-elevation-lower
                                  500.0 (first (terrain-create
