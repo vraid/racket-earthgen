@@ -16,7 +16,11 @@
    #f))
 
 (define (terrain-elevation-lower n t)
-  (terrain-elevation-map (subtract n) t))
+  (terrain-elevation-map (lambda (t)
+                           (fl- t (exact->inexact n)))
+                         t))
 
 (define (terrain-elevation-raise n t)
-  (terrain-elevation-map (add n) t))
+  (terrain-elevation-map (lambda (t)
+                           (fl+ t (exact->inexact n)))
+                         t))
