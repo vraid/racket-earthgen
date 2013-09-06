@@ -1,6 +1,7 @@
 #lang racket
 
-(require "terrain-create.rkt"
+(require "terrain-structs.rkt"
+         "terrain-create.rkt"
          "math.rkt"
          math/flonum)
 
@@ -10,8 +11,9 @@
 
 (define (terrain-elevation-map fn t)
   (terrain
-   (flvector-map fn (terrain-tile-elevation t))
-   (flvector-map fn (terrain-corner-elevation t))))
+   (flvector-map fn (terrain-tile-elevations t))
+   (flvector-map fn (terrain-corner-elevations t))
+   #f))
 
 (define (terrain-elevation-lower n t)
   (terrain-elevation-map (subtract n) t))

@@ -4,6 +4,7 @@
          "grid-functions.rkt"
          "grid-structs.rkt"
          "pseudo-random-list.rkt"
+         "terrain-structs.rkt"
          math/flonum)
 
 (provide terrain-create
@@ -17,11 +18,6 @@
    base-level
    magnitude
    frequency)
-  #:transparent)
-
-(struct terrain
-  (tile-elevation
-   corner-elevation)
   #:transparent)
 
 (define (average-elevation tile-elevation corner)
@@ -48,7 +44,8 @@
     (list
      (terrain
       (list->flvector (take elevation tile-count))
-      (list->flvector (drop elevation tile-count)))
+      (list->flvector (drop elevation tile-count))
+      #f)
      (pseudo-random-list-rest random-gen))))
 
 (define (terrain-create parameters grids)
@@ -78,17 +75,20 @@
                 (list
                  (terrain
                   tile-elevation
-                  corner-elevation)
+                  corner-elevation
+                  #f)
                  (pseudo-random-list-rest random-gen)))
-              (let* ([previous (create (grid-list-rest (force grids)))]
+              (let* ([flvector-append (lambda (a b)
+                                        (list->flvector
+                                         (append (flvector->list a) (flvector->list b))))]
+                     [previous (create (grid-list-rest (force grids)))]
                      [previous-terrain (first previous)]
                      [random-gen (pseudo-random-list-next (grid-corner-count grid)
                                                           (second previous))]
                      [numbers (list->flvector (pseudo-random-list-numbers random-gen))]
-                     [tile-elevation (list->flvector
-                                      (append
-                                       (flvector->list (terrain-tile-elevation previous-terrain))
-                                       (flvector->list (terrain-corner-elevation previous-terrain))))]
+                     [tile-elevation (flvector-append
+                                      (terrain-tile-elevations previous-terrain)
+                                     (terrain-corner-elevations previous-terrain))]
                      [corner-elevation (vector->flvector 
                                         (vector-map (lambda (corner)
                                                       ((lambda (n) (fl+ (average-elevation tile-elevation corner)
@@ -98,6 +98,7 @@
                 (list
                  (terrain
                   tile-elevation
-                  corner-elevation)
+                  corner-elevation
+                  #f)
                  (pseudo-random-list-rest random-gen)))))))
     (create grids))

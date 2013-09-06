@@ -1,7 +1,6 @@
 #lang racket
 (require racket/gui/base
-         "terrain-create.rkt"
-         "terrain-functions.rkt"
+         "terrain.rkt"
          "grid-structs.rkt"
          "grid-functions.rkt"
          "grid-list.rkt"
@@ -12,7 +11,7 @@
          sgl/gl)
 
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 8)]
+(define planet (let* ([grids (n-grid-list 5)]
                       [grid (force (grid-list-first (force grids)))]
                       [continent (terrain-elevation-lower
                                  500.0 (first (terrain-create
@@ -26,8 +25,8 @@
                       [final-terrain (terrain
                                       (vector->flvector
                                        (vector-map (lambda (n) 
-                                                     (let ([continent-elevation (flvector-ref (terrain-tile-elevation continent) n)]
-                                                           [mountain-elevation (flvector-ref (terrain-tile-elevation mountain) n)])
+                                                     (let ([continent-elevation (terrain-tile-elevation continent n)]
+                                                           [mountain-elevation (terrain-tile-elevation mountain n)])
                                                        (+ continent-elevation
                                                           (if (both true?
                                                                     (fl< 0.0 mountain-elevation)
@@ -35,6 +34,7 @@
                                                               mountain-elevation
                                                               0))))
                                                    (build-vector (grid-tile-count grid) identity)))
+                                      #f
                                       #f)])
                  (list grid final-terrain)))
 
@@ -96,7 +96,7 @@
          [corners (grid-corners->vector grid)])
     (for ([tile tiles])
       (glBegin GL_TRIANGLE_FAN)
-      (tile-color (flvector-ref (terrain-tile-elevation terrain) (tile-id tile)))
+      (tile-color (terrain-tile-elevation terrain (tile-id tile)))
       (tile-vertices grid tile)
       (glEnd))
     ))
