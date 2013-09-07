@@ -6,6 +6,7 @@
          math/flonum)
 
 (provide terrain-create
+         terrain-create-water-level
          terrain-parameters
          terrain
          terrain-tile-elevation
@@ -17,6 +18,14 @@
    magnitude
    frequency)
   #:transparent)
+
+(define (terrain-create-water-level water ter)
+  (terrain
+   (terrain-tile-elevations ter)
+   (terrain-corner-elevations ter)
+   (make-flvector
+    (flvector-length (terrain-tile-elevations ter))
+    water)))
 
 (define (average-elevation tile-elevation corner)
   (fl/ (foldl fl+

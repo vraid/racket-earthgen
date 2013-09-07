@@ -7,10 +7,12 @@
          terrain-tile-water-levels
          terrain-tile-elevation
          terrain-corner-elevation
-         terrain-tile-water-level)
+         terrain-tile-water-level
+         terrain-tile-water-depth)
 
 (require "terrain-create.rkt")
 (provide terrain-create
+         terrain-create-water-level
          terrain-parameters
          terrain
          terrain-tile-elevation

@@ -13,14 +13,16 @@
                       [grid (force (grid-list-first (force grids)))]
                       [continent (terrain-elevation-lower
                                  500.0 (first (terrain-create
-                                         (terrain-parameters "earth" 2 2000.0 0.65)
+                                         (terrain-parameters "earth 5" 2 2000.0 0.65)
                                          grids)))]
                       [mountain (terrain-elevation-lower
-                                 300.0
+                                 200.0
                                  (first (terrain-create
-                                         (terrain-parameters "mtn" 5 2500.0 0.7)
+                                         (terrain-parameters "mtn 7" 5 2500.0 0.7)
                                          grids)))]
-                      [final-terrain (terrain
+                      [final-terrain (terrain-create-water-level
+                                      0.0
+                                      (terrain
                                       (vector->flvector
                                        (vector-map (lambda (n) 
                                                      (let ([continent-elevation (terrain-tile-elevation continent n)]
@@ -33,7 +35,7 @@
                                                               0))))
                                                    (build-vector (grid-tile-count grid) identity)))
                                       #f
-                                      #f)])
+                                      #f))])
                  (list grid final-terrain)))
 
 (define (vector3->vertex v)
@@ -101,7 +103,7 @@
 
 (define frame
   (new frame%
-       [label "Earthgen"]
+       [label "earthgen"]
        [width display-width]
        [height display-height]
        [style '(no-resize-border
