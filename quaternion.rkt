@@ -9,7 +9,8 @@
          quaternion-identity
          quaternion-inverse
          quaternion-length
-         quaternion-normal)
+         quaternion-normal
+         quaternion->matrix3)
 
 (define quaternion-identity
   (flvector 1.0 0.0 0.0 0.0))
