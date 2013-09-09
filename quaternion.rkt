@@ -95,9 +95,8 @@
          [b (el q 1)]
          [c (el q 2)]
          [d (el q 3)]
-         [*2 (lambda (a b) (fl* 2.0 a b))]
-         [*-2 (lambda (a b) (fl- (*2 a b)))])
-    (list->flvector
+         [*2 (lambda (a b) (fl* 2.0 (fl* a b)))]
+         [*-2 (lambda (a b) (- (*2 a b)))])
      (matrix3+
       matrix3-identity
       (flvector (*-2 c c) (*2 b c) (*2 b d)
@@ -105,4 +104,4 @@
                 (*2 b d) (*2 c d) (*-2 b b))
       (flvector (*-2 d d) (*-2 a d) (*2 a c)
                 (*2 a d) (*-2 d d) (*-2 a b)
-                (*-2 a c) (*2 a b) (*-2 c c))))))
+                (*-2 a c) (*2 a b) (*-2 c c)))))
