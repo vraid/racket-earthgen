@@ -1,6 +1,8 @@
 #lang racket
 (require racket/gui/base
-         "terrain.rkt"
+         "heightmap-structs.rkt"
+         "heightmap-create.rkt"
+         "heightmap-functions.rkt"
          "grid.rkt"
          "vector3.rkt"
          "logic.rkt"
@@ -9,34 +11,26 @@
          sgl/gl)
 
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 8)]
+(define planet (let* ([grids (n-grid-list 6)]
                       [grid (force (grid-list-first (force grids)))]
-                      [continent (terrain-elevation-lower
-                                 500.0 (first (terrain-create
-                                         (terrain-parameters "earth 5" 2 2000.0 0.65)
-                                         grids)))]
-                      [mountain (terrain-elevation-lower
+                      [continent (heightmap-lower
+                                  500.0 (heightmap-create
+                                         (heightmap-parameters "earth 5" 2 2000.0 0.65)))]
+                      [mountain (heightmap-lower
                                  200.0
-                                 (first (terrain-create
-                                         (terrain-parameters "mtn 7" 5 2500.0 0.7)
-                                         grids)))]
-                      [final-terrain (terrain-create-water-level
-                                      0.0
-                                      (terrain
-                                      (vector->flvector
-                                       (vector-map (lambda (n) 
-                                                     (let ([continent-elevation (terrain-tile-elevation continent n)]
-                                                           [mountain-elevation (terrain-tile-elevation mountain n)])
-                                                       (+ continent-elevation
-                                                          (if (both true?
-                                                                    (fl< 0.0 mountain-elevation)
-                                                                    (fl< -200.0 continent-elevation))
-                                                              mountain-elevation
-                                                              0))))
-                                                   (build-vector (grid-tile-count grid) identity)))
-                                      #f
-                                      #f))])
-                 (list grid final-terrain)))
+                                 (heightmap-create
+                                  (heightmap-parameters "mtn 7" 5 2500.0 0.7)))]
+                      [final-terrain (heightmap-map
+                                      (lambda (a b . ns)
+                                        (fl+ a
+                                             (if (both true?
+                                                       (fl< -200.0 a)
+                                                       (fl< 0.0 b))
+                                                 b
+                                                 0.0)))
+                                      continent
+                                      mountain)])
+                 (list grid (final-terrain grids))))
 
 (define (vector3->vertex v)
   (glVertex3d (flvector-ref v 0)
@@ -96,7 +90,7 @@
          [corners (grid-corners->vector grid)])
     (for ([tile tiles])
       (glBegin GL_TRIANGLE_FAN)
-      (tile-color (terrain-tile-elevation terrain (tile-id tile)))
+      (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
       (tile-vertices grid tile)
       (glEnd))
     ))
