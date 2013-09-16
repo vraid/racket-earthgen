@@ -11,8 +11,8 @@
 (struct heightmap-parameters
   (seed
    base-level
-   magnitude
-   frequency)
+   amplitude
+   persistence)
   #:transparent)
 
 (define (average-elevation tile-elevation corner)
@@ -34,7 +34,7 @@
                       (+ tile-count (grid-corner-count grid))
                       (make-pseudo-random-list (heightmap-parameters-seed parameters)))]
          [elevation (map (lambda (number)
-                           (elevation-from-number number (heightmap-parameters-magnitude parameters)))
+                           (elevation-from-number number (heightmap-parameters-amplitude parameters)))
                          (pseudo-random-list-numbers random-gen))])
     (list
      (heightmap
@@ -47,8 +47,8 @@
     (define (create grids)
       (let* ([grid (force (grid-list-first (force grids)))]
              [level (- (grid-subdivision-level grid) (heightmap-parameters-base-level parameters))]
-             [scale (fl* (heightmap-parameters-magnitude parameters)
-                         (flexpt (heightmap-parameters-frequency parameters) (exact->inexact (+ 1 level))))])
+             [scale (fl* (heightmap-parameters-amplitude parameters)
+                         (flexpt (heightmap-parameters-persistence parameters) (exact->inexact (+ 1 level))))])
         (if (negative? level)
             (heightmap-all-random parameters grid)
             (if (zero? level)
@@ -58,7 +58,7 @@
                        [numbers (list->flvector (pseudo-random-list-numbers random-gen))]
                        [tile-elevation (vector->flvector
                                         (vector-map (lambda (tile)
-                                                      ((lambda (n) (elevation-from numbers (heightmap-parameters-magnitude parameters) n))
+                                                      ((lambda (n) (elevation-from numbers (heightmap-parameters-amplitude parameters) n))
                                                        (tile-id tile)))
                                                     (grid-tiles->vector grid)))]
                        [corner-elevation (vector->flvector
