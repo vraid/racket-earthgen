@@ -108,8 +108,8 @@
                   (list (cons 
                          (tile+corners+edges
                           tile
-                          ((list->fxvector n) (reverse tile-corners))
-                          ((list->fxvector n) (reverse tile-edges)))
+                          (list->fxvector n (reverse tile-corners))
+                          (list->fxvector n (reverse tile-edges)))
                          tiles)
                         corners
                         edges)
@@ -161,13 +161,16 @@
         (corner
          id
          (vector3-normal (foldl vector3+ vector3-zero (map tile-coordinates tiles)))
-         ((list->fxvector 3)
+         (list->fxvector
+          3
           (map tile-id
                tiles))
-         ((list->fxvector 3)
+         (list->fxvector
+          3
           (map (lambda (t) (tile-corner t (+ 1 (tile-corner-position t id))))
                tiles))
-         ((list->fxvector 3)
+         (list->fxvector
+          3
           (map (lambda (t) (tile-edge t (tile-corner-position t id)))
                tiles)))))
     partial-corners)))
