@@ -10,6 +10,8 @@
          subdivided-grid)
 
 (define none -1)
+(define (not-none? n)
+  (not (= none n)))
 
 (define 0-grid-coordinates
   (let* ([x 0.525731112119133606]
@@ -74,9 +76,8 @@
       (tile
        (tile-id t)
        (tile-coordinates t)
-       ((list->fxvector (tile-edge-count t))
-        (map (lambda (n) (+ n tile-count))
-             (tile-corners t)))
+       (fxvector-map (lambda (n) (+ n tile-count))
+                     (tile-corners->vector t))
        #f
        #f))
     tiles)
@@ -85,16 +86,15 @@
       (tile
        (+ tile-count (corner-id c))
        (corner-coordinates c)
-       ((list->fxvector 6)
-        (map (lambda (n) (if (even? n) (+ tile-count (corner-corner c (/ n 2))) (corner-tile c (/ (- n 1) 2))))
-             (range 0 6)))
+       (fxvector-map (lambda (n) (if (even? n) (+ tile-count (corner-corner c (/ n 2))) (corner-tile c (/ (- n 1) 2))))
+                     (build-fxvector 6 identity))
        #f
        #f))
     (grid-corners->vector grid))))
 
 (define (partial-grid subdivision-level tile-structure)
   (define (f tile-id ls)
-              (define tiles (first ls))
+    (define tiles (first ls))
     (define corners (second ls))
     (define edges (third ls))
     (if (= tile-id (subdivision-level-tile-count subdivision-level))
@@ -120,7 +120,7 @@
                              (if new-corner? (cons (partial-corner next-corner-id tile-id n) corners) corners)
                              (if new-edge? (cons (partial-edge next-edge-id tile-id n) edges) edges)))))
           (f (+ 1 tile-id) (next-tile 0 null null corners edges)))))
-    (f 0 (list null null null)))
+  (f 0 (list null null null)))
 
 (define (complete-grid partial-grid)
   (define tiles (complete-tiles (grid-tiles->vector partial-grid)))
@@ -135,22 +135,20 @@
    (lambda (t)
      (tile+corners+edges
       t
-      ((list->fxvector (tile-edge-count t))
-       (map (lambda (n)
-              (if (not (= none (tile-corner t n)))
-                  (tile-corner t n)
-                  (let* ([tn (vector-ref tiles (min (tile-tile t n)
-                                                    (tile-tile t (- n 1))))]
-                         [offset (if (= n (tile-tile-position t (tile-id tn))) 1 0)])
-                    (tile-corner tn (+ offset (tile-tile-position tn (tile-id t)))))))
-            (range 0 (tile-edge-count t))))
-      ((list->fxvector (tile-edge-count t))
-       (map (lambda (n)
-              (if (not (= none (tile-edge t n)))
-                  (tile-edge t n)
-                  (let ([tn (vector-ref tiles (tile-tile t n))])
-                    (tile-edge tn (tile-tile-position tn (tile-id t))))))
-            (range 0 (tile-edge-count t))))))
+      (fxvector-map (lambda (n)
+                      (if (not-none? (tile-corner t n))
+                          (tile-corner t n)
+                          (let* ([tn (vector-ref tiles (min (tile-tile t n)
+                                                            (tile-tile t (- n 1))))]
+                                 [offset (if (= n (tile-tile-position t (tile-id tn))) 1 0)])
+                            (tile-corner tn (+ offset (tile-tile-position tn (tile-id t)))))))
+                    (build-fxvector (tile-edge-count t) identity))
+      (fxvector-map (lambda (n)
+                      (if (not-none? (tile-edge t n))
+                          (tile-edge t n)
+                          (let ([tn (vector-ref tiles (tile-tile t n))])
+                            (tile-edge tn (tile-tile-position tn (tile-id t))))))
+                    (build-fxvector (tile-edge-count t) identity))))
    tiles))
 
 (define (complete-corners tiles partial-corners)
@@ -182,12 +180,12 @@
    (map
     (lambda (e)
       (let* ([id (partial-edge-id e)]
-            [t (vector-ref tiles (partial-edge-tile e))]
-            [pos (partial-edge-position e)])
-      (edge
-       id
-       (fxvector (tile-id t) (tile-tile t pos))
-       (fxvector (tile-corner t pos) (tile-corner t (+ 1 pos))))))
+             [t (vector-ref tiles (partial-edge-tile e))]
+             [pos (partial-edge-position e)])
+        (edge
+         id
+         (fxvector (tile-id t) (tile-tile t pos))
+         (fxvector (tile-corner t pos) (tile-corner t (+ 1 pos))))))
     edges)))
 
 (define 0-grid
