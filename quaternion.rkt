@@ -70,7 +70,7 @@
   (vector3-map-mult (remap-to-vector q m) 
                     (remap-to-vector r n)))
 
-(define (quaternion-single* r q)
+(define (quaternion-single* q r)
   (let ([a (vector 0 0 0)] 
         [b (vector 1 2 3)]
         [c (vector 2 3 1)]
@@ -88,7 +88,7 @@
 
 (define (quaternion-vector* q v)
   (quaternion-vector
-   (quaternion* q (vector->quaternion v) (conjugate q))))
+   (quaternion* q (vector->quaternion v) (quaternion-conjugate q))))
 
 (define (quaternion->matrix3 q)
   (let* ([a (el q 0)]
