@@ -13,13 +13,18 @@
        (range 0 (fxvector-length v))))
 
 (define (fxvector-map f v)
-  (build-fxvector (fxvector-length v)
-                  (lambda (n)
-                    (f (fxvector-ref v n)))))
+  (build-fxvector
+   (fxvector-length v)
+   (lambda (n) (f (fxvector-ref v n)))))
 
 (define (fxvector-member m v)
-  (let ([ls (fxvector->list v)])
-    (- (length ls) (length (member m ls)))))
+  (define (mem n)
+    (if (= n (fxvector-length v))
+        #f
+        (if (eq? m (fxvector-ref v n))
+            n
+            (mem (+ n 1)))))
+  (mem 0))
 
 (define (build-fxvector n f)
   (cond ([= 2 n] (build-fxvector2 f))
