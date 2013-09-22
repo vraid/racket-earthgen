@@ -27,11 +27,11 @@
 (define mouse-down-y 0)
 (define mouse-down-latitude latitude)
 (define mouse-down-longitude longitude)
-(define mspf 500.0)
+(define milliseconds-between-frames 20.0)
 (define last-draw (current-inexact-milliseconds))
 
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 4)]
+(define planet (let* ([grids (n-grid-list 6)]
                       [grid (force (grid-list-first (force grids)))]
                       [continent (heightmap-lower
                                   500.0 (heightmap-create
@@ -55,10 +55,9 @@
                  (list grid (final-terrain grids))))
 
 (define (vector3->vertex v)
-  (let ([v (matrix3-vector3* rotation-matrix v)])
-    (glVertex3d (flvector-ref v 0)
-                (flvector-ref v 1)
-                (flvector-ref v 2))))
+  (glVertex3d (flvector-ref v 0)
+              (flvector-ref v 1)
+              (flvector-ref v 2)))
   
 (define (tile-vertices grid tile)
   (vector3->vertex (tile-coordinates tile))
@@ -90,37 +89,36 @@
     (vector3->color col)))
 
 (define (draw-opengl)
-  (if (< mspf (fl- (current-inexact-milliseconds) last-draw))
+  (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
       (begin
-        (set! last-draw (current-inexact-milliseconds))
-  (glFrontFace GL_CCW)
-  (glEnable GL_CULL_FACE)
-  (glCullFace GL_BACK)
-  (glClearColor 0.0 0.0 0.0 0.0)
-  (glClear GL_COLOR_BUFFER_BIT)
- 
-  (glShadeModel GL_SMOOTH)
- 
-  (glMatrixMode GL_PROJECTION)
-  (glLoadIdentity)
-  (set! rotation-matrix (rotation))
-  (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
-        [my (fl/ 1.0 scale)])
-    (glOrtho (- mx) mx (- my) my -2.0 2.0))
-  (glMatrixMode GL_MODELVIEW)
-  (glLoadIdentity)
-  
-  (let* ([grid (first planet)]
-         [terrain (second planet)]
-         [tiles (grid-tiles->vector grid)]
-         [corners (grid-corners->vector grid)])
-    (for ([tile tiles])
-      (glBegin GL_TRIANGLE_FAN)
-      (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
-      (tile-vertices grid tile)
-      (glEnd))
-    ))
-  (void)))
+        (glFrontFace GL_CCW)
+        (glEnable GL_CULL_FACE)
+        (glCullFace GL_BACK)
+        (glClearColor 0.0 0.0 0.0 0.0)
+        (glClear GL_COLOR_BUFFER_BIT)
+        
+        (glShadeModel GL_SMOOTH)
+        
+        (glMatrixMode GL_PROJECTION)
+        (glLoadIdentity)
+        (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
+              [my (fl/ 1.0 scale)])
+          (glOrtho (- mx) mx (- my) my -2.0 2.0))
+        (glRotatef 90.0 -1.0 0.0 0.0)
+        (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
+        (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
+        
+        (let* ([grid (first planet)]
+               [terrain (second planet)]
+               [tiles (grid-tiles->vector grid)]
+               [corners (grid-corners->vector grid)])
+          (for ([tile tiles])
+            (glBegin GL_TRIANGLE_FAN)
+            (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
+            (tile-vertices grid tile)
+            (glEnd)))
+        (set! last-draw (current-inexact-milliseconds)))
+      (void)))
 
 (define frame
   (new frame%
