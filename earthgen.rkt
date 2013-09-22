@@ -5,13 +5,33 @@
          "heightmap-functions.rkt"
          "grid.rkt"
          "vector3.rkt"
+         "quaternion.rkt"
+         "matrix3.rkt"
          "logic.rkt"
          "math.rkt"
          math/flonum
          sgl/gl)
 
+(define longitude 0.0)
+(define latitude 0.0)
+(define (rotation) (quaternion->matrix3
+                    (quaternion*
+                     (quaternion (fl/ pi 2.0) (vector3 1.0 0.0 0.0))
+                     (quaternion latitude (vector3 -1.0 0.0 0.0))
+                     (quaternion longitude (vector3 0.0 0.0 -1.0)))))
+(define rotation-matrix (rotation))
+(define scale 0.9)
+
+(define mouse-down? false)
+(define mouse-down-x 0)
+(define mouse-down-y 0)
+(define mouse-down-latitude latitude)
+(define mouse-down-longitude longitude)
+(define mspf 500.0)
+(define last-draw (current-inexact-milliseconds))
+
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 8)]
+(define planet (let* ([grids (n-grid-list 4)]
                       [grid (force (grid-list-first (force grids)))]
                       [continent (heightmap-lower
                                   500.0 (heightmap-create
@@ -35,11 +55,11 @@
                  (list grid (final-terrain grids))))
 
 (define (vector3->vertex v)
-  (glVertex3d (flvector-ref v 0)
-              (flvector-ref v 1)
-              (flvector-ref v 2)))
+  (let ([v (matrix3-vector3* rotation-matrix v)])
+    (glVertex3d (flvector-ref v 0)
+                (flvector-ref v 1)
+                (flvector-ref v 2))))
   
-
 (define (tile-vertices grid tile)
   (vector3->vertex (tile-coordinates tile))
   (for ([c (tile-corners tile)])
@@ -70,6 +90,9 @@
     (vector3->color col)))
 
 (define (draw-opengl)
+  (if (< mspf (fl- (current-inexact-milliseconds) last-draw))
+      (begin
+        (set! last-draw (current-inexact-milliseconds))
   (glFrontFace GL_CCW)
   (glEnable GL_CULL_FACE)
   (glCullFace GL_BACK)
@@ -80,8 +103,9 @@
  
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
-  (let ([mx (* 1.1 (exact->inexact (/ display-width display-height)))]
-        [my 1.1])
+  (set! rotation-matrix (rotation))
+  (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
+        [my (fl/ 1.0 scale)])
     (glOrtho (- mx) mx (- my) my -2.0 2.0))
   (glMatrixMode GL_MODELVIEW)
   (glLoadIdentity)
@@ -96,6 +120,7 @@
       (tile-vertices grid tile)
       (glEnd))
     ))
+  (void)))
 
 (define frame
   (new frame%
@@ -113,6 +138,30 @@
       (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
+    (define/override (on-event event)
+      (if (send event button-up? 'left)
+          (set! mouse-down? false)
+          (if mouse-down?
+              (begin
+                (set! longitude (fl+ mouse-down-longitude
+                                     (fl* (exact->inexact
+                                           (- mouse-down-x (send event get-x)))
+                                          (fl/ pi -800.0))))
+                (set! latitude (max (fl/ pi -2.0)
+                                    (min (fl/ pi 2.0)
+                                         (fl+ mouse-down-latitude
+                                              (fl* (exact->inexact
+                                                    (- mouse-down-y (send event get-y)))
+                                                   (fl/ pi -600.0))))))
+                (on-paint))
+              (if (send event button-down? 'left)
+                  (begin
+                    (set! mouse-down? true)
+                    (set! mouse-down-x (send event get-x))
+                    (set! mouse-down-y (send event get-y))
+                    (set! mouse-down-latitude latitude)
+                    (set! mouse-down-longitude longitude))
+                  (void)))))
     (super-instantiate () (style '(gl)))))
 
 (define gl-context (new canvas [parent frame]))
