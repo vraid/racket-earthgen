@@ -86,8 +86,7 @@
       (tile
        (+ tile-count (corner-id c))
        (corner-coordinates c)
-       (fxvector-map (lambda (n) (if (even? n) (+ tile-count (corner-corner c (/ n 2))) (corner-tile c (/ (- n 1) 2))))
-                     (build-fxvector 6 identity))
+       (build-fxvector 6 (lambda (n) (if (even? n) (+ tile-count (corner-corner c (/ n 2))) (corner-tile c (/ (- n 1) 2)))))
        #f
        #f))
     (grid-corners->vector grid))))
@@ -135,20 +134,18 @@
    (lambda (t)
      (tile+corners+edges
       t
-      (fxvector-map (lambda (n)
+      (build-fxvector (tile-edge-count t) (lambda (n)
                       (if (not-none? (tile-corner t n))
                           (tile-corner t n)
                           (let* ([tn (vector-ref tiles (min (tile-tile t n)
                                                             (tile-tile t (- n 1))))]
                                  [offset (if (= n (tile-tile-position t (tile-id tn))) 1 0)])
-                            (tile-corner tn (+ offset (tile-tile-position tn (tile-id t)))))))
-                    (build-fxvector (tile-edge-count t) identity))
-      (fxvector-map (lambda (n)
+                            (tile-corner tn (+ offset (tile-tile-position tn (tile-id t))))))))
+      (build-fxvector (tile-edge-count t) (lambda (n)
                       (if (not-none? (tile-edge t n))
                           (tile-edge t n)
                           (let ([tn (vector-ref tiles (tile-tile t n))])
-                            (tile-edge tn (tile-tile-position tn (tile-id t))))))
-                    (build-fxvector (tile-edge-count t) identity))))
+                            (tile-edge tn (tile-tile-position tn (tile-id t)))))))))
    tiles))
 
 (define (complete-corners tiles partial-corners)
