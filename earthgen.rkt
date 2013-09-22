@@ -11,25 +11,27 @@
          sgl/gl)
 
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 6)]
+(define planet (let* ([grids (n-grid-list 8)]
                       [grid (force (grid-list-first (force grids)))]
                       [continent (heightmap-lower
                                   500.0 (heightmap-create
                                          (heightmap-parameters "earth 5" 2 2000.0 0.65)))]
-                      [mountain (heightmap-lower
-                                 200.0
-                                 (heightmap-create
-                                  (heightmap-parameters "mtn 7" 5 2500.0 0.7)))]
-                      [final-terrain (heightmap-map
-                                      (lambda (a b . ns)
-                                        (fl+ a
-                                             (if (both true?
-                                                       (fl< -200.0 a)
-                                                       (fl< 0.0 b))
-                                                 b
-                                                 0.0)))
-                                      continent
-                                      mountain)])
+                      [mountain-base (heightmap-lower
+                                      200.0
+                                      (heightmap-create
+                                       (heightmap-parameters "mtn 7" 5 2500.0 0.7)))]
+                      [mountain (heightmap-map
+                                 (lambda (a b . ns)
+                                   (if (both true?
+                                             (fl< -200.0 a)
+                                             (fl< 0.0 b))
+                                       b
+                                       0.0))
+                                 continent
+                                 mountain-base)]
+                                             
+                      [final-terrain (heightmap-combine continent
+                                                        mountain)])
                  (list grid (final-terrain grids))))
 
 (define (vector3->vertex v)

@@ -8,7 +8,7 @@
 (provide heightmap-map
          heightmap-lower
          heightmap-raise
-         heightmap-sum
+         heightmap-add
          heightmap-combine)
 
 (define (heightmap-map f . hs)
@@ -32,7 +32,7 @@
   (lambda (grids)
     ((heightmap-raise (- n) t) grids)))
 
-(define (heightmap-combine a b)
+(define (heightmap-add a b)
   (lambda (grids)
     (let ([hmap-a (a grids)]
           [hmap-b (b grids)])
@@ -40,12 +40,7 @@
        (flvector+ (heightmap-tiles hmap-a) (heightmap-tiles hmap-b))
        (flvector+ (heightmap-corners hmap-a) (heightmap-corners hmap-b))))))
 
-(define (heightmap-sum hs)
+(define (heightmap-combine a . hs)
   (lambda (grids)
-    (if (empty? hs)
-        #f
-        (if (empty? (rest hs))
-            ((first hs) grids)
-            (foldl
-             (lambda (a b) ((heightmap-combine a b) grids))
-             hs)))))
+    (foldl (lambda (a b) ((heightmap-add a b) grids))
+           a hs)))
