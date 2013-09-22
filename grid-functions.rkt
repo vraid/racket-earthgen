@@ -1,6 +1,7 @@
 #lang racket
 
 (require "utilities.rkt"
+         "util-vector.rkt"
          "grid-structs.rkt"
          racket/fixnum)
 
@@ -33,6 +34,10 @@
          grid-tile
          grid-corner
          grid-edge)
+
+(define (vector-member m v)
+  (let ([ls (fxvector->list v)])
+    (- (length ls) (length (member m ls)))))
 
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
@@ -97,19 +102,19 @@
     [else 0]))
 
 (define (tile-tile t n)
-  (vector-ref (tile-tiles->vector t) (fxmodulo n (tile-edge-count t))))
+  (fxvector-ref (tile-tiles->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (tile-corner t n)
-  (vector-ref (tile-corners->vector t) (fxmodulo n (tile-edge-count t))))
+  (fxvector-ref (tile-corners->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (tile-edge t n)
-  (vector-ref (tile-edges->vector t) (fxmodulo n (tile-edge-count t))))
+  (fxvector-ref (tile-edges->vector t) (fxmodulo n (tile-edge-count t))))
 
 (define (corner-tile c n)
-  (vector-ref (corner-tiles->vector c) (fxmodulo n corner-edge-count)))
+  (fxvector-ref (corner-tiles->vector c) (fxmodulo n corner-edge-count)))
 
 (define (corner-corner c n)
-  (vector-ref (corner-corners->vector c) (fxmodulo n corner-edge-count)))
+  (fxvector-ref (corner-corners->vector c) (fxmodulo n corner-edge-count)))
 
 (define (corner-edge c n)
-  (vector-ref (corner-edges->vector c) (fxmodulo n corner-edge-count)))
+  (fxvector-ref (corner-edges->vector c) (fxmodulo n corner-edge-count)))

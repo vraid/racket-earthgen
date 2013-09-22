@@ -1,5 +1,8 @@
 #lang racket
 
+(require racket/fixnum
+         "util-vector.rkt")
+
 (provide tile
          tile-id
          tile-tiles
@@ -66,35 +69,35 @@
   #:transparent)
 
 (define (tile-tiles a)
-  (vector->list
+  (fxvector->list
    (tile-tiles->vector a)))
 
 (define (tile-corners a)
-  (vector->list
+  (fxvector->list
    (tile-corners->vector a)))
 
 (define (tile-edges a)
-  (vector->list
+  (fxvector->list
    (tile-edges->vector a)))
 
 (define (corner-tiles a)
-  (vector->list
+  (fxvector->list
    (corner-tiles->vector a)))
 
 (define (corner-corners a)
-  (vector->list
+  (fxvector->list
    (corner-corners->vector a)))
 
 (define (corner-edges a)
-  (vector->list
+  (fxvector->list
    (corner-edges->vector a)))
 
 (define (edge-tiles a)
-  (vector->list
+  (fxvector->list
    (edge-tiles->vector a)))
 
 (define (edge-corners a)
-  (vector->list
+  (fxvector->list
    (edge-corners->vector a)))
 
 (define (grid-tiles a)
