@@ -1,0 +1,22 @@
+(values
+ 6
+ (let* ([continent (heightmap-lower
+                    300.0 (heightmap-create
+                           (heightmap-parameters "earth1" 2 2000.0 0.65)))]
+        [mountain-base (heightmap-lower
+                        200.0
+                        (heightmap-create
+                         (heightmap-parameters "mtn1" 4 2500.0 0.7)))]
+        [mountain (heightmap-map
+                   (lambda (a b . ns)
+                     (if (both true?
+                               (fl< -200.0 a)
+                               (fl< 0.0 b))
+                         b
+                         0.0))
+                   continent
+                   mountain-base)]
+        
+        [final-terrain (heightmap-combine continent
+                                          mountain)])
+   final-terrain))

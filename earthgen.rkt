@@ -30,35 +30,21 @@
 (define milliseconds-between-frames 20.0)
 (define last-draw (current-inexact-milliseconds))
 
+(define grids (n-grid-list null 0))
+
+(define (terrain-gen) (let*-values ([(size method) (load "terrain-gen.txt")])
+                        (begin
+                          (set! grids (n-grid-list grids size))
+                          (list (grid-list-first grids) (method grids)))))
+
 (define-values (display-width display-height) (get-display-size))
-(define planet (let* ([grids (n-grid-list 6)]
-                      [grid (force (grid-list-first (force grids)))]
-                      [continent (heightmap-lower
-                                  500.0 (heightmap-create
-                                         (heightmap-parameters "earth 5" 2 2000.0 0.65)))]
-                      [mountain-base (heightmap-lower
-                                      200.0
-                                      (heightmap-create
-                                       (heightmap-parameters "mtn 7" 5 2500.0 0.7)))]
-                      [mountain (heightmap-map
-                                 (lambda (a b . ns)
-                                   (if (both true?
-                                             (fl< -200.0 a)
-                                             (fl< 0.0 b))
-                                       b
-                                       0.0))
-                                 continent
-                                 mountain-base)]
-                                             
-                      [final-terrain (heightmap-combine continent
-                                                        mountain)])
-                 (list grid (final-terrain grids))))
+(define planet null)
 
 (define (vector3->vertex v)
   (glVertex3d (flvector-ref v 0)
               (flvector-ref v 1)
               (flvector-ref v 2)))
-  
+
 (define (tile-vertices grid tile)
   (vector3->vertex (tile-coordinates tile))
   (for ([c (tile-corners tile)])
@@ -108,16 +94,19 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-        (let* ([grid (first planet)]
-               [terrain (second planet)]
-               [tiles (grid-tiles->vector grid)]
-               [corners (grid-corners->vector grid)])
-          (for ([tile tiles])
-            (glBegin GL_TRIANGLE_FAN)
-            (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
-            (tile-vertices grid tile)
-            (glEnd)))
+        (if (null? planet)
+            (void)
+            (let* ([grid (first planet)]
+                   [terrain (second planet)]
+                   [tiles (grid-tiles->vector grid)]
+                   [corners (grid-corners->vector grid)])
+              (for ([tile tiles])
+                (glBegin GL_TRIANGLE_FAN)
+                (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
+                (tile-vertices grid tile)
+                (glEnd))))
         (set! last-draw (current-inexact-milliseconds)))
+      
       (void)))
 
 (define frame
@@ -136,21 +125,32 @@
       (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
+    (define/override (on-char event)
+      (if (both true?
+                (send event get-control-down)
+                (eq? #\q (send event get-key-code)))
+          (begin
+            (set! planet (terrain-gen))
+            (set! last-draw 0.0)
+            (draw-opengl))
+          (void)))
     (define/override (on-event event)
       (if (send event button-up? 'left)
           (set! mouse-down? false)
           (if mouse-down?
               (begin
-                (set! longitude (fl+ mouse-down-longitude
+                (set! longitude
+                      (fl+ mouse-down-longitude
+                           (fl* (exact->inexact
+                                 (- mouse-down-x (send event get-x)))
+                                (fl/ pi -800.0))))
+                (set! latitude
+                      (max (fl/ pi -2.0)
+                           (min (fl/ pi 2.0)
+                                (fl+ mouse-down-latitude
                                      (fl* (exact->inexact
-                                           (- mouse-down-x (send event get-x)))
-                                          (fl/ pi -800.0))))
-                (set! latitude (max (fl/ pi -2.0)
-                                    (min (fl/ pi 2.0)
-                                         (fl+ mouse-down-latitude
-                                              (fl* (exact->inexact
-                                                    (- mouse-down-y (send event get-y)))
-                                                   (fl/ pi -600.0))))))
+                                           (- mouse-down-y (send event get-y)))
+                                          (fl/ pi -600.0))))))
                 (on-paint))
               (if (send event button-down? 'left)
                   (begin

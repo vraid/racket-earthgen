@@ -1,4 +1,4 @@
-#lang lazy
+#lang racket
 
 (require "grid-structs.rkt"
          "grid-functions.rkt"
@@ -24,12 +24,16 @@
      grid
      rest)))
 
-(define (n-grid-list n)
+(define (n-grid-list grids n)
   (if (zero? n)
       (grid-list
        (n-grid 0)
        null)
-      (let ([grids (n-grid-list (- n 1))])
-        (grid-list
-         (subdivided-grid (grid-list-first grids))
-         grids))))
+      (if (eq? n (grid-subdivision-level (grid-list-first grids)))
+          grids
+          (if (< n (grid-subdivision-level (grid-list-first grids)))
+              (n-grid-list (grid-list-rest grids) n)
+              (n-grid-list (grid-list
+                            (subdivided-grid (grid-list-first grids))
+                            grids)
+                           n)))))
