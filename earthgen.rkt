@@ -9,6 +9,7 @@
          "matrix3.rkt"
          "logic.rkt"
          "math.rkt"
+         "color.rkt"
          math/flonum
          sgl/gl)
 
@@ -39,6 +40,7 @@
 
 (define-values (display-width display-height) (get-display-size))
 (define planet null)
+(define tile-colors null)
 
 (define (vector3->vertex v)
   (glVertex3d (flvector-ref v 0)
@@ -51,29 +53,46 @@
     (vector3->vertex (corner-coordinates (grid-corner grid c))))
   (vector3->vertex (corner-coordinates (grid-corner grid (tile-corner tile 0)))))
 
-(define (vector3->color v)
-  (glColor3f (flvector-ref v 0)
-             (flvector-ref v 1)
-             (flvector-ref v 2)))
+(define (set-gl-color! c)
+  (glColor3f (color-red c)
+             (color-green c)
+             (color-blue c)))
 
 (define (color-interpolate col-one col-two d)
-  (vector3+ (vector3-scale col-one (- 1.0 d)) (vector3-scale col-two d)))
+  (let ([1-d (fl- 1.0 d)])
+    (color (fl+ (fl* 1-d (color-red col-one))
+                (fl* d (color-red col-two)))
+           (fl+ (fl* 1-d (color-green col-one))
+                (fl* d (color-green col-two)))
+           (fl+ (fl* 1-d (color-blue col-one))
+                (fl* d (color-blue col-two))))))
 
 (define water-surface
-  (vector3 0.0 0.4 0.8))
+  (color 0.0 0.4 0.8))
 (define water-deep
-  (vector3 0.0 0.0 0.3))
+  (color 0.0 0.0 0.3))
 (define land-low
-  (vector3 0.5 0.8 0.0))
+  (color 0.5 0.8 0.0))
 (define land-high
-  (vector3 0.2 0.2 0.1))
+  (color 0.2 0.2 0.1))
 
-(define (tile-color elevation)
-  (let ([col (if (< 0 elevation)
-                 (color-interpolate land-low land-high (exact->inexact (min 1.0 (/ elevation 3000.0))))
-                 (color-interpolate water-surface water-deep (exact->inexact (min 1.0 (/ elevation -3000.0)))))])
-    (vector3->color col)))
+(define (base-color-water elevation)
+      (color-interpolate
+       water-surface
+       water-deep
+       (exact->inexact (min 1.0 (/ elevation -3000.0)))))
 
+(define (base-color-land elevation)
+      (color-interpolate
+       land-low
+       land-high
+       (exact->inexact (min 1.0 (/ elevation 3000.0)))))
+
+(define (base-color elevation)
+  (if (< 0 elevation)
+      (base-color-land elevation)
+      (base-color-water elevation)))
+  
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
       (begin
@@ -102,11 +121,10 @@
                    [corners (grid-corners->vector grid)])
               (for ([tile tiles])
                 (glBegin GL_TRIANGLE_FAN)
-                (tile-color (flvector-ref (heightmap-tiles terrain) (tile-id tile)))
+                (set-gl-color! (vector-ref tile-colors (tile-id tile)))
                 (tile-vertices grid tile)
                 (glEnd))))
         (set! last-draw (current-inexact-milliseconds)))
-      
       (void)))
 
 (define frame
@@ -131,6 +149,10 @@
                 (eq? #\q (send event get-key-code)))
           (begin
             (set! planet (terrain-gen))
+            (set! tile-colors
+                  (build-vector
+                   (flvector-length (heightmap-tiles (second planet)))
+                   (lambda (n) (base-color (flvector-ref (heightmap-tiles (second planet)) n)))))
             (set! last-draw 0.0)
             (draw-opengl))
           (void)))
