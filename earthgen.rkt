@@ -3,6 +3,8 @@
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
          "heightmap-functions.rkt"
+         "planet.rkt"
+         "planet-create.rkt"
          "grid.rkt"
          "vector3.rkt"
          "quaternion.rkt"
@@ -39,7 +41,7 @@
                           (list (grid-list-first grids) (method grids)))))
 
 (define-values (display-width display-height) (get-display-size))
-(define planet null)
+(define planet-entity null)
 (define tile-colors null)
 
 (define (vector3->vertex v)
@@ -76,7 +78,7 @@
 (define land-high
   (color 0.2 0.2 0.1))
 
-(define (base-color-water elevation)
+(define (base-color-water depth)
       (color-interpolate
        water-surface
        water-deep
@@ -113,10 +115,10 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-        (if (null? planet)
+        (if (null? planet-entity)
             (void)
-            (let* ([grid (first planet)]
-                   [terrain (second planet)]
+            (let* ([grid (first planet-entity)]
+                   [terrain (second planet-entity)]
                    [tiles (grid-tiles->vector grid)]
                    [corners (grid-corners->vector grid)])
               (for ([tile tiles])
@@ -148,11 +150,11 @@
                 (send event get-control-down)
                 (eq? #\q (send event get-key-code)))
           (begin
-            (set! planet (terrain-gen))
+            (set! planet-entity (terrain-gen))
             (set! tile-colors
                   (build-vector
-                   (flvector-length (heightmap-tiles (second planet)))
-                   (lambda (n) (base-color (flvector-ref (heightmap-tiles (second planet)) n)))))
+                   (flvector-length (heightmap-tiles (second planet-entity)))
+                   (lambda (n) (base-color (flvector-ref (heightmap-tiles (second planet-entity)) n)))))
             (set! last-draw 0.0)
             (draw-opengl))
           (void)))

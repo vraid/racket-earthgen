@@ -6,6 +6,9 @@
          vector3-zero
          vector3-scale
          vector3-length
+         vector3-length-squared
+         vector3-distance
+         vector3-distance-squared
          vector3-normal
          vector3+
          vector3-
@@ -19,10 +22,19 @@
 (define vector3-zero
   (flvector 0.0 0.0 0.0))
 
+(define (vector3-length-squared v)
+  (flvector-sum
+   (flvector-sqr v)))
+
 (define (vector3-length v)
   (flsqrt 
-   (flvector-sum 
-    (flvector-sqr v))))
+   (vector3-length-squared v)))
+
+(define (vector3-distance-squared v u)
+  (vector3-length-squared (vector3- v u)))
+
+(define (vector3-distance v u)
+  (vector3-length (vector3- v u)))
 
 (define vector3-scale
   flvector-scale)
