@@ -38,10 +38,10 @@
 (define (terrain-gen) (let*-values ([(size method) (load "terrain-gen.txt")])
                         (begin
                           (set! grids (n-grid-list grids size))
-                          (list (grid-list-first grids) (method grids)))))
+                          (method grids))))
 
 (define-values (display-width display-height) (get-display-size))
-(define planet-entity null)
+(define planet-entity #f)
 (define tile-colors null)
 
 (define (vector3->vertex v)
@@ -78,7 +78,7 @@
 (define land-high
   (color 0.2 0.2 0.1))
 
-(define (base-color-water depth)
+(define (base-color-water elevation)
       (color-interpolate
        water-surface
        water-deep
@@ -115,17 +115,16 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-        (if (null? planet-entity)
-            (void)
-            (let* ([grid (first planet-entity)]
-                   [terrain (second planet-entity)]
+        (if (planet? planet-entity)
+            (let* ([grid (grid-list-first grids)]
                    [tiles (grid-tiles->vector grid)]
                    [corners (grid-corners->vector grid)])
               (for ([tile tiles])
                 (glBegin GL_TRIANGLE_FAN)
                 (set-gl-color! (vector-ref tile-colors (tile-id tile)))
                 (tile-vertices grid tile)
-                (glEnd))))
+                (glEnd)))
+            (void))
         (set! last-draw (current-inexact-milliseconds)))
       (void)))
 
@@ -146,15 +145,19 @@
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
     (define/override (on-char event)
-      (if (both true?
-                (send event get-control-down)
-                (eq? #\q (send event get-key-code)))
+      (if (eq? #\q (send event get-key-code))
           (begin
-            (set! planet-entity (terrain-gen))
-            (set! tile-colors
-                  (build-vector
-                   (flvector-length (heightmap-tiles (second planet-entity)))
-                   (lambda (n) (base-color (flvector-ref (heightmap-tiles (second planet-entity)) n)))))
+            (terrain-gen)
+            (set! planet-entity ((heightmap->planet (grid-list-first grids)) (terrain-gen)))
+            (if (planet? planet-entity)
+                (set! tile-colors
+                      (build-vector
+                       (vector-length (planet-tiles planet-entity))
+                       (lambda (n)
+                         (base-color
+                          (planet-tile-elevation
+                           (vector-ref (planet-tiles planet-entity) n))))))
+                (void))
             (set! last-draw 0.0)
             (draw-opengl))
           (void)))

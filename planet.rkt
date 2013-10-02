@@ -1,22 +1,24 @@
 #lang racket
 
-(require "planet-structs.rkt"
-         "planet-tile-struct.rkt")
-
+(require "planet-structs.rkt")
 (provide planet
+         planet?
          planet-grid
          planet-tiles
          planet-corners
          planet-edges
-         planet-tile
+         planet-corner
+         planet-corner-stream-direction
+         planet-corner-elevation
+         planet-edge
+         planet-edge-length
+         planet-edge-tile-distance)
+
+(require "planet-tile-struct.rkt")
+(provide planet-tile
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level
          planet-tile-temperature
          planet-tile-humidity
-         planet-tile-precipitation
-         planet-corner
-         planet-corner-stream-direction
-         planet-corner-elevation
-         planet-edge
-         planet-edge-length)
+         planet-tile-precipitation)
