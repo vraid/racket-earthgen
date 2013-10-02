@@ -12,6 +12,7 @@
          "logic.rkt"
          "math.rkt"
          "color.rkt"
+         "planet-color.rkt"
          math/flonum
          sgl/gl)
 
@@ -59,41 +60,6 @@
   (glColor3f (color-red c)
              (color-green c)
              (color-blue c)))
-
-(define (color-interpolate col-one col-two d)
-  (let ([1-d (fl- 1.0 d)])
-    (color (fl+ (fl* 1-d (color-red col-one))
-                (fl* d (color-red col-two)))
-           (fl+ (fl* 1-d (color-green col-one))
-                (fl* d (color-green col-two)))
-           (fl+ (fl* 1-d (color-blue col-one))
-                (fl* d (color-blue col-two))))))
-
-(define water-surface
-  (color 0.0 0.4 0.8))
-(define water-deep
-  (color 0.0 0.0 0.3))
-(define land-low
-  (color 0.5 0.8 0.0))
-(define land-high
-  (color 0.2 0.2 0.1))
-
-(define (base-color-water elevation)
-      (color-interpolate
-       water-surface
-       water-deep
-       (exact->inexact (min 1.0 (/ elevation -3000.0)))))
-
-(define (base-color-land elevation)
-      (color-interpolate
-       land-low
-       land-high
-       (exact->inexact (min 1.0 (/ elevation 3000.0)))))
-
-(define (base-color elevation)
-  (if (< 0 elevation)
-      (base-color-land elevation)
-      (base-color-water elevation)))
   
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
@@ -137,6 +103,13 @@
                 no-caption
                 no-system-menu)]))
 
+(define (color-vector planet f)
+  (build-vector
+   (vector-length (planet-tiles planet-entity))
+   (lambda (n)
+     (f
+      (vector-ref (planet-tiles planet-entity) n)))))
+
 (define canvas
   (class* canvas% ()
     (inherit with-gl-context swap-gl-buffers)
@@ -145,18 +118,18 @@
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
     (define/override (on-char event)
+      (when (eq? #\a (send event get-key-code))
+          (when (planet? planet-entity)
+              (set! tile-colors (color-vector planet-entity base-color))))
+      (when (eq? #\s (send event get-key-code))
+          (when (planet? planet-entity)
+              (set! tile-colors (color-vector planet-entity color-temperature))))
       (if (eq? #\q (send event get-key-code))
           (begin
             (terrain-gen)
             (set! planet-entity ((heightmap->planet (grid-list-first grids)) (terrain-gen)))
             (if (planet? planet-entity)
-                (set! tile-colors
-                      (build-vector
-                       (vector-length (planet-tiles planet-entity))
-                       (lambda (n)
-                         (base-color
-                          (planet-tile-elevation
-                           (vector-ref (planet-tiles planet-entity) n))))))
+                (set! tile-colors (color-vector planet-entity base-color))
                 (void))
             (set! last-draw 0.0)
             (draw-opengl))
