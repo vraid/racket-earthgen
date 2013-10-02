@@ -19,6 +19,7 @@
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level
+         planet-tile-water-depth
          planet-tile-temperature
          planet-tile-humidity
          planet-tile-precipitation)
