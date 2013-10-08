@@ -118,22 +118,31 @@
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
     (define/override (on-char event)
-      (when (eq? #\a (send event get-key-code))
-          (when (planet? planet-entity)
-              (set! tile-colors (color-vector planet-entity base-color))))
-      (when (eq? #\s (send event get-key-code))
-          (when (planet? planet-entity)
-              (set! tile-colors (color-vector planet-entity color-temperature))))
-      (if (eq? #\q (send event get-key-code))
-          (begin
-            (terrain-gen)
-            (set! planet-entity ((heightmap->planet (grid-list-first grids)) (terrain-gen)))
-            (if (planet? planet-entity)
-                (set! tile-colors (color-vector planet-entity base-color))
-                (void))
-            (set! last-draw 0.0)
-            (draw-opengl))
-          (void)))
+      (define key-code (send event get-key-code))
+      (cond
+        [(eq? #\q key-code)
+         (begin
+           (terrain-gen)
+           (set! planet-entity ((heightmap->planet (grid-list-first grids)) (terrain-gen)))
+           (if (planet? planet-entity)
+               (set! tile-colors (color-vector planet-entity base-color))
+               (void))
+           (set! last-draw 0.0)
+           (on-paint))]
+        [(eq? #\a key-code)
+         (when (planet? planet-entity)
+           (begin
+             (set! tile-colors (color-vector planet-entity base-color))
+             (set! last-draw 0.0)
+             (on-paint)))]
+        [(eq? #\s key-code)
+         (when (planet? planet-entity)
+           (begin
+             (set! tile-colors (color-vector planet-entity color-temperature))
+             (set! last-draw 0.0)
+             (on-paint)))]
+        [(eq? #\d key-code)
+         (void)]))
     (define/override (on-event event)
       (if (send event button-up? 'left)
           (set! mouse-down? false)

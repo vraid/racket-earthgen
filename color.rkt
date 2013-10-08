@@ -9,6 +9,11 @@
          color-blue
          color-interpolate)
 
+(struct: color
+  ([red : Flonum]
+   [green : Flonum]
+   [blue : Flonum]))
+
 (define color-interpolate
   (lambda: ([col-one : color]
             [col-two : color]
@@ -20,8 +25,3 @@
                   (fl* d (color-green col-two)))
              (fl+ (fl* 1-d (color-blue col-one))
                   (fl* d (color-blue col-two)))))))
-
-(struct: color
-  ([red : Flonum]
-   [green : Flonum]
-   [blue : Flonum]))
