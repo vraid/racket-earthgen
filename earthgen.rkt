@@ -138,6 +138,12 @@
         [(eq? #\s key-code)
          (when (planet? planet-entity)
            (begin
+             (set! tile-colors (color-vector planet-entity color-topography))
+             (set! last-draw 0.0)
+             (on-paint)))]
+        [(eq? #\d key-code)
+         (when (planet? planet-entity)
+           (begin
              (set! tile-colors (color-vector planet-entity color-temperature))
              (set! last-draw 0.0)
              (on-paint)))]
