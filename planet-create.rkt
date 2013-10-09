@@ -37,6 +37,7 @@
      grid
      (vector-map (lambda (n)
                    (planet-tile
+                    n
                     (tile-area grid (grid-tile grid n))
                     (flvector-ref (heightmap-tiles heightmap) n)
                     0.0

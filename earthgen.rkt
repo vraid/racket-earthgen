@@ -5,6 +5,7 @@
          "heightmap-functions.rkt"
          "planet.rkt"
          "planet-create.rkt"
+         "climate-create.rkt"
          "grid.rkt"
          "vector3.rkt"
          "quaternion.rkt"
@@ -123,7 +124,7 @@
         [(eq? #\q key-code)
          (begin
            (terrain-gen)
-           (set! planet-entity ((heightmap->planet (grid-list-first grids)) (terrain-gen)))
+           (set! planet-entity (climate-first ((heightmap->planet (grid-list-first grids)) (terrain-gen)) (grid-list-first grids)))
            (if (planet? planet-entity)
                (set! tile-colors (color-vector planet-entity base-color))
                (void))

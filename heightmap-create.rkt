@@ -45,7 +45,7 @@
 (define (heightmap-create parameters)
   (lambda (grids)
     (define (create grids)
-      (let* ([grid (force (grid-list-first (force grids)))]
+      (let* ([grid (grid-list-first grids)]
              [level (- (grid-subdivision-level grid) (heightmap-parameters-base-level parameters))]
              [scale (fl* (heightmap-parameters-amplitude parameters)
                          (flexpt (heightmap-parameters-persistence parameters) (exact->inexact (+ 1 level))))])
@@ -75,7 +75,7 @@
                 (let* ([flvector-append (lambda (a b)
                                           (list->flvector
                                            (append (flvector->list a) (flvector->list b))))]
-                       [previous (create (grid-list-rest (force grids)))]
+                       [previous (create (grid-list-rest grids))]
                        [previous-terrain (first previous)]
                        [random-gen (pseudo-random-list-next (grid-corner-count grid)
                                                             (second previous))]

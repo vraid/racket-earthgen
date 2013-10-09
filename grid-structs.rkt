@@ -4,6 +4,7 @@
          "util-vector.rkt")
 
 (provide tile
+         tile?
          tile-id
          tile-tiles
          tile-corners
@@ -14,6 +15,7 @@
          tile-coordinates
          
          corner
+         corner?
          corner-id
          corner-tiles
          corner-corners
@@ -24,6 +26,7 @@
          corner-coordinates
          
          edge
+         edge?
          edge-id
          edge-tiles
          edge-corners
@@ -31,6 +34,7 @@
          edge-corners->vector
          
          grid
+         grid?
          grid-subdivision-level
          grid-tiles
          grid-corners

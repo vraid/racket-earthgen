@@ -16,6 +16,7 @@
 
 (require "planet-tile-struct.rkt")
 (provide planet-tile
+         planet-tile-id
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level

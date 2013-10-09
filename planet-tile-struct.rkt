@@ -3,6 +3,7 @@
 (require racket/flonum)
 
 (provide planet-tile
+         planet-tile-id
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level
@@ -12,7 +13,8 @@
          planet-tile-precipitation)
 
 (struct: planet-tile
-  ([area : Flonum]
+  ([id : Fixnum]
+   [area : Flonum]
    [elevation : Flonum]
    [water-level : Flonum]
    [temperature : Flonum]
