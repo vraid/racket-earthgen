@@ -1,7 +1,8 @@
 #lang typed/racket
 
 (require "planet.rkt"
-         "color.rkt")
+         "color.rkt"
+         "typed-logic.rkt")
 
 (provide base-color
          color-temperature)
@@ -76,20 +77,21 @@
                 [colors : (Listof color)]
                 [last-interval : (U Flonum Boolean)]
                 [last-color : color])
-        (if (empty? intervals)
-            color-undefined
-            (if (< tile-value (first intervals))
-                (if (flonum? last-interval)
-                    (color-interpolate last-color
-                                       (first colors)
-                                       (/ (- tile-value last-interval)
-                                          (- (first intervals) last-interval)))
-                    
-                    color-undefined)
-                (rec-find (rest intervals)
-                          (rest colors)
-                          (first intervals)
-                          (first colors))))))
+        (cond [(empty? intervals)
+               color-undefined]
+              [(and (flonum? last-interval)
+                    (< tile-value (first intervals)))
+               (color-interpolate last-color
+                                  (first colors)
+                                  (/ (- tile-value last-interval)
+                                     (- (first intervals) last-interval)))]
+              [(boolean? last-interval)
+               color-undefined]
+              [else
+               (rec-find (rest intervals)
+                         (rest colors)
+                         (first intervals)
+                         (first colors))])))
     (rec-find intervals
               colors
               #f
