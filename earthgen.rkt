@@ -118,6 +118,14 @@
       (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
     (define/override (on-size width height)
       (with-gl-context (lambda () (glViewport 0 0 width height))))
+    (define (repaint!)
+      (set! last-draw 0.0)
+      (on-paint))
+    (define (color-planet! f)
+      (when (planet? planet-entity)
+        (begin
+          (set! tile-colors (color-vector planet-entity f))
+          (repaint!))))
     (define/override (on-char event)
       (define key-code (send event get-key-code))
       (cond
@@ -125,40 +133,19 @@
          (begin
            (terrain-gen)
            (set! planet-entity (climate-first ((heightmap->planet (grid-list-first grids)) (terrain-gen)) (grid-list-first grids)))
-           (if (planet? planet-entity)
-               (set! tile-colors (color-vector planet-entity base-color))
-               (void))
-           (set! last-draw 0.0)
-           (on-paint))]
+           (color-planet! base-color))]
         [(eq? #\w key-code)
          (begin
            (climate-next planet-entity (grid-list-first grids))
-           (set! last-draw 0.0)
-           (on-paint))]
+           (repaint!))]
         [(eq? #\a key-code)
-         (when (planet? planet-entity)
-           (begin
-             (set! tile-colors (color-vector planet-entity base-color))
-             (set! last-draw 0.0)
-             (on-paint)))]
+         (color-planet! base-color)]
         [(eq? #\s key-code)
-         (when (planet? planet-entity)
-           (begin
-             (set! tile-colors (color-vector planet-entity color-topography))
-             (set! last-draw 0.0)
-             (on-paint)))]
+         (color-planet! color-topography)]
         [(eq? #\d key-code)
-         (when (planet? planet-entity)
-           (begin
-             (set! tile-colors (color-vector planet-entity color-temperature))
-             (set! last-draw 0.0)
-             (on-paint)))]
+         (color-planet! color-temperature)]
         [(eq? #\f key-code)
-         (when (planet? planet-entity)
-           (begin
-             (set! tile-colors (color-vector planet-entity color-albedo))
-             (set! last-draw 0.0)
-             (on-paint)))]
+         (color-planet! color-albedo)]
         ))
     (define/override (on-event event)
       (if (send event button-up? 'left)
