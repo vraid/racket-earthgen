@@ -130,6 +130,11 @@
                (void))
            (set! last-draw 0.0)
            (on-paint))]
+        [(eq? #\w key-code)
+         (begin
+           (climate-next planet-entity (grid-list-first grids))
+           (set! last-draw 0.0)
+           (on-paint))]
         [(eq? #\a key-code)
          (when (planet? planet-entity)
            (begin
@@ -148,8 +153,13 @@
              (set! tile-colors (color-vector planet-entity color-temperature))
              (set! last-draw 0.0)
              (on-paint)))]
-        [(eq? #\d key-code)
-         (void)]))
+        [(eq? #\f key-code)
+         (when (planet? planet-entity)
+           (begin
+             (set! tile-colors (color-vector planet-entity color-albedo))
+             (set! last-draw 0.0)
+             (on-paint)))]
+        ))
     (define/override (on-event event)
       (if (send event button-up? 'left)
           (set! mouse-down? false)

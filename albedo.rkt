@@ -1,4 +1,4 @@
-#lang racket
+#lang typed/racket
 
 (require "planet-tile-struct.rkt"
          "tile-terrain.rkt"
@@ -14,32 +14,38 @@
 (define forest-albedo 0.15)
 (define grassland-albedo 0.25)
 
+(: interpolate (Flonum Flonum Flonum -> Flonum))
 (define (interpolate a b d)
   (fl+ (fl* a (fl- 1.0 d))
        (fl* b d)))
 
-(define (water-surface-albedo tile)
-  (interpolate water-albedo
-               water-ice-albedo
-               (planet-tile-ice-cover tile)))
+(define water-surface-albedo
+  (lambda: ([tile : planet-tile])
+    (interpolate water-albedo
+                 water-ice-albedo
+                 (planet-tile-ice-cover tile))))
 
-(define (land-surface-albedo tile)
-  (interpolate
-   (interpolate desert-albedo
-               forest-albedo
-               (planet-tile-vegetation-cover tile)))
-  snow-albedo
-  (planet-tile-snow-cover tile))
+(define land-surface-albedo
+  (lambda: ([tile : planet-tile])
+    (interpolate
+     (interpolate desert-albedo
+                  forest-albedo
+                  (planet-tile-vegetation-cover tile))
+     snow-albedo
+     (planet-tile-snow-cover tile))))
 
-(define (surface-albedo tile)
-  (if (planet-tile-water? tile)
-      (water-surface-albedo tile)
-      (land-surface-albedo tile)))
+(define surface-albedo
+  (lambda: ([tile : planet-tile])
+    (if (planet-tile-water? tile)
+        (water-surface-albedo tile)
+        (land-surface-albedo tile))))
 
-(define (sky-albedo tile)
-  (fl* cloud-albedo
-       (planet-tile-cloud-cover tile)))
+(define sky-albedo
+  (lambda: ([tile : planet-tile])
+    (fl* cloud-albedo
+         (planet-tile-cloud-cover tile))))
 
-(define (planet-tile-albedo tile)
-  (fl- 1.0 (fl* (fl- 1.0 (surface-albedo tile))
-                (fl- 1.0 (sky-albedo tile)))))
+(define planet-tile-albedo
+  (lambda: ([tile : planet-tile])
+    (fl- 1.0 (fl* (fl- 1.0 (surface-albedo tile))
+                  (fl- 1.0 (sky-albedo tile))))))

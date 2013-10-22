@@ -24,3 +24,16 @@
          planet-tile-temperature
          planet-tile-humidity
          planet-tile-precipitation)
+
+(require "tile-terrain.rkt")
+(provide planet-tile-water?
+         planet-tile-land?
+         planet-tile-snow-cover
+         planet-tile-ice-cover
+         planet-tile-vegetation-cover)
+
+(require "tile-atmosphere.rkt")
+(provide planet-tile-cloud-cover)
+
+(require "albedo.rkt")
+(provide planet-tile-albedo)

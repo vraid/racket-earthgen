@@ -9,7 +9,9 @@
 
 (provide base-color
          color-temperature
-         color-topography)
+         color-topography
+         color-albedo)
+
 (define find-color
   (lambda: ([tile-value : Flonum]
             [intervals : (Listof Flonum)]
@@ -135,3 +137,12 @@
     (find-color (planet-tile-temperature tile)
                 temperature-intervals
                 temperature-colors)))
+
+(define albedo-min (color 0.0 0.0 0.1))
+(define albedo-max (color 1.0 1.0 1.0))
+
+(define color-albedo
+  (lambda: ([tile : planet-tile])
+    (color-interpolate albedo-min
+                       albedo-max
+                       (planet-tile-albedo tile))))
