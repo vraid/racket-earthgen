@@ -10,7 +10,7 @@
          planet-tile-vegetation-cover)
 
 (define (planet-tile-water? tile)
-  (< 0 (planet-tile-water-depth tile)))
+  (fl< 0.0 (planet-tile-water-depth tile)))
 
 (define (planet-tile-land? tile)
   (not (planet-tile-water? tile)))
