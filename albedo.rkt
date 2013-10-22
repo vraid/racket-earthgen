@@ -1,6 +1,8 @@
 #lang racket
 
 (require "planet-tile-struct.rkt"
+         "tile-terrain.rkt"
+         "tile-atmosphere.rkt"
          racket/flonum)
 (provide planet-tile-albedo)
 
