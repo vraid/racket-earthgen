@@ -1,6 +1,7 @@
 #lang racket
 
-(require "planet-tile-struct.rkt")
+(require "planet-tile-struct.rkt"
+         racket/flonum)
 (provide planet-tile-albedo)
 
 (define cloud-albedo 0.8)
@@ -21,9 +22,12 @@
                (planet-tile-ice-cover tile)))
 
 (define (land-surface-albedo tile)
-  (interpolate desert-albedo
+  (interpolate
+   (interpolate desert-albedo
                forest-albedo
                (planet-tile-vegetation-cover tile)))
+  snow-albedo
+  (planet-tile-snow-cover tile))
 
 (define (surface-albedo tile)
   (if (planet-tile-water? tile)
