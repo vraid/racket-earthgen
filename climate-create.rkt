@@ -3,9 +3,11 @@
 (require math/flonum
          "planet.rkt"
          "grid.rkt"
-         "vector3.rkt")
+         "vector3.rkt"
+         "parallel-util.rkt")
 
-(provide climate-first)
+(provide climate-first
+         climate-next)
 
 (define (temperature-first v)
   (if (flvector? v)
@@ -17,7 +19,7 @@
   (if (planet? p)
       (planet
        (planet-grid p)
-       (vector-map (lambda (t)
+       (vector-map!-parallel (lambda (t)
                      (let ([c (tile-coordinates (grid-tile grid (planet-tile-id t)))])
                        (planet-tile
                         (planet-tile-id t)
@@ -31,3 +33,9 @@
        (planet-corners p)
        (planet-edges p))
       p))
+
+(define (climate-next p grid)
+  (begin
+    (vector-map!-parallel identity
+                          (planet-tiles p))
+    p))
