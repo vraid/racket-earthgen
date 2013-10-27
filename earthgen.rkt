@@ -128,25 +128,19 @@
           (repaint!))))
     (define/override (on-char event)
       (define key-code (send event get-key-code))
-      (cond
-        [(eq? #\q key-code)
-         (begin
-           (terrain-gen)
-           (set! planet-entity (climate-first ((heightmap->planet (grid-list-first grids)) (terrain-gen)) (grid-list-first grids)))
-           (color-planet! base-color))]
-        [(eq? #\w key-code)
-         (begin
-           (climate-next planet-entity (grid-list-first grids))
-           (repaint!))]
-        [(eq? #\a key-code)
-         (color-planet! base-color)]
-        [(eq? #\s key-code)
-         (color-planet! color-topography)]
-        [(eq? #\d key-code)
-         (color-planet! color-temperature)]
-        [(eq? #\f key-code)
-         (color-planet! color-albedo)]
-        ))
+      (match key-code
+        [#\q (begin
+               (terrain-gen)
+               (set! planet-entity (climate-first ((heightmap->planet (grid-list-first grids)) (terrain-gen)) (grid-list-first grids)))
+               (color-planet! base-color))]
+        [#\w (begin
+               (climate-next planet-entity (grid-list-first grids))
+               (repaint!))]
+        [#\a (color-planet! base-color)]
+        [#\s (color-planet! color-topography)]
+        [#\d (color-planet! color-temperature)]
+        [#\f (color-planet! color-albedo)]
+        [_ (void)]))
     (define/override (on-event event)
       (if (send event button-up? 'left)
           (set! mouse-down? false)
