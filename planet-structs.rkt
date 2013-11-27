@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require "planet-tile-struct.rkt")
+(require "types.rkt"
+         "planet-tile-struct.rkt")
 
 (provide planet
          planet?
@@ -22,7 +23,7 @@
    [edges : Any]))
 
 (struct: planet-corner
-  ([stream-direction : (U Boolean Fixnum)]
+  ([stream-direction : (maybe index)]
    [elevation : Flonum]))
 
 (struct: planet-edge

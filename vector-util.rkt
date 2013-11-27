@@ -1,12 +1,14 @@
 #lang typed/racket
 
-(require "index-vector.rkt")
+(require "types.rkt"
+         "index-vector.rkt")
 
-(provide index-vector-member)
+(provide vector-member
+         vector-index)
 
-(: index-vector-member (Fixnum (Vectorof Fixnum) -> maybe-index))
-(define (index-vector-member m v)
-  (: mem (Integer -> maybe-index))
+(: vector-member (All (A) (A (Vectorof A) -> maybe-index)))
+(define (vector-member m v)
+  (: mem (index -> maybe-index))
   (define (mem n)
     (if (= n (vector-length v))
         #f
@@ -14,3 +16,15 @@
             n
             (mem (+ n 1)))))
   (mem 0))
+
+(: vector-index (All (A) (A (Vectorof A) -> index)))
+(define (vector-index m v)
+  (: in (index -> index))
+  (define (in n)
+    (if (= n (vector-length v))
+        (+ 1 (vector-length v))
+        (if (eq? m (vector-ref v n))
+            n
+            (in (+ n 1)))))
+  (in 0))
+

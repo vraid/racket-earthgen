@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require racket/flonum)
+(require racket/flonum
+         "types.rkt")
 
 (provide planet-tile
          planet-tile-id
@@ -13,7 +14,7 @@
          planet-tile-precipitation)
 
 (struct: planet-tile
-  ([id : Fixnum]
+  ([id : index]
    [area : Flonum]
    [elevation : Flonum]
    [water-level : Flonum]
@@ -21,7 +22,7 @@
    [humidity : Flonum]
    [precipitation : Flonum]))
 
-(define planet-tile-water-depth
-  (lambda: ([t : planet-tile])
+(: planet-tile-water-depth (planet-tile -> Flonum))
+(define (planet-tile-water-depth t)
     (fl- (planet-tile-water-level t)
-         (planet-tile-elevation t))))
+         (planet-tile-elevation t)))

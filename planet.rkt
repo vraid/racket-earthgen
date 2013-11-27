@@ -1,4 +1,4 @@
-#lang racket
+#lang typed/racket
 
 (require "planet-structs.rkt")
 (provide planet

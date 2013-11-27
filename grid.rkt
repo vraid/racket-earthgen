@@ -1,4 +1,4 @@
-#lang racket
+#lang typed/racket
 
 (require "grid-structs.rkt")
 (provide tile
@@ -39,7 +39,15 @@
          grid-edges
          grid-tiles->vector
          grid-corners->vector
-         grid-edges->vector)
+         grid-edges->vector
+         
+         tile-vector
+         corner-vector
+         edge-vector
+         index-list
+         tile-index-vector
+         corner-index-vector
+         edge-index-vector)
 
 (require "grid-functions.rkt")
 (provide tile-edge-count
@@ -77,8 +85,5 @@
          subdivided-grid)
 
 (require "grid-list.rkt")
-(provide grid-list?
-         grid-list-first
-         grid-list-rest
-         make-grid-list
+(provide grid-list
          n-grid-list)

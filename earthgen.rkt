@@ -6,6 +6,7 @@
          "planet.rkt"
          "planet-create.rkt"
          "climate-create.rkt"
+         "sample-gen.rkt"
          "grid.rkt"
          "vector3.rkt"
          "quaternion.rkt"
@@ -21,9 +22,9 @@
 (define latitude 0.0)
 (define (rotation) (quaternion->matrix3
                     (quaternion*
-                     (quaternion (fl/ pi 2.0) (vector3 1.0 0.0 0.0))
-                     (quaternion latitude (vector3 -1.0 0.0 0.0))
-                     (quaternion longitude (vector3 0.0 0.0 -1.0)))))
+                     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
+                     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
+                     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
 (define rotation-matrix (rotation))
 (define scale 0.9)
 
@@ -37,25 +38,24 @@
 
 (define grids (n-grid-list null 0))
 
-(define (terrain-gen) (let*-values ([(size method) (load "terrain-gen.txt")])
-                        (begin
-                          (set! grids (n-grid-list grids size))
-                          (method grids))))
+(define (terrain-gen) (begin
+                        (set! grids (n-grid-list grids 5))
+                        (sample-planet grids)))
 
 (define-values (display-width display-height) (get-display-size))
 (define planet-entity #f)
 (define tile-colors null)
 
-(define (vector3->vertex v)
+(define (flvector->vertex v)
   (glVertex3d (flvector-ref v 0)
               (flvector-ref v 1)
               (flvector-ref v 2)))
 
 (define (tile-vertices grid tile)
-  (vector3->vertex (tile-coordinates tile))
+  (flvector->vertex (tile-coordinates tile))
   (for ([c (tile-corners tile)])
-    (vector3->vertex (corner-coordinates (grid-corner grid c))))
-  (vector3->vertex (corner-coordinates (grid-corner grid (tile-corner tile 0)))))
+    (flvector->vertex (corner-coordinates (grid-corner grid c))))
+  (flvector->vertex (corner-coordinates (grid-corner grid (tile-corner tile 0)))))
 
 (define (set-gl-color! c)
   (glColor3f (color-red c)
@@ -83,7 +83,7 @@
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
         (if (planet? planet-entity)
-            (let* ([grid (grid-list-first grids)]
+            (let* ([grid (first grids)]
                    [tiles (grid-tiles->vector grid)]
                    [corners (grid-corners->vector grid)])
               (for ([tile tiles])
@@ -131,10 +131,10 @@
       (match key-code
         [#\q (begin
                (terrain-gen)
-               (set! planet-entity (climate-first ((heightmap->planet (grid-list-first grids)) (terrain-gen)) (grid-list-first grids)))
+               (set! planet-entity (climate-first ((heightmap->planet (first grids)) (terrain-gen)) (first grids)))
                (color-planet! base-color))]
         [#\w (begin
-               (climate-next planet-entity (grid-list-first grids))
+               (climate-next planet-entity (first grids))
                (repaint!))]
         [#\a (color-planet! base-color)]
         [#\s (color-planet! color-topography)]

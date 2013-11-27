@@ -1,19 +1,31 @@
 #lang typed/racket
 
-(require racket/vector)
+(require racket/vector
+         "types.rkt")
 
-(provide maybe-index
+(provide vector2
+         vector3
+         index-list
          index-vector
          index-vector2
          index-vector3
-         index-vector5
-         index-vector6)
+         maybe-index
+         maybe-index-list
+         maybe-index-vector
+         maybe-index-vector2
+         maybe-index-vector3)
 
-(define-type maybe-index (U Integer False))
+(define-type (vector2 a) (Vector a a))
+(define-type (vector3 a) (Vector a a a))
 
-(define-type index-vector (Vectorof Fixnum))
+(define-type index-list (Listof index))
+(define-type maybe-index (maybe index))
+(define-type maybe-index-list (Listof maybe-index))
 
-(define-type index-vector2 (Vector Fixnum Fixnum))
-(define-type index-vector3 (Vector Fixnum Fixnum Fixnum))
-(define-type index-vector5 (Vector Fixnum Fixnum Fixnum Fixnum Fixnum))
-(define-type index-vector6 (Vector Fixnum Fixnum Fixnum Fixnum Fixnum Fixnum))
+(define-type index-vector (Vectorof index))
+(define-type index-vector2 (vector2 index))
+(define-type index-vector3 (vector3 index))
+
+(define-type maybe-index-vector (Vectorof maybe-index))
+(define-type maybe-index-vector2 (vector2 maybe-index))
+(define-type maybe-index-vector3 (vector3 maybe-index))

@@ -11,7 +11,8 @@
          quaternion-inverse
          quaternion-length
          quaternion-normal
-         quaternion->matrix3)
+         quaternion->matrix3
+         angle-axis->quaternion)
 
 (define-type quaternion FlVector)
 

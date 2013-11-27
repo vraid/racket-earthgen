@@ -1,4 +1,4 @@
-#lang racket
+#lang typed/racket
 
 (require math/flonum)
 
@@ -6,7 +6,7 @@
          heightmap-tiles
          heightmap-corners)
 
-(struct heightmap
-  (tiles
-   corners)
+(struct: heightmap
+  ([tiles : FlVector]
+   [corners : FlVector])
   #:transparent)
