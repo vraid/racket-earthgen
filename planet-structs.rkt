@@ -1,6 +1,7 @@
 #lang typed/racket
 
 (require "types.rkt"
+         "grid.rkt"
          "planet-tile-struct.rkt")
 
 (provide planet
@@ -17,7 +18,7 @@
          planet-edge-tile-distance)
 
 (struct: planet
-  ([grid : Any]
+  ([grid : grid]
    [tiles : (Vectorof planet-tile)]
    [corners : (Vectorof planet-corner)]
    [edges : Any]))
