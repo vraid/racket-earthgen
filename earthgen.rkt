@@ -6,7 +6,6 @@
          "planet.rkt"
          "planet-create.rkt"
          "climate-create.rkt"
-         "sample-gen.rkt"
          "grid.rkt"
          "vector3.rkt"
          "quaternion.rkt"
@@ -42,7 +41,8 @@
 
 (define (terrain-gen)
   (begin
-    (set! grids (n-grid-list grids 7))
+    (define-values (size method) (load "terrain-gen.txt"))
+    (set! grids (n-grid-list grids size))
     (set! draw-tiles
           (vector-map
            (lambda (tile)
@@ -53,7 +53,7 @@
                             (lambda (n)
                               (corner-coordinates (grid-corner (first grids) (tile-corner tile n)))))))
            (grid-tiles->vector (first grids))))
-    (sample-planet grids)))
+    (method grids)))
 
 (define-values (display-width display-height) (get-display-size))
 (define planet-entity #f)
