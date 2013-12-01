@@ -33,7 +33,7 @@
 (define mouse-down-y 0)
 (define mouse-down-latitude latitude)
 (define mouse-down-longitude longitude)
-(define milliseconds-between-frames 20.0)
+(define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 (define draw-tiles (vector))
 
@@ -127,7 +127,10 @@
      (define/override (on-paint)
        (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
      (define/override (on-size width height)
-       (with-gl-context (lambda () (glViewport 0 0 width height))))
+       (begin
+         (set! display-width width)
+         (set! display-height height)
+         (with-gl-context (lambda () (glViewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))
@@ -146,6 +149,7 @@
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
+         ['escape (exit)]
          [#\q (generate-terrain!)]
          [#\w (begin
                 (climate-next planet-entity (first grids))
@@ -188,5 +192,4 @@
 
 (send frame maximize #t) 
 (send frame show #t)
-(send frame focus)
 (send canvas focus)
