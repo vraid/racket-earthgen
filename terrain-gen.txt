@@ -1,5 +1,5 @@
 (values
- 6
+ 8
  (let* ([continent (heightmap-map
                     (lambda (a)
                       (if (< 0 a)
