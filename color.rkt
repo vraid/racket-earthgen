@@ -2,26 +2,26 @@
 
 (require math/flonum)
 
-(provide color
-         color?
-         color-red
-         color-green
-         color-blue
-         color-interpolate)
+(provide flcolor
+         flcolor?
+         flcolor-red
+         flcolor-green
+         flcolor-blue
+         flcolor-interpolate)
 
-(struct: color
+(struct: flcolor
   ([red : Flonum]
    [green : Flonum]
    [blue : Flonum]))
 
-(define color-interpolate
-  (lambda: ([col-one : color]
-            [col-two : color]
+(define flcolor-interpolate
+  (lambda: ([col-one : flcolor]
+            [col-two : flcolor]
             [d : Flonum])
     (let ([1-d (fl- 1.0 d)])
-      (color (fl+ (fl* 1-d (color-red col-one))
-                  (fl* d (color-red col-two)))
-             (fl+ (fl* 1-d (color-green col-one))
-                  (fl* d (color-green col-two)))
-             (fl+ (fl* 1-d (color-blue col-one))
-                  (fl* d (color-blue col-two)))))))
+      (flcolor (fl+ (fl* 1-d (flcolor-red col-one))
+                    (fl* d (flcolor-red col-two)))
+               (fl+ (fl* 1-d (flcolor-green col-one))
+                    (fl* d (flcolor-green col-two)))
+               (fl+ (fl* 1-d (flcolor-blue col-one))
+                    (fl* d (flcolor-blue col-two)))))))

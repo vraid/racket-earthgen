@@ -5,32 +5,34 @@
          "typed-logic.rkt")
 
 (define color-undefined
-  (color 0.7 0.7 0.7))
+  (flcolor 0.7 0.7 0.7))
 
 (provide base-color
          color-temperature
          color-topography
          color-albedo)
 
+(define-type flcolor-list (Listof flcolor))
+
 (define find-color
   (lambda: ([tile-value : Flonum]
             [intervals : (Listof Flonum)]
-            [colors : (Listof color)])
-    (: rec-find ((Listof Flonum) (Listof color) (U Flonum Boolean) color -> color))
+            [colors : flcolor-list])
+    (: rec-find ((Listof Flonum) flcolor-list (U Flonum Boolean) flcolor -> flcolor))
     (define rec-find
       (lambda: ([intervals : (Listof Flonum)]
-                [colors : (Listof color)]
+                [colors : flcolor-list]
                 [last-interval : (U Flonum Boolean)]
-                [last-color : color])
+                [last-color : flcolor])
         (cond [(empty? intervals)
                color-undefined]
               [(< tile-value (first intervals))
                (if (boolean? last-interval)
                    color-undefined
-                   (color-interpolate last-color
-                                      (first colors)
-                                      (/ (- tile-value last-interval)
-                                         (- (first intervals) last-interval))))]
+                   (flcolor-interpolate last-color
+                                        (first colors)
+                                        (/ (- tile-value last-interval)
+                                           (- (first intervals) last-interval))))]
               [else
                (rec-find (rest intervals)
                          (rest colors)
@@ -42,24 +44,24 @@
               color-undefined)))
 
 (define water-surface
-  (color 0.0 0.4 0.8))
+  (flcolor 0.0 0.4 0.8))
 (define water-deep
-  (color 0.0 0.0 0.3))
+  (flcolor 0.0 0.0 0.3))
 (define land-low
-  (color 0.5 0.8 0.0))
+  (flcolor 0.5 0.8 0.0))
 (define land-high
-  (color 0.2 0.2 0.1))
+  (flcolor 0.2 0.2 0.1))
 
 (define base-color-water
   (lambda: ([depth : Flonum])
-    (color-interpolate
+    (flcolor-interpolate
      water-surface
      water-deep
      (min 1.0 (/ depth 3000.0)))))
 
 (define base-color-land
   (lambda: ([elevation : Flonum])
-    (color-interpolate
+    (flcolor-interpolate
      land-low
      land-high
      (min 1.0 (/ elevation 3000.0)))))
@@ -79,20 +81,20 @@
 (define filter-colors
   (lambda: ([ls : (Listof Any)])
     (filter (lambda: ([n : Any])
-              (color? n))
+              (flcolor? n))
             ls)))
 
 (define topography-intervals-colors
-  (list -10000.0 (color 0.0 0.0 0.0)
-        -3000.0 (color 0.5 0.0 0.5)
-        -2000.0 (color 0.0 0.0 0.5)
-        -1000.0 (color 0.0 0.0 1.0)
-        0.0 (color 0.0 1.0 1.0)
-        0.0 (color 0.0 1.0 0.0)
-        1000.0 (color 1.0 1.0 0.0)
-        2000.0 (color 1.0 0.0 0.0)
-        3000.0 (color 0.5 0.5 0.5)
-        10000.0 (color 0.0 0.0 0.0)))
+  (list -10000.0 (flcolor 0.0 0.0 0.0)
+        -3000.0 (flcolor 0.5 0.0 0.5)
+        -2000.0 (flcolor 0.0 0.0 0.5)
+        -1000.0 (flcolor 0.0 0.0 1.0)
+        0.0 (flcolor 0.0 1.0 1.0)
+        0.0 (flcolor 0.0 1.0 0.0)
+        1000.0 (flcolor 1.0 1.0 0.0)
+        2000.0 (flcolor 1.0 0.0 0.0)
+        3000.0 (flcolor 0.5 0.5 0.5)
+        10000.0 (flcolor 0.0 0.0 0.0)))
 
 (define topography-intervals
   (filter-intervals
@@ -112,15 +114,15 @@
 (define freezing-temperature 273.15)
 
 (define temperature-intervals-colors
-  (list (- freezing-temperature) (color 1.0 1.0 1.0)
-        -70.0 (color 1.0 0.0 1.0)
-        -50.0 (color 0.5 0.0 0.5)
-        -30.0 (color 0.0 0.0 0.5)
-        -10.0 (color 0.0 0.0 1.0)
-        10.0 (color 1.0 1.0 0.0)
-        30.0 (color 1.0 0.0 0.0)
-        50.0 (color 0.5 0.0 0.0)
-        70.0 (color 0.0 0.0 0.0)))
+  (list (- freezing-temperature) (flcolor 1.0 1.0 1.0)
+        -70.0 (flcolor 1.0 0.0 1.0)
+        -50.0 (flcolor 0.5 0.0 0.5)
+        -30.0 (flcolor 0.0 0.0 0.5)
+        -10.0 (flcolor 0.0 0.0 1.0)
+        10.0 (flcolor 1.0 1.0 0.0)
+        30.0 (flcolor 1.0 0.0 0.0)
+        50.0 (flcolor 0.5 0.0 0.0)
+        70.0 (flcolor 0.0 0.0 0.0)))
 
 (define temperature-intervals
   (map (lambda: ([n : Flonum])
@@ -138,11 +140,11 @@
                 temperature-intervals
                 temperature-colors)))
 
-(define albedo-min (color 0.0 0.0 0.1))
-(define albedo-max (color 1.0 1.0 1.0))
+(define albedo-min (flcolor 0.0 0.0 0.1))
+(define albedo-max (flcolor 1.0 1.0 1.0))
 
 (define color-albedo
   (lambda: ([tile : planet-tile])
-    (color-interpolate albedo-min
-                       albedo-max
-                       (planet-tile-albedo tile))))
+    (flcolor-interpolate albedo-min
+                         albedo-max
+                         (planet-tile-albedo tile))))

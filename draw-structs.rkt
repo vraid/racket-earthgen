@@ -13,7 +13,7 @@
 (define-type draw-tile-vector (Vectorof draw-tile))
 
 (struct: draw-tile
-  ([color : color]
+  ([color : flcolor]
    [center : flvector3]
    [corners : (Vector flvector3
                       flvector3

@@ -47,7 +47,7 @@
           (vector-map
            (lambda (tile)
              (draw-tile
-              (color 0.0 0.0 0.0)
+              (flcolor 0.0 0.0 0.0)
               (tile-coordinates tile)
               (build-vector 6
                             (lambda (n)
@@ -70,9 +70,9 @@
   (flvector->vertex (vector-ref (draw-tile-corners tile) 0)))
 
 (define (set-gl-color! c)
-  (glColor3f (color-red c)
-             (color-green c)
-             (color-blue c)))
+  (glColor3f (flcolor-red c)
+             (flcolor-green c)
+             (flcolor-blue c)))
 
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
