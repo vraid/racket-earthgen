@@ -20,7 +20,7 @@
          math/flonum
          sgl/gl)
 
-(define longitude 0.0)
+(define longitude pi)
 (define latitude 0.0)
 (define (rotation) (quaternion->matrix3
                     (quaternion*

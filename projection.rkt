@@ -10,7 +10,7 @@
   (lambda: ([coord : FlVector])
     (let ([lon (flvector-ref coord 0)]
           [lat (flvector-ref coord 1)])
-      (vector (max 0 (modulo (round  (inexact->exact (* width (/ lon 2.0))))
+      (vector (max 0 (modulo (round  (inexact->exact (* width (/ (+ 1.0 lon) 2.0))))
                              width))
               (max 0 (modulo (round (inexact->exact (* height (+ 0.5 lat))))
                              height))))))
