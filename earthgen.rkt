@@ -15,6 +15,8 @@
          "color.rkt"
          "planet-color.rkt"
          "draw-structs.rkt"
+         "load-image.rkt"
+         "projection.rkt"
          math/flonum
          sgl/gl)
 
@@ -120,6 +122,16 @@
      (f
       (vector-ref (planet-tiles planet-entity) n)))))
 
+(define (tile-latitude tile grid)
+  (asin (flvector-ref (tile-coordinates (grid-tile grid (planet-tile-id tile))) 2)))
+
+(define (tile-longitude tile grid)
+  (let* ([t (grid-tile grid (planet-tile-id tile))]
+         [coord (tile-coordinates t)]
+         [x (flvector-ref coord 0)]
+         [y (flvector-ref coord 1)])
+    (atan y x)))
+
 (define canvas
   (new
    (class* canvas% ()
@@ -154,6 +166,21 @@
          [#\w (begin
                 (climate-next planet-entity (first grids))
                 (repaint!))]
+         [#\e (color-planet! ((lambda ()
+                                (let* ([image (load-image/file "image-path")]
+                                       [width (image-width image)]
+                                       [height (image-height image)]
+                                       [rel->rect (relative->rectangular width height)]
+                                       [pixel-color (pixel-color image)])
+                                  (lambda (tile)
+                                    (let* ([lat (tile-latitude tile (first grids))]
+                                           [lon (tile-longitude tile (first grids))]
+                                           [coord (equirectangular-projection lon lat)]
+                                           [px (rel->rect coord)]
+                                           [x (vector-ref px 0)]
+                                           [y (vector-ref px 1)])
+                                      (pixel-color x y)
+                                      ))))))]
          [#\a (color-planet! base-color)]
          [#\s (color-planet! color-topography)]
          [#\d (color-planet! color-temperature)]
