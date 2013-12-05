@@ -20,6 +20,7 @@
          math/flonum
          sgl/gl)
 
+(define image-path "C:/directory/image.ext")
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation) (quaternion->matrix3
@@ -29,6 +30,8 @@
                      (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
 (define rotation-matrix (rotation))
 (define scale 0.9)
+(define scale-max 100.0)
+(define scale-min 0.5)
 
 (define mouse-down? false)
 (define mouse-down-x 0)
@@ -167,7 +170,7 @@
                 (climate-next planet-entity (first grids))
                 (repaint!))]
          [#\e (color-planet! ((lambda ()
-                                (let* ([image (load-image/file "image-path")]
+                                (let* ([image (load-image/file image-path)]
                                        [width (image-width image)]
                                        [height (image-height image)]
                                        [rel->rect (relative->rectangular width height)]
@@ -185,6 +188,16 @@
          [#\s (color-planet! color-topography)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-albedo)]
+         ['wheel-up (begin
+                      (set! scale
+                            (min scale-max
+                                 (* scale 1.05)))
+                      (on-paint))]
+         ['wheel-down (begin
+                        (set! scale
+                              (max scale-min
+                                   (/ scale 1.05)))
+                        (on-paint))]
          [_ (void)]))
      (define/override (on-event event)
        (if (send event button-up? 'left)
@@ -195,14 +208,14 @@
                        (fl+ mouse-down-longitude
                             (fl* (exact->inexact
                                   (- mouse-down-x (send event get-x)))
-                                 (fl/ pi -800.0))))
+                                 (fl/ pi (* scale -900.0)))))
                  (set! latitude
                        (max (fl/ pi -2.0)
                             (min (fl/ pi 2.0)
                                  (fl+ mouse-down-latitude
                                       (fl* (exact->inexact
                                             (- mouse-down-y (send event get-y)))
-                                           (fl/ pi -600.0))))))
+                                           (fl/ pi (* scale -740.0)))))))
                  (on-paint))
                (if (send event button-down? 'left)
                    (begin
