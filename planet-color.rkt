@@ -85,16 +85,13 @@
             ls)))
 
 (define topography-intervals-colors
-  (list -10000.0 (flcolor 0.0 0.0 0.0)
-        -3000.0 (flcolor 0.5 0.0 0.5)
-        -2000.0 (flcolor 0.0 0.0 0.5)
-        -1000.0 (flcolor 0.0 0.0 1.0)
-        0.0 (flcolor 0.0 1.0 1.0)
-        0.0 (flcolor 0.0 1.0 0.0)
-        1000.0 (flcolor 1.0 1.0 0.0)
-        2000.0 (flcolor 1.0 0.0 0.0)
-        3000.0 (flcolor 0.5 0.5 0.5)
-        10000.0 (flcolor 0.0 0.0 0.0)))
+  (list -3000.0 (flcolor 0.0 0.02 0.08)
+        -200.0 (flcolor 0.09 0.27 0.49)
+        0.0 (flcolor 0.09 0.27 0.49)
+        0.0 (flcolor 0.66 0.59 0.45)
+        1500.0 (flcolor 0.41 0.35 0.22)
+        3000.0 (flcolor 0.09 0.13 0.04)
+        ))
 
 (define topography-intervals
   (filter-intervals

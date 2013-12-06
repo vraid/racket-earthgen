@@ -160,7 +160,7 @@
        (begin
          (terrain-gen)
          (set! planet-entity (climate-first ((heightmap->planet (first grids)) (terrain-gen)) (first grids)))
-         (color-planet! base-color)))
+         (color-planet! color-topography)))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
