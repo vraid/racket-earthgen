@@ -23,6 +23,8 @@
          corner-corner-position
          corner-edge-position
          
+         edge-tile
+         edge-corner
          edge-tile-sign
          edge-corner-sign
          
@@ -141,3 +143,11 @@
 (: corner-edge (corner Integer -> index))
 (define (corner-edge c n)
   (vector-ref (corner-edges->vector c) (modulo n corner-edge-count)))
+
+(: edge-tile (edge Integer -> index))
+(define (edge-tile e n)
+  (vector-ref (edge-tiles->vector e) (modulo n 2)))
+
+(: edge-corner (edge Integer -> index))
+(define (edge-corner e n)
+  (vector-ref (edge-corners->vector e) (modulo n 2)))

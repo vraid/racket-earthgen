@@ -66,6 +66,8 @@
          corner-corner-position
          corner-edge-position
          
+         edge-tile
+         edge-corner
          edge-tile-sign
          edge-corner-sign
          

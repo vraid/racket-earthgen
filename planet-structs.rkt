@@ -10,6 +10,7 @@
          planet-corners
          planet-edges
          planet-tile
+         planet-tile-planet
          planet-tile-grid
          planet-tile-area
          planet-tile-elevation
@@ -18,16 +19,21 @@
          planet-tile-humidity
          planet-tile-precipitation
          planet-corner
+         planet-corner-planet
          planet-corner-grid
          planet-corner-elevation
          planet-corner-river-direction
          planet-edge
+         planet-edge-planet
          planet-edge-grid
          planet-edge-length
          planet-edge-tile-distance
          planet-edge-wind
-         planet-edge-river-flow
+         planet-edge-river-flow)
          
+(provide set-planet-tiles!
+         set-planet-corners!
+         set-planet-edges!
          set-planet-tile-temperature!
          set-planet-tile-humidity!
          set-planet-tile-precipitation!
@@ -37,10 +43,12 @@
   ([grid : grid]
    [tiles : (Vectorof planet-tile)]
    [corners : (Vectorof planet-corner)]
-   [edges : Any]))
+   [edges : (Vectorof planet-edge)])
+  #:mutable)
 
 (struct: planet-tile
-  ([grid : tile]
+  ([planet : planet]
+   [grid : tile]
    [area : Flonum]
    [elevation : Flonum]
    [water-level : Flonum]
@@ -50,12 +58,14 @@
   #:mutable)
 
 (struct: planet-corner
-  ([grid : corner]
+  ([planet : planet]
+   [grid : corner]
    [elevation : Flonum]
    [river-direction : (maybe index)]))
 
 (struct: planet-edge
-  ([grid : edge]
+  ([planet : planet]
+   [grid : edge]
    [length : Flonum]
    [tile-distance : Positive-Flonum]
    [wind : Flonum]

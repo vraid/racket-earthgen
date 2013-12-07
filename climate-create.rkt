@@ -22,6 +22,7 @@
        (vector-map!-parallel (lambda (t)
                      (let ([c (tile-coordinates (planet-tile-grid t))])
                        (planet-tile
+                        p
                         (planet-tile-grid t)
                         (planet-tile-area t)
                         (planet-tile-elevation t)

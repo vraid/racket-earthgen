@@ -26,6 +26,24 @@
          planet-edge-wind
          planet-edge-river-flow)
 
+(provide set-planet-tiles!
+         set-planet-corners!
+         set-planet-edges!
+         set-planet-tile-temperature!
+         set-planet-tile-humidity!
+         set-planet-tile-precipitation!
+         set-planet-edge-wind!)
+
+(require "planet-functions.rkt")
+(provide planet-tile-tile
+         planet-tile-corner
+         planet-tile-edge
+         planet-corner-tile
+         planet-corner-corner
+         planet-corner-edge
+         planet-edge-tile
+         planet-edge-corner)
+
 (require "tile-terrain.rkt")
 (provide planet-tile-water-depth
          planet-tile-water?

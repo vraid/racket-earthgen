@@ -50,22 +50,32 @@
 (: heightmap->planet (grid -> (heightmap -> planet)))
 (define (heightmap->planet grid)
   (lambda: ([h : heightmap])
-    (planet
-     grid
-     (build-vector (natural->integer (grid-tile-count grid))
-                   (lambda: ([n : index])
-                     (planet-tile
-                      (grid-tile grid n)
-                      (tile-area grid (grid-tile grid n))
-                      (flvector-ref (heightmap-tiles h) n)
-                      0.0
-                      0.0
-                      0.0
-                      0.0)))
-     (build-vector (natural->integer (grid-corner-count grid))
-                   (lambda: ([n : index])
-                     (planet-corner
-                      (grid-corner grid n)
-                      (flvector-ref (heightmap-corners h) n)
-                      false)))
-     #f)))
+    (define p (planet
+               grid
+               (vector)
+               (vector)
+               (vector)))
+    (begin
+      (set-planet-tiles!
+       p
+       (build-vector (natural->integer (grid-tile-count grid))
+                     (lambda: ([n : index])
+                       (planet-tile
+                        p
+                        (grid-tile grid n)
+                        (tile-area grid (grid-tile grid n))
+                        (flvector-ref (heightmap-tiles h) n)
+                        0.0
+                        0.0
+                        0.0
+                        0.0))))
+      (set-planet-corners!
+       p
+       (build-vector (natural->integer (grid-corner-count grid))
+                     (lambda: ([n : index])
+                       (planet-corner
+                        p
+                        (grid-corner grid n)
+                        (flvector-ref (heightmap-corners h) n)
+                        false))))
+      p)))
