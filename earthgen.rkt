@@ -159,7 +159,7 @@
      (define (generate-terrain!)
        (begin
          (terrain-gen)
-         (set! planet-entity (climate-first ((heightmap->planet (first grids)) (terrain-gen)) (first grids)))
+         (set! planet-entity (climate-first ((heightmap->planet (first grids)) (terrain-gen))))
          (color-planet! color-topography)))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
@@ -167,7 +167,7 @@
          ['escape (exit)]
          [#\q (generate-terrain!)]
          [#\w (begin
-                (climate-next planet-entity (first grids))
+                (climate-next planet-entity)
                 (repaint!))]
          [#\e (color-planet! ((lambda ()
                                 (let* ([image (load-image/file image-path)]
