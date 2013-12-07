@@ -8,15 +8,18 @@
          planet-corners
          planet-edges
          planet-tile
+         planet-tile-grid
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level
          planet-tile-temperature
          planet-tile-humidity
          planet-tile-precipitation
+         planet-corner-grid
          planet-corner
          planet-corner-elevation
          planet-corner-river-direction
+         planet-edge-grid
          planet-edge
          planet-edge-length
          planet-edge-tile-distance

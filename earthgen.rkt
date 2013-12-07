@@ -126,10 +126,10 @@
       (vector-ref (planet-tiles planet-entity) n)))))
 
 (define (tile-latitude tile grid)
-  (asin (flvector-ref (tile-coordinates (grid-tile grid (planet-tile-id tile))) 2)))
+  (asin (flvector-ref (tile-coordinates (planet-tile-grid tile)) 2)))
 
 (define (tile-longitude tile grid)
-  (let* ([t (grid-tile grid (planet-tile-id tile))]
+  (let* ([t (planet-tile-grid tile)]
          [coord (tile-coordinates t)]
          [x (flvector-ref coord 0)]
          [y (flvector-ref coord 1)])
@@ -153,7 +153,7 @@
        (when (planet? planet-entity)
          (begin
            (for ([tile (planet-tiles planet-entity)])
-             (let ([d-tile (vector-ref draw-tiles (planet-tile-id tile))])
+             (let ([d-tile (vector-ref draw-tiles (tile-id (planet-tile-grid tile)))])
                (set-draw-tile-color! d-tile (f tile))))
            (repaint!))))
      (define (generate-terrain!)

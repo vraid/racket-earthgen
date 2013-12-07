@@ -55,7 +55,7 @@
      (build-vector (natural->integer (grid-tile-count grid))
                    (lambda: ([n : index])
                      (planet-tile
-                      n
+                      (grid-tile grid n)
                       (tile-area grid (grid-tile grid n))
                       (flvector-ref (heightmap-tiles h) n)
                       0.0
@@ -65,6 +65,7 @@
      (build-vector (natural->integer (grid-corner-count grid))
                    (lambda: ([n : index])
                      (planet-corner
-                      #f
-                      (flvector-ref (heightmap-corners h) n))))
+                      (grid-corner grid n)
+                      (flvector-ref (heightmap-corners h) n)
+                      false)))
      #f)))

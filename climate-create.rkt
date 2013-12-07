@@ -20,9 +20,9 @@
       (planet
        (planet-grid p)
        (vector-map!-parallel (lambda (t)
-                     (let ([c (tile-coordinates (grid-tile grid (planet-tile-id t)))])
+                     (let ([c (tile-coordinates (planet-tile-grid t))])
                        (planet-tile
-                        (planet-tile-id t)
+                        (planet-tile-grid t)
                         (planet-tile-area t)
                         (planet-tile-elevation t)
                         (planet-tile-water-level t)
