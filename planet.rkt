@@ -7,28 +7,27 @@
          planet-tiles
          planet-corners
          planet-edges
-         planet-corner
-         planet-corner-river
-         planet-corner-elevation
-         river-direction
-         river-flow
-         planet-edge
-         planet-edge-length
-         planet-edge-tile-distance)
-
-(require "planet-tile-struct.rkt")
-(provide planet-tile
-         planet-tile-id
+         planet-tile
          planet-tile-area
          planet-tile-elevation
          planet-tile-water-level
-         planet-tile-water-depth
          planet-tile-temperature
          planet-tile-humidity
-         planet-tile-precipitation)
+         planet-tile-precipitation
+         planet-corner
+         planet-corner-elevation
+         planet-corner-river-direction
+         planet-edge
+         planet-edge-length
+         planet-edge-tile-distance
+         planet-edge-wind
+         planet-edge-river-flow
+         river-direction
+         river-flow)
 
 (require "tile-terrain.rkt")
-(provide planet-tile-water?
+(provide planet-tile-water-depth
+         planet-tile-water?
          planet-tile-land?
          planet-tile-snow-cover
          planet-tile-ice-cover

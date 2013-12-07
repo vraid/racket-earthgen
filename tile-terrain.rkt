@@ -1,30 +1,36 @@
 #lang typed/racket
 
-(require "planet-tile-struct.rkt"
+(require "planet-structs.rkt"
          racket/flonum)
 
-(provide planet-tile-water?
+(provide planet-tile-water-depth
+         planet-tile-water?
          planet-tile-land?
          planet-tile-snow-cover
          planet-tile-ice-cover
          planet-tile-vegetation-cover)
 
-(define planet-tile-water?
-  (lambda: ([tile : planet-tile])
-    (fl< 0.0 (planet-tile-water-depth tile))))
+(: planet-tile-water-depth (planet-tile -> Flonum))
+(define (planet-tile-water-depth t)
+  (- (planet-tile-water-level t)
+     (planet-tile-elevation t)))
 
-(define planet-tile-land?
-  (lambda: ([tile : planet-tile])
-    (not (planet-tile-water? tile))))
+(: planet-tile-water? (planet-tile -> Boolean))
+(define (planet-tile-water? tile)
+  (< 0.0 (planet-tile-water-depth tile)))
 
-(define planet-tile-snow-cover
-  (lambda: ([tile : planet-tile])
-    0.0))
+(: planet-tile-land? (planet-tile -> Boolean))
+(define (planet-tile-land? tile)
+  (not (planet-tile-water? tile)))
 
-(define planet-tile-ice-cover
-  (lambda: ([tile : planet-tile])
-    0.0))
+(: planet-tile-snow-cover (planet-tile -> Flonum))
+(define (planet-tile-snow-cover tile)
+  0.0)
 
-(define planet-tile-vegetation-cover
-  (lambda: ([tile : planet-tile])
-    0.0))
+(: planet-tile-ice-cover (planet-tile -> Flonum))
+(define (planet-tile-ice-cover tile)
+  0.0)
+
+(: planet-tile-vegetation-cover (planet-tile -> Flonum))
+(define (planet-tile-vegetation-cover tile)
+  0.0)

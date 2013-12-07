@@ -1,9 +1,10 @@
 #lang typed/racket
 
-(require "planet-tile-struct.rkt"
+(require "planet-structs.rkt"
          "tile-terrain.rkt"
          "tile-atmosphere.rkt"
          racket/flonum)
+
 (provide planet-tile-albedo)
 
 (define cloud-albedo 0.8)
@@ -19,33 +20,33 @@
   (fl+ (fl* a (fl- 1.0 d))
        (fl* b d)))
 
-(define water-surface-albedo
-  (lambda: ([tile : planet-tile])
-    (interpolate water-albedo
-                 water-ice-albedo
-                 (planet-tile-ice-cover tile))))
+(: water-surface-albedo (planet-tile -> Flonum))
+(define (water-surface-albedo tile)
+  (interpolate water-albedo
+               water-ice-albedo
+               (planet-tile-ice-cover tile)))
 
-(define land-surface-albedo
-  (lambda: ([tile : planet-tile])
-    (interpolate
-     (interpolate desert-albedo
-                  forest-albedo
-                  (planet-tile-vegetation-cover tile))
-     snow-albedo
-     (planet-tile-snow-cover tile))))
+(: land-surface-albedo (planet-tile -> Flonum))
+(define (land-surface-albedo tile)
+  (interpolate
+   (interpolate desert-albedo
+                forest-albedo
+                (planet-tile-vegetation-cover tile))
+   snow-albedo
+   (planet-tile-snow-cover tile)))
 
-(define surface-albedo
-  (lambda: ([tile : planet-tile])
-    (if (planet-tile-water? tile)
-        (water-surface-albedo tile)
-        (land-surface-albedo tile))))
+(: surface-albedo (planet-tile -> Flonum))
+(define (surface-albedo tile)
+  (if (planet-tile-water? tile)
+      (water-surface-albedo tile)
+      (land-surface-albedo tile)))
 
-(define sky-albedo
-  (lambda: ([tile : planet-tile])
-    (fl* cloud-albedo
-         (planet-tile-cloud-cover tile))))
+(: sky-albedo (planet-tile -> Flonum))
+(define (sky-albedo tile)
+  (* cloud-albedo
+     (planet-tile-cloud-cover tile)))
 
-(define planet-tile-albedo
-  (lambda: ([tile : planet-tile])
-    (fl- 1.0 (fl* (fl- 1.0 (surface-albedo tile))
-                  (fl- 1.0 (sky-albedo tile))))))
+(: planet-tile-albedo (planet-tile -> Flonum))
+(define (planet-tile-albedo tile)
+  (- 1.0 (* (- 1.0 (surface-albedo tile))
+            (- 1.0 (sky-albedo tile)))))
