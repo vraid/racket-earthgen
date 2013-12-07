@@ -5,7 +5,6 @@
          "types.rkt"
          "index-vector.rkt"
          "vector-util.rkt"
-         "util-vector.rkt"
          "vector3.rkt"
          "grid-structs.rkt"
          "grid-functions.rkt")

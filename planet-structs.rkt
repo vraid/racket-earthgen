@@ -34,7 +34,8 @@
    [edges : Any]))
 
 (struct: planet-tile
-  ([area : Flonum]
+  ([grid : tile]
+   [area : Flonum]
    [elevation : Flonum]
    [water-level : Flonum]
    [temperature : Flonum]
@@ -42,11 +43,13 @@
    [precipitation : Flonum]))
 
 (struct: planet-corner
-  ([elevation : Flonum]
+  ([grid : corner]
+   [elevation : Flonum]
    [river-direction : (maybe index)]))
 
 (struct: planet-edge
-  ([length : Flonum]
+  ([grid : edge]
+   [length : Flonum]
    [tile-distance : Positive-Flonum]
    [wind : Flonum]
    [river-flow : (maybe Flonum)]))
