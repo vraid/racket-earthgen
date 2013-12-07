@@ -16,9 +16,7 @@
   (lambda: ([a : Boolean])
     (eq? true a)))
 
-(define false?
-  (lambda: ([a : Boolean])
-    (not (true? a))))
+(define false? not)
 
 (define any ormap)
 

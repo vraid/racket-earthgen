@@ -11,11 +11,13 @@
          planet-corners
          planet-edges
          planet-corner
-         planet-corner-stream-direction
+         planet-corner-river
          planet-corner-elevation
          planet-edge
          planet-edge-length
-         planet-edge-tile-distance)
+         planet-edge-tile-distance
+         river-direction
+         river-flow)
 
 (struct: planet
   ([grid : grid]
@@ -24,9 +26,13 @@
    [edges : Any]))
 
 (struct: planet-corner
-  ([stream-direction : (maybe index)]
+  ([river : (maybe river)]
    [elevation : Flonum]))
 
 (struct: planet-edge
   ([length : Flonum]
-   [tile-distance : Flonum]))
+   [tile-distance : Positive-Flonum]))
+
+(struct: river
+  ([direction : index]
+   [flow : Positive-Flonum]))

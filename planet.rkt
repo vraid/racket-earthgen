@@ -8,8 +8,10 @@
          planet-corners
          planet-edges
          planet-corner
-         planet-corner-stream-direction
+         planet-corner-river
          planet-corner-elevation
+         river-direction
+         river-flow
          planet-edge
          planet-edge-length
          planet-edge-tile-distance)

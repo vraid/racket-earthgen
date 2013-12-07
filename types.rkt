@@ -4,7 +4,6 @@
          natural
          maybe
          nothing
-         nothing?
          something?
          certainly)
 
@@ -16,16 +15,12 @@
 (: nothing False)
 (define nothing #f)
 
-(: nothing? (All (a) ((maybe a) -> Boolean)))
-(define (nothing? maybe-value)
-  (false? maybe-value))
-
 (: something? (All (a) ((maybe a) -> Boolean)))
 (define (something? maybe-value)
-  (not (nothing? maybe-value)))
+  (not (not maybe-value)))
 
 (: certainly (All (a) ((maybe a) a -> a)))
 (define (certainly maybe-value default-value)
-  (if (false? maybe-value)
+  (if (not maybe-value)
       default-value
       maybe-value))

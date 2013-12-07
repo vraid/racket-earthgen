@@ -156,7 +156,7 @@
 
 (: maybe-index->index (maybe-index -> index))
 (define (maybe-index->index n)
-  (if (false? n)
+  (if (not n)
       0
       n))
 
