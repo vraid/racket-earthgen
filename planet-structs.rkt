@@ -24,8 +24,11 @@
          planet-edge-tile-distance
          planet-edge-wind
          planet-edge-river-flow
-         river-direction
-         river-flow)
+         
+         set-planet-tile-temperature!
+         set-planet-tile-humidity!
+         set-planet-tile-precipitation!
+         set-planet-edge-wind!)
 
 (struct: planet
   ([grid : grid]
@@ -40,7 +43,8 @@
    [water-level : Flonum]
    [temperature : Flonum]
    [humidity : Flonum]
-   [precipitation : Flonum]))
+   [precipitation : Flonum])
+  #:mutable)
 
 (struct: planet-corner
   ([grid : corner]
@@ -52,8 +56,5 @@
    [length : Flonum]
    [tile-distance : Positive-Flonum]
    [wind : Flonum]
-   [river-flow : (maybe Flonum)]))
-
-(struct: river
-  ([direction : index]
-   [flow : Positive-Flonum]))
+   [river-flow : (maybe Flonum)])
+  #:mutable)

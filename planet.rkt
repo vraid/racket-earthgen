@@ -21,9 +21,7 @@
          planet-edge-length
          planet-edge-tile-distance
          planet-edge-wind
-         planet-edge-river-flow
-         river-direction
-         river-flow)
+         planet-edge-river-flow)
 
 (require "tile-terrain.rkt")
 (provide planet-tile-water-depth
