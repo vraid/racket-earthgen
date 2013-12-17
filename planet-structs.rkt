@@ -1,6 +1,9 @@
 #lang typed/racket
 
 (provide (struct-out planet)
+         tile-count
+         corner-count
+         edge-count
          (all-from-out "planet-typed-data-structs.rkt"
                        "grid.rkt"))
 
@@ -13,6 +16,18 @@
    [tile : tile-data]
    [corner : corner-data]
    [edge : edge-data]))
+
+(: tile-count (planet -> Integer))
+(define (tile-count p)
+  (grid-tile-count (planet-grid p)))
+
+(: corner-count (planet -> Integer))
+(define (corner-count p)
+  (grid-corner-count (planet-grid p)))
+
+(: edge-count (planet -> Integer))
+(define (edge-count p)
+  (grid-edge-count (planet-grid p)))
 
 (require (for-syntax racket/syntax
                      racket/list))
