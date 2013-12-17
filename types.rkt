@@ -1,11 +1,6 @@
 #lang typed/racket
 
-(provide index
-         natural
-         maybe
-         nothing
-         something?
-         certainly)
+(provide (all-defined-out))
 
 (define-type index Nonnegative-Integer)
 (define-type natural Positive-Integer)

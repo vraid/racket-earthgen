@@ -3,7 +3,6 @@
 (require "grid-list.rkt"
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
-         "math.rkt"
          math/flonum)
 
 (provide heightmap-map

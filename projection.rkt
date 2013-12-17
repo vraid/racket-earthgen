@@ -1,9 +1,9 @@
 #lang typed/racket
 
-(require racket/flonum)
-
 (provide relative->rectangular
          equirectangular-projection)
+
+(require racket/flonum)
 
 (: relative->rectangular (Integer Integer -> (FlVector -> (Vectorof Integer))))
 (define (relative->rectangular width height)

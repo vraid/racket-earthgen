@@ -1,6 +1,7 @@
 #lang typed/racket
 
-(require "planet.rkt"
+(require "types.rkt"
+         "planet.rkt"
          "color.rkt"
          "typed-logic.rkt")
 
@@ -14,34 +15,28 @@
 
 (define-type flcolor-list (Listof flcolor))
 
-(define find-color
-  (lambda: ([tile-value : Flonum]
-            [intervals : (Listof Flonum)]
-            [colors : flcolor-list])
-    (: rec-find ((Listof Flonum) flcolor-list (U Flonum Boolean) flcolor -> flcolor))
-    (define rec-find
-      (lambda: ([intervals : (Listof Flonum)]
-                [colors : flcolor-list]
-                [last-interval : (U Flonum Boolean)]
-                [last-color : flcolor])
-        (cond [(empty? intervals)
-               color-undefined]
-              [(< tile-value (first intervals))
-               (if (boolean? last-interval)
-                   color-undefined
-                   (flcolor-interpolate last-color
-                                        (first colors)
-                                        (/ (- tile-value last-interval)
-                                           (- (first intervals) last-interval))))]
-              [else
-               (rec-find (rest intervals)
-                         (rest colors)
-                         (first intervals)
-                         (first colors))])))
-    (rec-find intervals
-              colors
-              #f
-              color-undefined)))
+(: find-color (Flonum (Listof Flonum) flcolor-list -> flcolor))
+(define (find-color tile-value intervals colors)
+  (: rec-find ((Listof Flonum) flcolor-list (U Flonum Boolean) flcolor -> flcolor))
+  (define (rec-find intervals colors last-interval last-color)
+    (cond [(empty? intervals)
+           color-undefined]
+          [(< tile-value (first intervals))
+           (if (boolean? last-interval)
+               color-undefined
+               (flcolor-interpolate last-color
+                                    (first colors)
+                                    (/ (- tile-value last-interval)
+                                       (- (first intervals) last-interval))))]
+          [else
+           (rec-find (rest intervals)
+                     (rest colors)
+                     (first intervals)
+                     (first colors))]))
+  (rec-find intervals
+            colors
+            #f
+            color-undefined))
 
 (define water-surface
   (flcolor 0.0 0.4 0.8))
@@ -52,40 +47,37 @@
 (define land-high
   (flcolor 0.2 0.2 0.1))
 
-(define base-color-water
-  (lambda: ([depth : Flonum])
-    (flcolor-interpolate
-     water-surface
-     water-deep
-     (min 1.0 (/ depth 3000.0)))))
+(: base-color-water (Flonum -> flcolor))
+(define (base-color-water depth)
+  (flcolor-interpolate
+   water-surface
+   water-deep
+   (min 1.0 (/ depth 3000.0))))
 
-(define base-color-land
-  (lambda: ([elevation : Flonum])
-    (flcolor-interpolate
-     land-low
-     land-high
-     (min 1.0 (/ elevation 3000.0)))))
+(: base-color-land (Flonum -> flcolor))
+(define (base-color-land elevation)
+  (flcolor-interpolate
+   land-low
+   land-high
+   (min 1.0 (/ elevation 3000.0))))
 
-(define base-color
-  (lambda: ([tile : planet-tile])
-    (if (< 0 (planet-tile-water-depth tile))
-        (base-color-water (planet-tile-water-depth tile))
-        (base-color-land (planet-tile-elevation tile)))))
+(: base-color (planet index -> flcolor))
+(define (base-color p n)
+  (if (< 0 (tile-water-depth p n))
+      (base-color-water (tile-water-depth p n))
+      (base-color-land (tile-elevation p n))))
 
-(define filter-intervals
-  (lambda: ([ls : (Listof Any)])
-    (filter (lambda: ([n : Any])
-              (flonum? n))
-            ls)))
+(: filter-intervals ((Listof Any) -> (Listof Flonum)))
+(define (filter-intervals ls)
+  (filter flonum? ls))
 
-(define filter-colors
-  (lambda: ([ls : (Listof Any)])
-    (filter (lambda: ([n : Any])
-              (flcolor? n))
-            ls)))
+(: filter-colors ((Listof Any) -> flcolor-list))
+(define (filter-colors ls)
+  (filter flcolor? ls))
 
 (define topography-intervals-colors
-  (list -3000.0 (flcolor 0.0 0.02 0.08)
+  (list -10000.0 (flcolor 0.0 0.0 0.0) 
+        -3000.0 (flcolor 0.0 0.02 0.08)
         -200.0 (flcolor 0.09 0.27 0.49)
         0.0 (flcolor 0.09 0.27 0.49)
         0.0 (flcolor 0.66 0.59 0.45)
@@ -101,11 +93,11 @@
   (filter-colors
    topography-intervals-colors))
 
-(define color-topography
-  (lambda: ([tile : planet-tile])
-    (find-color (planet-tile-elevation tile)
-                topography-intervals
-                topography-colors)))
+(: color-topography (planet index -> flcolor))
+(define (color-topography p n)
+  (find-color (tile-elevation p n)
+              topography-intervals
+              topography-colors))
 
 
 (define freezing-temperature 273.15)
@@ -121,6 +113,7 @@
         50.0 (flcolor 0.5 0.0 0.0)
         70.0 (flcolor 0.0 0.0 0.0)))
 
+(: temperature-intervals (Listof Flonum))
 (define temperature-intervals
   (map (lambda: ([n : Flonum])
          (+ n freezing-temperature))
@@ -131,17 +124,17 @@
   (filter-colors
    temperature-intervals-colors))
 
-(define color-temperature
-  (lambda: ([tile : planet-tile])
-    (find-color (planet-tile-temperature tile)
-                temperature-intervals
-                temperature-colors)))
+(: color-temperature (planet index -> flcolor))
+(define (color-temperature p n)
+  (find-color (tile-temperature p n)
+              temperature-intervals
+              temperature-colors))
 
 (define albedo-min (flcolor 0.0 0.0 0.1))
 (define albedo-max (flcolor 1.0 1.0 1.0))
 
-(define color-albedo
-  (lambda: ([tile : planet-tile])
-    (flcolor-interpolate albedo-min
-                         albedo-max
-                         (planet-tile-albedo tile))))
+(: color-albedo (planet index -> flcolor))
+(define (color-albedo p n)
+  (flcolor-interpolate albedo-min
+                       albedo-max
+                       (tile-albedo p n)))

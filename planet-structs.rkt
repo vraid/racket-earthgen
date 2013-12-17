@@ -1,73 +1,50 @@
 #lang typed/racket
 
-(require "types.rkt"
-         "grid.rkt")
+(provide (struct-out planet)
+         (all-from-out "planet-typed-data-structs.rkt"
+                       "grid.rkt"))
 
-(provide planet
-         planet?
-         planet-grid
-         planet-tiles
-         planet-corners
-         planet-edges
-         planet-tile
-         planet-tile-planet
-         planet-tile-grid
-         planet-tile-area
-         planet-tile-elevation
-         planet-tile-water-level
-         planet-tile-temperature
-         planet-tile-humidity
-         planet-tile-precipitation
-         planet-corner
-         planet-corner-planet
-         planet-corner-grid
-         planet-corner-elevation
-         planet-corner-river-direction
-         planet-edge
-         planet-edge-planet
-         planet-edge-grid
-         planet-edge-length
-         planet-edge-tile-distance
-         planet-edge-wind
-         planet-edge-river-flow)
-         
-(provide set-planet-tiles!
-         set-planet-corners!
-         set-planet-edges!
-         set-planet-tile-temperature!
-         set-planet-tile-humidity!
-         set-planet-tile-precipitation!
-         set-planet-edge-wind!)
+(require "types.rkt"
+         "grid.rkt"
+         "planet-typed-data-structs.rkt")
 
 (struct: planet
   ([grid : grid]
-   [tiles : (Vectorof planet-tile)]
-   [corners : (Vectorof planet-corner)]
-   [edges : (Vectorof planet-edge)])
-  #:mutable)
+   [tile : tile-data]
+   [corner : corner-data]
+   [edge : edge-data]))
 
-(struct: planet-tile
-  ([planet : planet]
-   [grid : tile]
-   [area : Flonum]
-   [elevation : Flonum]
-   [water-level : Flonum]
-   [temperature : Flonum]
-   [humidity : Flonum]
-   [precipitation : Flonum])
-  #:mutable)
+(require (for-syntax racket/syntax
+                     racket/list))
 
-(struct: planet-corner
-  ([planet : planet]
-   [grid : corner]
-   [elevation : Flonum]
-   [river-direction : (maybe index)]))
+(define-syntax (direct-access stx)
+  (syntax-case stx ()
+    [(_ id alias struct ([field type] ...))
+     (with-syntax ([(function ...) (map (lambda (field)
+                                          (format-id stx "~a-~a" #'alias field))
+                                        (syntax->list #'(field ...)))]
+                   [(struct-function ...) (map (lambda (field)
+                                                 (format-id stx "~a-~a" #'struct field))
+                                               (syntax->list #'(field ...)))]
+                   [id-alias (format-id stx "~a-~a" #'id #'alias)])
+       
+       #'(begin
+           (provide function ...)
+           (: function (id index -> type)) ...
+           (define (function a i)
+             ((struct-function (id-alias a)) i)) ...))]))
 
-(struct: planet-edge
-  ([planet : planet]
-   [grid : edge]
-   [length : Flonum]
-   [tile-distance : Positive-Flonum]
-   [wind : Flonum]
-   [river-flow : (maybe Flonum)])
-  #:mutable)
+(direct-access planet tile tile-data
+               ([elevation Flonum]
+                [water-level Flonum]
+                [temperature Flonum]
+                [humidity Flonum]
+                [precipitation Flonum]))
+
+(direct-access planet corner corner-data
+               ([elevation Flonum]
+                [river-direction Fixnum]))
+
+(direct-access planet edge edge-data
+               ([has-river? Boolean]
+                [river-flow Flonum]))

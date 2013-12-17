@@ -11,7 +11,6 @@
          "quaternion.rkt"
          "matrix3.rkt"
          "logic.rkt"
-         "math.rkt"
          "color.rkt"
          "planet-color.rkt"
          "draw-structs.rkt"
@@ -46,7 +45,7 @@
 
 (define (terrain-gen)
   (begin
-    (define-values (size method) (load "terrain-gen.txt"))
+    (define-values (size method) (load "terrain-gen.rkt"))
     (set! grids (n-grid-list grids size))
     (set! draw-tiles
           (vector-map
@@ -120,16 +119,15 @@
 
 (define (color-vector planet f)
   (build-vector
-   (vector-length (planet-tiles planet-entity))
+   (vector-length (grid-tile-count (planet-grid planet-entity)))
    (lambda (n)
-     (f
-      (vector-ref (planet-tiles planet-entity) n)))))
+     (f planet-entity n))))
 
-(define (tile-latitude tile grid)
-  (asin (flvector-ref (tile-coordinates (planet-tile-grid tile)) 2)))
+(define (tile-latitude tile-id grid)
+  (asin (flvector-ref (tile-coordinates (grid-tile grid tile-id)) 2)))
 
-(define (tile-longitude tile grid)
-  (let* ([t (planet-tile-grid tile)]
+(define (tile-longitude tile-id grid)
+  (let* ([t (grid-tile grid tile-id)]
          [coord (tile-coordinates t)]
          [x (flvector-ref coord 0)]
          [y (flvector-ref coord 1)])
@@ -152,9 +150,9 @@
      (define (color-planet! f)
        (when (planet? planet-entity)
          (begin
-           (for ([tile (planet-tiles planet-entity)])
-             (let ([d-tile (vector-ref draw-tiles (tile-id (planet-tile-grid tile)))])
-               (set-draw-tile-color! d-tile (f tile))))
+           (for ([n (grid-tile-count (planet-grid planet-entity))])
+             (let ([d-tile (vector-ref draw-tiles n)])
+               (set-draw-tile-color! d-tile (f planet-entity n))))
            (repaint!))))
      (define (generate-terrain!)
        (begin

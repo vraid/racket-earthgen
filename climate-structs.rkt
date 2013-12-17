@@ -1,18 +1,10 @@
 #lang typed/racket
 
-(require "typed-struct-kw.rkt")
+(provide (struct-out planet-characteristics)
+         (struct-out climate-characteristics)
+         (struct-out climate-parameters))
 
-(provide planet-characteristics
-         planet-characteristics/kw
-         planet-characteristics-axial-tilt
-         planet-characteristics-radius
-         planet-characteristics-seasons
-         climate-characteristics
-         climate-characteristics/kw
-         climate-characteristics-time-of-year
-         climate-characteristics-solar-equator
-         climate-parameters
-         climate-parameters/kw)
+(require "typed-struct-kw.rkt")
 
 (struct:/kw planet-characteristics
   ([axial-tilt : Flonum]
@@ -20,11 +12,11 @@
    [seasons : Integer])
   #:transparent)
 
-(struct:/kw climate-parameters
-  ()
-  #:transparent)
-
 (struct:/kw climate-characteristics
   ([time-of-year : Flonum]
    [solar-equator : Flonum])
+  #:transparent)
+
+(struct:/kw climate-parameters
+  ()
   #:transparent)

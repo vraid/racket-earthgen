@@ -1,9 +1,11 @@
 #lang typed/racket
 
-(require "planet-structs.rkt"
+(require "types.rkt"
+         "planet-structs.rkt"
          racket/flonum)
 
-(provide planet-tile-cloud-cover)
+(provide (all-defined-out))
 
-(: planet-tile-cloud-cover (planet-tile -> Flonum))
-(define (planet-tile-cloud-cover tile) 0.0)
+(: tile-cloud-cover (planet index -> Flonum))
+(define (tile-cloud-cover p n)
+  0.0)

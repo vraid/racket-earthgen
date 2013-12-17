@@ -2,9 +2,7 @@
 
 (require math/flonum)
 
-(provide heightmap
-         heightmap-tiles
-         heightmap-corners)
+(provide (struct-out heightmap))
 
 (struct: heightmap
   ([tiles : FlVector]

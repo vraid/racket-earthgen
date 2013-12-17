@@ -3,17 +3,7 @@
 (require racket/vector
          "types.rkt")
 
-(provide vector2
-         vector3
-         index-list
-         index-vector
-         index-vector2
-         index-vector3
-         maybe-index
-         maybe-index-list
-         maybe-index-vector
-         maybe-index-vector2
-         maybe-index-vector3)
+(provide (all-defined-out))
 
 (define-type (vector2 a) (Vector a a))
 (define-type (vector3 a) (Vector a a a))

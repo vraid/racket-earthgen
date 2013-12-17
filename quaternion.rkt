@@ -1,8 +1,4 @@
 #lang typed/racket
-(require math/flonum
-         racket/vector
-         "vector3.rkt"
-         "matrix3.rkt")
 
 (provide quaternion
          quaternion*
@@ -13,6 +9,11 @@
          quaternion-normal
          quaternion->matrix3
          angle-axis->quaternion)
+
+(require math/flonum
+         racket/vector
+         "vector3.rkt"
+         "matrix3.rkt")
 
 (define-type quaternion FlVector)
 

@@ -8,7 +8,7 @@
                     (heightmap-lower
                      70.0
                      (heightmap-create
-                      (heightmap-parameters "earth99" 2 800.0 0.65))))]
+                      (heightmap-parameters "earth04" 2 800.0 0.65))))]
         [mountain-base (heightmap-map*
                         (lambda (a b . ns)
                           (if (both
