@@ -150,7 +150,7 @@
      (define (color-planet! f)
        (when (planet? planet-entity)
          (begin
-           (for ([n (grid-tile-count (planet-grid planet-entity))])
+           (for ([n (tile-count planet-entity)])
              (let ([d-tile (vector-ref draw-tiles n)])
                (set-draw-tile-color! d-tile (f planet-entity n))))
            (repaint!))))
