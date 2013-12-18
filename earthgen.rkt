@@ -1,4 +1,5 @@
 #lang racket
+
 (require racket/gui/base
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
@@ -39,9 +40,9 @@
 (define mouse-down-longitude longitude)
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
-(define draw-tiles (vector))
 
 (define grids (n-grid-list null 0))
+(define draw-tiles (vector))
 
 (define (terrain-gen)
   (begin
@@ -59,7 +60,9 @@
            (grid-tiles->vector (first grids))))
     (method grids)))
 
-(define-values (display-width display-height) (get-display-size))
+(define-values
+  (display-width display-height)
+  (get-display-size))
 (define planet-entity #f)
 
 (define (flvector->vertex v)
@@ -98,13 +101,12 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-        (if (planet? planet-entity)
             (for ([tile draw-tiles])
               (glBegin GL_TRIANGLE_FAN)
               (set-gl-color! (draw-tile-color tile))
               (tile-vertices tile)
               (glEnd))
-            (void))
+            (void)
         (set! last-draw (current-inexact-milliseconds)))
       (void)))
 
@@ -147,19 +149,23 @@
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))
-     (define (color-planet! f)
-       (when (planet? planet-entity)
-         (begin
-           (for ([n (tile-count planet-entity)])
-             (let ([d-tile (vector-ref draw-tiles n)])
-               (set-draw-tile-color! d-tile (f planet-entity n))))
-           (repaint!))))
+     (define (color-planet! planet-entity f)
+       (thread
+        (lambda ()
+          (when (planet? planet-entity)
+            (begin
+              (for ([n (tile-count planet-entity)])
+                (let ([d-tile (vector-ref draw-tiles n)])
+                  (set-draw-tile-color! d-tile (f planet-entity n))))
+              (repaint!))))))
      (define (generate-terrain!)
        (begin
-         (terrain-gen)
-         (set! planet-entity (climate-first (climate-parameters)
-                                            ((heightmap->planet (first grids)) (terrain-gen))))
-         (color-planet! color-topography)))
+         (thread
+          (lambda ()
+            (terrain-gen)
+            (set! planet-entity ((heightmap->planet (first grids)) (terrain-gen)))
+            (color-planet! planet-entity
+                           color-topography)))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
@@ -168,25 +174,30 @@
          [#\w (begin
                 (climate-next (climate-parameters) planet-entity)
                 (repaint!))]
-         [#\e (color-planet! ((lambda ()
+         [#\e (color-planet! planet-entity
+                             ((lambda ()
                                 (let* ([image (load-image/file image-path)]
                                        [width (image-width image)]
                                        [height (image-height image)]
                                        [rel->rect (relative->rectangular width height)]
                                        [pixel-color (pixel-color image)])
                                   (lambda (tile)
-                                    (let* ([lat (tile-latitude tile (first grids))]
-                                           [lon (tile-longitude tile (first grids))]
+                                    (let* ([lat (tile-latitude tile (planet-grid planet-entity))]
+                                           [lon (tile-longitude tile (planet-grid planet-entity))]
                                            [coord (equirectangular-projection lon lat)]
                                            [px (rel->rect coord)]
                                            [x (vector-ref px 0)]
                                            [y (vector-ref px 1)])
                                       (pixel-color x y)
                                       ))))))]
-         [#\a (color-planet! base-color)]
-         [#\s (color-planet! color-topography)]
-         [#\d (color-planet! color-temperature)]
-         [#\f (color-planet! color-albedo)]
+         [#\a (color-planet! planet-entity
+                             base-color)]
+         [#\s (color-planet! planet-entity
+                             color-topography)]
+         [#\d (color-planet! planet-entity
+                             color-temperature)]
+         [#\f (color-planet! planet-entity
+                             color-albedo)]
          ['wheel-up (begin
                       (set! scale
                             (min scale-max

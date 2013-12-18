@@ -8,7 +8,11 @@
                     (heightmap-lower
                      70.0
                      (heightmap-create
-                      (heightmap-parameters "earth04" 2 800.0 0.65))))]
+                      (heightmap-parameters/kw
+                       #:seed "earth04"
+                       #:base-level 2
+                       #:amplitude 800.0
+                       #:persistence 0.65))))]
         [mountain-base (heightmap-map*
                         (lambda (a b . ns)
                           (if (both
@@ -21,7 +25,11 @@
                         (heightmap-raise
                          300.0
                          (heightmap-create
-                          (heightmap-parameters "mtn2" 3 800.0 0.7))))]
+                          (heightmap-parameters/kw
+                           #:seed "mtn2"
+                           #:base-level 3
+                           #:amplitude 800.0 
+                           #:persistence 0.7))))]
         [mountain (heightmap-combine
                    continent
                    mountain-base)]
@@ -37,7 +45,11 @@
                       (heightmap-raise
                        1500.0
                        (heightmap-create
-                        (heightmap-parameters "trench" 3 2500.0 0.7))))]                   
+                        (heightmap-parameters/kw
+                         #:seed "trench"
+                         #:base-level 3
+                         #:amplitude 2500.0
+                         #:persistence 0.7))))]
         [final-terrain
          (heightmap-combine
           mountain

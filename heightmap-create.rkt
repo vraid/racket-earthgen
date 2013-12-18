@@ -5,20 +5,22 @@
          "pseudo-random-list.rkt"
          "heightmap-structs.rkt"
          "grid-list.rkt"
+         "typed-struct-kw.rkt"
          math/flonum)
 
 (provide heightmap-create
-         heightmap-parameters
-         heightmap-function)
+         heightmap-function
+         (struct-out heightmap-parameters)
+         heightmap-parameters/kw)
 
 (define-type heightmap-function (grid-list -> heightmap))
 
-(struct: heightmap-parameters
-  ([seed : String]
-   [base-level : index]
-   [amplitude : Flonum]
-   [persistence : Flonum])
-  #:transparent)
+(struct:/kw heightmap-parameters
+            ([seed : String]
+             [base-level : index]
+             [amplitude : Flonum]
+             [persistence : Flonum])
+            #:transparent)
 
 (: average-elevation (FlVector corner -> Flonum))
 (define (average-elevation tile-elevation corner)
