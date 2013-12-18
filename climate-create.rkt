@@ -8,20 +8,36 @@
          "vector3.rkt"
          "parallel-util.rkt")
 
-(provide climate-first
-         climate-next
+(provide climate-next
          climate-parameters)
 
-(: temperature-first (flvector3 -> Flonum))
-(define (temperature-first v)
-  (let ([light (flsqrt (fl- 1.0 (flexpt (flvector-ref v 2) 2.0)))])
-    (fl* light 340.0))
-  0.0)
+(: temperature-first (planet index -> Flonum))
+(define (temperature-first p n)
+  (let ([light (cos (tile-latitude p n))])
+    (+ 200.0
+       (* 130.0 light))))
 
 (: climate-first (climate-parameters planet -> planet))
 (define (climate-first par prev)
-  prev)
+  (let ([p (planet
+            (planet-grid prev)
+            true
+            (make-tile-data (tile-count prev))
+            (make-corner-data (corner-count prev))
+            (make-edge-data (edge-count prev)))])
+    (begin
+      (for ([n (tile-count p)])
+        ((tile-data-elevation-set! (planet-tile p)) n
+                                                    (tile-elevation prev n))
+        ((tile-data-temperature-set! (planet-tile p)) n
+                                                      (temperature-first p n)))
+      (for ([n (corner-count p)])
+        ((corner-data-elevation-set! (planet-corner p)) n
+                                                        (corner-elevation prev n)))
+      p)))
 
 (: climate-next (climate-parameters planet -> planet))
 (define (climate-next par prev)
-  prev)
+  (if (not (planet-has-climate? prev))
+      (climate-first par prev)
+      prev))

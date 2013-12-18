@@ -31,6 +31,6 @@
                           [river-flow : (index -> Flonum)]
                           [has-river?-set! : (index Boolean -> Void)]
                           [river-flow-set! : (index Flonum -> Void)])]
-               [make-tile-data (index -> tile-data)]
-               [make-corner-data (index -> corner-data)]
-               [make-edge-data (index -> edge-data)])
+               [make-tile-data (Integer -> tile-data)]
+               [make-corner-data (Integer -> corner-data)]
+               [make-edge-data (Integer -> edge-data)])

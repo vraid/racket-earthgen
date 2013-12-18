@@ -125,9 +125,6 @@
    (lambda (n)
      (f planet-entity n))))
 
-(define (tile-latitude tile-id grid)
-  (asin (flvector-ref (tile-coordinates (grid-tile grid tile-id)) 2)))
-
 (define (tile-longitude tile-id grid)
   (let* ([t (grid-tile grid tile-id)]
          [coord (tile-coordinates t)]
@@ -150,14 +147,12 @@
        (set! last-draw 0.0)
        (on-paint))
      (define (color-planet! planet-entity f)
-       (thread
-        (lambda ()
-          (when (planet? planet-entity)
-            (begin
-              (for ([n (tile-count planet-entity)])
-                (let ([d-tile (vector-ref draw-tiles n)])
-                  (set-draw-tile-color! d-tile (f planet-entity n))))
-              (repaint!))))))
+       (when (planet? planet-entity)
+         (begin
+           (for ([n (tile-count planet-entity)])
+             (let ([d-tile (vector-ref draw-tiles n)])
+               (set-draw-tile-color! d-tile (f planet-entity n))))
+           (repaint!))))
      (define (generate-terrain!)
        (begin
          (thread
@@ -172,7 +167,7 @@
          ['escape (exit)]
          [#\q (generate-terrain!)]
          [#\w (begin
-                (climate-next (climate-parameters) planet-entity)
+                (set! planet-entity (climate-next (climate-parameters) planet-entity))
                 (repaint!))]
          [#\e (color-planet! planet-entity
                              ((lambda ()

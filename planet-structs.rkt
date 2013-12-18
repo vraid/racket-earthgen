@@ -13,6 +13,7 @@
 
 (struct: planet
   ([grid : grid]
+   [has-climate? : Boolean]
    [tile : tile-data]
    [corner : corner-data]
    [edge : edge-data]))
