@@ -40,4 +40,16 @@
 (define (climate-next par prev)
   (if (not (planet-has-climate? prev))
       (climate-first par prev)
-      prev))
+      (let ([p (planet
+                (planet-grid prev)
+                true
+                (make-tile-data (tile-count prev))
+                (make-corner-data (corner-count prev))
+                (make-edge-data (edge-count prev)))])
+        (begin
+          (for ([n (tile-count p)])
+            ((tile-data-elevation-set! (planet-tile p)) n (tile-elevation prev n))
+            ((tile-data-temperature-set! (planet-tile p)) n (tile-temperature prev n)))
+          (for ([n (corner-count p)])
+            ((corner-data-elevation-set! (planet-corner p)) n (corner-elevation prev n)))
+          p))))

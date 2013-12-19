@@ -43,6 +43,7 @@
 
 (define grids (n-grid-list null 0))
 (define draw-tiles (vector))
+(define color-mode color-topography)
 
 (define (terrain-gen)
   (begin
@@ -149,6 +150,7 @@
      (define (color-planet! planet-entity f)
        (when (planet? planet-entity)
          (begin
+           (set! color-mode f)
            (for ([n (tile-count planet-entity)])
              (let ([d-tile (vector-ref draw-tiles n)])
                (set-draw-tile-color! d-tile (f planet-entity n))))
@@ -160,7 +162,7 @@
             (terrain-gen)
             (set! planet-entity ((heightmap->planet (first grids)) (terrain-gen)))
             (color-planet! planet-entity
-                           color-topography)))))
+                           color-mode)))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
@@ -168,6 +170,8 @@
          [#\q (generate-terrain!)]
          [#\w (begin
                 (set! planet-entity (climate-next (climate-parameters) planet-entity))
+                (color-planet! planet-entity
+                              color-mode)
                 (repaint!))]
          [#\e (color-planet! planet-entity
                              ((lambda ()
