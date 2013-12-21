@@ -14,12 +14,12 @@
 (define (tile-index t n)
   (modulo n (edge-count t)))
 
-(: tile-tile (tile Integer -> maybe-tile))
+(: tile-tile (tile Integer -> tile))
 (define (tile-tile t n)
   (vector-ref (tile-tiles t)
               (tile-index t n)))
 
-(: tile-corner (tile Integer -> maybe-corner))
+(: tile-corner (tile Integer -> corner))
 (define (tile-corner t n)
   (vector-ref (tile-corners t)
               (tile-index t n)))
@@ -28,17 +28,17 @@
 (define (corner-index t n)
   (modulo n (edge-count t)))
 
-(: corner-tile (corner Integer -> maybe-tile))
+(: corner-tile (corner Integer -> tile))
 (define (corner-tile t n)
   (vector-ref (corner-tiles t)
               (corner-index t n)))
 
-(: corner-corner (corner Integer -> maybe-corner))
+(: corner-corner (corner Integer -> corner))
 (define (corner-corner t n)
   (vector-ref (corner-corners t)
               (corner-index t n)))
 
-(: member-index (All (a) (a (Vectorof (U False a)) -> Index)))
+(: member-index (All (a) (a (Vectorof a) -> Index)))
 (define (member-index n v)
   (let ([a (vector-memq n v)])
     (if (not a)

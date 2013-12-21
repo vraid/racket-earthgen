@@ -9,6 +9,18 @@
          "vector3.rkt"
          math/flonum)
 
+(define empty-corner
+  (corner (flvector3-zero) (vector) (vector)))
+
+(define empty-tile
+  (tile empty-corner (flvector3-zero) (vector) (vector)))
+
+(define (empty-tile? t)
+  (eq? t empty-tile))
+
+(define (empty-corner? c)
+  (eq? c empty-corner))
+
 (define icosahedron-coordinates
   (let* ([x 0.525731112119133606]
          [z 0.850650808352039932]
@@ -44,14 +56,14 @@
    (vector 1 8 3 7 6)
    (vector 0 6 7 2 9)))
 
-(: connect-corners (tile maybe-corner maybe-corner -> Void))
+(: connect-corners (tile corner corner -> Void))
 (define (connect-corners t a b)
   (begin
-    (unless (not a)
+    (unless (empty-corner? a)
       (let ([i (corner-tile-index a t)])
         (vector-set! (corner-corners a) i
                      b))))
-  (unless (not b)
+  (unless (empty-corner? b)
     (let ([i (corner-tile-index b t)])
       (vector-set! (corner-corners b) (corner-index b (+ i 1))
                    a))))
@@ -64,7 +76,7 @@
                                       (tile-coordinates t))
                                     (list a b c))))
             (vector a b c)
-            (make-vector 3 false))])
+            (make-vector 3 empty-corner))])
     (begin
       (: connect (tile corner -> Void))
       (define (connect t c)
@@ -77,37 +89,25 @@
       (connect b n)
       (connect c n)
       n)))
-
-(: maybe->tile (maybe-tile -> tile))
-(define (maybe->tile t)
-  (if (not t)
-      (tile false (flvector3-zero) (vector) (vector))
-      t))
-
-(: maybe->corner (maybe-corner -> corner))
-(define (maybe->corner c)
-  (if (not c)
-      (corner (flvector3-zero) (vector) (vector))
-      c))
-
+  
 (: cornerize-top (tile -> Void))
 (define (cornerize-top t)
   (for ([n (edge-count t)])
-    (when (not (tile-corner t n))
+    (when (empty-corner? (tile-corner t n))
       (add-corner t
-                  (maybe->tile (tile-tile t (tile-index t (- n 1))))
-                  (maybe->tile (tile-tile t n))))))
-    
+                  (tile-tile t (tile-index t (- n 1)))
+                  (tile-tile t n)))))
+
 (: top-grid (-> tile-set))
 (define (top-grid)
   (let ([tiles (build-vector
                 12
                 (lambda: ([n : Integer])
                   (tile
-                   false
+                   empty-tile
                    (vector-ref icosahedron-coordinates n)
                    (vector)
-                   (make-vector 5 false))))])
+                   (make-vector 5 empty-corner))))])
     (begin
       (for ([n 12])
         (set-tile-tiles!
@@ -123,7 +123,8 @@
 (define (closest-tile tiles v)
   (: tile+dist (tile -> (List tile Flonum)))
   (define (tile+dist t)
-    (list t (flvector3-distance-squared v (tile-coordinates t))))
+    (list t (flvector3-distance-squared (tile-coordinates t)
+                                        v)))
   (: closest (tile -> tile))
   (first (foldl (lambda: ([a : (List tile Flonum)]
                           [b : (List tile Flonum)])
@@ -132,14 +133,44 @@
                 (tile+dist (set-first tiles))
                 (set-map tiles tile+dist))))
 
+(: tile-section-coordinates (tile Index -> flvector3))
+(define (tile-section-coordinates t i)
+  (flvector3-normal
+   (flvector3+
+    (tile-coordinates t)
+    (corner-coordinates (tile-corner t i))
+    (corner-coordinates (tile-corner t (tile-index t (- i 1)))))))
+
+(: corner-section-coordinates (corner Index -> flvector3))
+(define (corner-section-coordinates c i)
+  (flvector3-zero))
+
+(: section-coordinates ((U tile corner) Index -> flvector3))
+(define (section-coordinates t i)
+  (if (tile? t)
+      (tile-section-coordinates t i)
+      (corner-section-coordinates t i)))
+
+(: cornerize (tile -> Void))
+(define (cornerize t)
+  (begin
+    (for ([n (edge-count t)])
+      (if (not (tile-corner t n))
+          (vector-set! (tile-corners t) n
+                       (corner
+                        (section-coordinates (tile-parent t) n)
+                        (vector)
+                        (vector)))
+          (void)))))
+
 (: push (tile -> tile))
 (define (push t)
   (let ([new-tile
          (tile
           t
           (tile-coordinates t)
-          (make-vector (edge-count t) false)
-          (make-vector (edge-count t) false))])
+          (make-vector (edge-count t) empty-tile)
+          (make-vector (edge-count t) empty-corner))])
     (begin
       (for ([n (edge-count t)])
         (vector-set! (tile-corners new-tile) n
@@ -147,17 +178,21 @@
                       (flvector3-normal
                        (flvector3+
                         (tile-coordinates t)
-                        (corner-coordinates (maybe->corner (tile-corner t (tile-index t n))))
-                        (corner-coordinates (maybe->corner (tile-corner t (tile-index t (- n 1)))))))
-                      (vector new-tile false false)
-                      (vector false false false))))
+                        (corner-coordinates (tile-corner t (tile-index t n)))
+                        (corner-coordinates (tile-corner t (tile-index t (- n 1))))))
+                      (vector new-tile empty-tile empty-tile)
+                      (make-vector 3 empty-corner))))
       (for ([n (edge-count t)])
-        (let ([c (maybe->corner (tile-corner new-tile n))])
+        (let ([c (tile-corner new-tile n)])
           (set-corner-corners! c (vector
                                   (tile-corner new-tile (tile-index t (+ n 1)))
                                   (tile-corner new-tile (tile-index t (- n 1)))
-                                  false))))
+                                  empty-corner))))
       new-tile)))
+
+(: add-one-tile (tile-set -> tile-set))
+(define (add-one-tile tiles)
+  tiles)
 
 (: prune ((tile -> Boolean) tile-set -> tile-set))
 (define (prune f t)
