@@ -7,6 +7,7 @@
 (require "dynamic-grid-structs.rkt"
          "dynamic-grid-access.rkt"
          "vector3.rkt"
+         "typed-logic.rkt"
          math/flonum)
 
 (define icosahedron-coordinates
@@ -173,6 +174,24 @@
       (cornerize new-tile)
       new-tile)))
 
+(: add-left-corner (tile tile -> Void))
+(define (add-left-corner old new)
+  (let* ([i (tile-tile-index old new)]
+         [k (tile-tile-index new old)]
+         [c (tile-corner old (tile-index old (+ i 1)))])
+    (begin
+      (vector-set! (tile-corners new) k c)
+      (vector-set! (corner-tiles c) (corner-index c (+ (corner-tile-index c old) 1)) new))))
+
+(: add-right-corner (tile tile -> Void))
+(define (add-right-corner old new)
+  (let* ([i (tile-tile-index old new)]
+         [k (tile-tile-index new old)]
+         [c (tile-corner old (tile-index old i))])
+    (begin
+      (vector-set! (tile-corners new) (tile-index new (+ k 1)) c)
+      (vector-set! (corner-tiles c) (corner-index c (- (corner-tile-index c old) 1)) new))))
+
 (: add-corners (tile tile -> Void))
 (define (add-corners old new)
   (let* ([i (tile-tile-index old new)]
@@ -188,20 +207,22 @@
 (: add-left (tile tile -> Void))
 (define (add-left t new)
   (let ([left (tile-tile t (tile-index t (+ (tile-tile-index t new) 1)))])
-    (unless (empty-tile? left)
+    (unless (one-or-both true? (empty-tile? left) (no-empty? new))
       (begin
         (vector-set! (tile-tiles left) (tile-index left (+ (tile-tile-index left t) 1)) new)
         (vector-set! (tile-tiles new) (tile-index new (- (tile-tile-index new t) 1)) left)
-        (add-corners left new)))))
+        (add-left-corner left new)
+        (add-left (tile-tile t (tile-index t (+ (tile-tile-index t new) 1))) new)))))
 
 (: add-right (tile tile -> Void))
 (define (add-right t new)
   (let ([right (tile-tile t (tile-index t (- (tile-tile-index t new) 1)))])
-    (unless (empty-tile? right)
+    (unless (one-or-both true? (empty-tile? right) (no-empty? new))
       (begin
         (vector-set! (tile-tiles right) (tile-index right (- (tile-tile-index right t) 1)) new)
         (vector-set! (tile-tiles new) (tile-index new (+ (tile-tile-index new t) 1)) right)
-        (add-corners right new)))))
+        (add-right-corner right new)
+        (add-right (tile-tile t (tile-index t (- (tile-tile-index t new) 1))) new)))))
 
 (: add-tile (tile Index -> tile))
 (define (add-tile t i)
@@ -223,9 +244,13 @@
       (cornerize new-tile)
       new-tile)))
 
+(: no-empty? (tile -> Boolean))
+(define (no-empty? t)
+  (not (has-empty? t)))
+
 (: has-empty? (tile -> Boolean))
 (define (has-empty? t)
-  (not (empty? (filter empty-tile? (vector->list (tile-tiles t))))))
+  (not (not (vector-memq empty-tile (tile-tiles t)))))
 
 (: find-to-add (tile-set -> (List tile Index)))
 (define (find-to-add tiles)
