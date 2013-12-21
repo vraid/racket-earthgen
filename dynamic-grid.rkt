@@ -69,7 +69,7 @@
     (begin
       (: connect (tile corner -> Void))
       (define (connect t c)
-        (connect-corners t c (tile-corner t (tile-index t (+ 1 (tile-corner-index t c))))))
+        (connect-corners t c (tile-corner t (+ 1 (tile-corner-index t c)))))
       
       (vector-set! (tile-corners a) (tile-tile-index a c) n)
       (vector-set! (tile-corners b) (tile-tile-index b a) n)
@@ -84,7 +84,7 @@
   (for ([n (edge-count t)])
     (when (empty-corner? (tile-corner t n))
       (add-corner t
-                  (tile-tile t (tile-index t (- n 1)))
+                  (tile-tile t (- n 1))
                   (tile-tile t n)))))
 
 (: top-grid (-> tile-set))
@@ -128,7 +128,7 @@
    (flvector3+
     (tile-coordinates t)
     (corner-coordinates (tile-corner t i))
-    (corner-coordinates (tile-corner t (tile-index t (- i 1)))))))
+    (corner-coordinates (tile-corner t (- i 1))))))
 
 (: corner-section-coordinates (corner Index -> flvector3))
 (define (corner-section-coordinates c i)
@@ -152,15 +152,15 @@
         (vector-set! (tile-corners t) n
                      (corner
                       (section-coordinates (tile-parent t) n)
-                      (vector t (tile-tile t (tile-index t (- n 1))) (tile-tile t n))
+                      (vector t (tile-tile t (- n 1)) (tile-tile t n))
                       (make-vector 3 empty-corner)))))
     (for ([n (edge-count t)])
       (let* ([c (tile-corner t n)]
              [i (corner-tile-index c t)])
         (vector-set! (corner-corners c) i
-                     (tile-corner t (tile-index t (+ n 1))))
+                     (tile-corner t (+ n 1)))
         (vector-set! (corner-corners c) (corner-index c (+ i 1))
-                     (tile-corner t (tile-index t (- n 1))))))))
+                     (tile-corner t (- n 1)))))))
 
 (: push (tile -> tile))
 (define (push t)
@@ -178,7 +178,7 @@
 (define (add-left-corner old new)
   (let* ([i (tile-tile-index old new)]
          [k (tile-tile-index new old)]
-         [c (tile-corner old (tile-index old (+ i 1)))])
+         [c (tile-corner old (+ i 1))])
     (begin
       (vector-set! (tile-corners new) k c)
       (vector-set! (corner-tiles c) (corner-index c (+ (corner-tile-index c old) 1)) new))))
@@ -187,7 +187,7 @@
 (define (add-right-corner old new)
   (let* ([i (tile-tile-index old new)]
          [k (tile-tile-index new old)]
-         [c (tile-corner old (tile-index old i))])
+         [c (tile-corner old i)])
     (begin
       (vector-set! (tile-corners new) (tile-index new (+ k 1)) c)
       (vector-set! (corner-tiles c) (corner-index c (- (corner-tile-index c old) 1)) new))))
@@ -197,7 +197,7 @@
   (let* ([i (tile-tile-index old new)]
          [k (tile-tile-index new old)]
          [a (tile-corner old i)]
-         [b (tile-corner old (tile-index old (+ i 1)))])
+         [b (tile-corner old (+ i 1))])
     (begin
       (vector-set! (tile-corners new) k b)
       (vector-set! (tile-corners new) (tile-index new (+ k 1)) a)
@@ -206,27 +206,40 @@
 
 (: add-left (tile tile -> Void))
 (define (add-left t new)
-  (let ([left (tile-tile t (tile-index t (+ (tile-tile-index t new) 1)))])
+  (let ([left (tile-tile t (+ (tile-tile-index t new) 1))])
     (unless (one-or-both true? (empty-tile? left) (no-empty? new))
       (begin
         (vector-set! (tile-tiles left) (tile-index left (+ (tile-tile-index left t) 1)) new)
         (vector-set! (tile-tiles new) (tile-index new (- (tile-tile-index new t) 1)) left)
         (add-left-corner left new)
-        (add-left (tile-tile t (tile-index t (+ (tile-tile-index t new) 1))) new)))))
+        (add-left (tile-tile t (+ (tile-tile-index t new) 1)) new)))))
 
 (: add-right (tile tile -> Void))
 (define (add-right t new)
-  (let ([right (tile-tile t (tile-index t (- (tile-tile-index t new) 1)))])
+  (let ([right (tile-tile t (- (tile-tile-index t new) 1))])
     (unless (one-or-both true? (empty-tile? right) (no-empty? new))
       (begin
         (vector-set! (tile-tiles right) (tile-index right (- (tile-tile-index right t) 1)) new)
         (vector-set! (tile-tiles new) (tile-index new (+ (tile-tile-index new t) 1)) right)
         (add-right-corner right new)
-        (add-right (tile-tile t (tile-index t (- (tile-tile-index t new) 1))) new)))))
+        (add-right (tile-tile t (- (tile-tile-index t new) 1)) new)))))
+
+(: guarantee ((U tile corner) -> (U tile corner)))
+(define (guarantee t)
+  (begin
+    (when (and (corner? t) (has-empty? t))
+      (let ([n (first (filter (lambda (a)
+                                (not (empty-tile? a)))
+                              (vector->list (corner-tiles t))))])
+        (for ([i (list (tile-corner-index n t)
+                       (- (tile-corner-index n t) 1))])
+          (when (empty-tile? (tile-tile n i))
+            (add-tile n (tile-index n i))))))
+    t))
 
 (: add-tile (tile Index -> tile))
 (define (add-tile t i)
-  (let* ([parent (parent-at (tile-parent t) i)]
+  (let* ([parent (guarantee (parent-at (tile-parent t) i))]
          [edge-count (if (corner? parent) 6 (edge-count parent))]
          [new-tile
           (tile
@@ -244,13 +257,17 @@
       (cornerize new-tile)
       new-tile)))
 
-(: no-empty? (tile -> Boolean))
+(: no-empty? ((U tile corner) -> Boolean))
 (define (no-empty? t)
   (not (has-empty? t)))
 
-(: has-empty? (tile -> Boolean))
+(: has-empty? ((U tile corner) -> Boolean))
 (define (has-empty? t)
-  (not (not (vector-memq empty-tile (tile-tiles t)))))
+  (not (not (vector-memq
+             empty-tile
+             (if (tile? t)
+                 (tile-tiles t)
+                 (corner-tiles t))))))
 
 (: find-to-add (tile-set -> (List tile Index)))
 (define (find-to-add tiles)
