@@ -162,7 +162,7 @@
         (vector-set! (corner-corners c) (corner-index c (+ i 1))
                      (tile-corner t (- n 1)))))))
 
-(: push (tile -> tile))
+(: push (tile -> tile-set))
 (define (push t)
   (let ([new-tile
          (tile
@@ -172,7 +172,16 @@
           (make-vector (edge-count t) empty-corner))])
     (begin
       (cornerize new-tile)
-      new-tile)))
+      (set new-tile))))
+
+(: pop (tile -> tile-set))
+(define (pop t)
+  (let ([parent (guarantee (tile-parent t))])
+    (if (or (empty-tile? parent) (and (tile? parent) (empty-tile? (tile-parent parent))))
+        (top-grid)
+        (set (if (tile? parent)
+                 parent
+                 (corner-tile parent 0))))))
 
 (: add-left-corner (tile tile -> Void))
 (define (add-left-corner old new)

@@ -33,7 +33,7 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
-(define grid (set (push (closest-tile (top-grid) (flvector 0.0 1.0 0.0)))))
+(define grid (top-grid))
 
 (define-values
   (display-width display-height)
@@ -128,6 +128,12 @@
          ['escape (exit)]
          [#\q (begin
                 (set! grid (add-one-tile grid))
+                (repaint!))]
+         [#\w (begin
+                (set! grid (push (closest-tile grid (flvector 0.0 1.0 0.0))))
+                (repaint!))]
+         [#\e (begin
+                (set! grid (pop (closest-tile grid (flvector 0.0 1.0 0.0))))
                 (repaint!))]
          ['wheel-up (begin
                       (set! scale
