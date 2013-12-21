@@ -201,8 +201,8 @@
     (begin
       (vector-set! (tile-corners new) k b)
       (vector-set! (tile-corners new) (tile-index new (+ k 1)) a)
-      (vector-set! (corner-tiles a) (corner-index a (+ (corner-tile-index a old) 1)) new)
-      (vector-set! (corner-tiles b) (corner-index b (- (corner-tile-index b old) 1)) new))))
+      (vector-set! (corner-tiles a) (corner-index a (- (corner-tile-index a old) 1)) new)
+      (vector-set! (corner-tiles b) (corner-index b (+ (corner-tile-index b old) 1)) new))))
 
 (: add-left (tile tile -> Void))
 (define (add-left t new)
