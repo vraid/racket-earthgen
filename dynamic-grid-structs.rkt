@@ -20,3 +20,19 @@
    [tiles : tile-vector]
    [corners : corner-vector])
   #:mutable)
+
+(define empty-corner
+  (corner (flvector3-zero) (vector) (vector)))
+
+(define empty-tile
+  (tile empty-corner (flvector3-zero) (vector) (vector)))
+
+(define (empty-tile? t)
+  (eq? t empty-tile))
+
+(define (empty-corner? c)
+  (eq? c empty-corner))
+
+(: empty-parent? (tile -> Boolean))
+(define (empty-parent? t)
+  (eq? (tile-parent t) empty-tile))

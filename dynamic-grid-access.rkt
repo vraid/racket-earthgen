@@ -2,13 +2,43 @@
 
 (provide (all-defined-out))
 
-(require "dynamic-grid-structs.rkt")
+(require "dynamic-grid-structs.rkt"
+         "vector3.rkt")
 
 (: edge-count ((U tile corner) -> Index))
 (define (edge-count t)
   (if (tile? t)
       (vector-length (tile-tiles t))
       3))
+
+(: coordinates ((U tile corner) -> flvector3))
+(define (coordinates t)
+  (if (tile? t)
+      (tile-coordinates t)
+      (corner-coordinates t)))
+
+(: parent-corner-at (corner Integer -> (U tile corner)))
+(define (parent-corner-at c i)
+  (let ([n (corner-index c (quotient (modulo i 6) 2))])
+    (if (even? i)
+        (corner-corner c n)
+        (corner-tile c n))))
+
+(: parent-at ((U tile corner) Index -> (U tile corner)))
+(define (parent-at t i)
+  (if (tile? t)
+      (tile-corner t i)
+      (parent-corner-at t i)))
+
+(: parent-parent-index ((U tile corner) (U tile corner) -> Index))
+(define (parent-parent-index t n)
+  (if (tile? t)
+      (if (corner? n)
+          (tile-corner-index t n)
+          121235)
+      (if (tile? n)
+          (modulo (+ 1 (* 2 (corner-tile-index t n))) 6)
+          (modulo (* 2 (corner-corner-index t n)) 6))))
 
 (: tile-index (tile Integer -> Index))
 (define (tile-index t n)

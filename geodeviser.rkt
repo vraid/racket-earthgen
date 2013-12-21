@@ -33,7 +33,7 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
-(define grid (top-grid))
+(define grid (set (push (closest-tile (top-grid) (flvector 0.0 1.0 0.0)))))
 
 (define-values
   (display-width display-height)
@@ -59,9 +59,9 @@
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
       (begin
-;        (glFrontFace GL_CCW)
-;        (glEnable GL_CULL_FACE)
-;        (glCullFace GL_BACK)
+        (glFrontFace GL_CCW)
+        (glEnable GL_CULL_FACE)
+        (glCullFace GL_BACK)
         (glClearColor 0.0 0.0 0.0 0.0)
         (glClear GL_COLOR_BUFFER_BIT)
         
@@ -126,6 +126,9 @@
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
+         [#\q (begin
+                (set! grid (add-one-tile grid))
+                (repaint!))]
          ['wheel-up (begin
                       (set! scale
                             (min scale-max
