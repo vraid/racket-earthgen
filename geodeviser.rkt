@@ -7,7 +7,6 @@
          "matrix3.rkt"
          "logic.rkt"
          "color.rkt"
-         "draw-structs.rkt"
          "load-image.rkt"
          "projection.rkt"
          math/flonum
@@ -34,6 +33,8 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
+(define grid (top-grid))
+
 (define-values
   (display-width display-height)
   (get-display-size))
@@ -58,9 +59,9 @@
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
       (begin
-        (glFrontFace GL_CCW)
-        (glEnable GL_CULL_FACE)
-        (glCullFace GL_BACK)
+;        (glFrontFace GL_CCW)
+;        (glEnable GL_CULL_FACE)
+;        (glCullFace GL_BACK)
         (glClearColor 0.0 0.0 0.0 0.0)
         (glClear GL_COLOR_BUFFER_BIT)
         
@@ -75,16 +76,16 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-            (for ([tile top-grid])
-              (glBegin GL_TRIANGLE_FAN)
-              (set-gl-color! (let ([v (tile-coordinates tile)]
-                                   [m (lambda (n) (/ (+ 1.0 n) 2.0))])
-                               (flcolor (m (flvector-ref v 0))
-                                        (m (flvector-ref v 1))
-                                        (m (flvector-ref v 2)))))
-              (tile-vertices tile)
-              (glEnd))
-            (void)
+        (for ([tile grid])
+          (glBegin GL_TRIANGLE_FAN)
+          (set-gl-color! (let ([v (tile-coordinates tile)]
+                               [m (lambda (n) (/ (+ 1.0 n) 2.0))])
+                           (flcolor (m (flvector-ref v 0))
+                                    (m (flvector-ref v 1))
+                                    (m (flvector-ref v 2)))))
+          (tile-vertices tile)
+          (glEnd))
+        (void)
         (set! last-draw (current-inexact-milliseconds)))
       (void)))
 

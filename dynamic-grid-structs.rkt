@@ -8,6 +8,7 @@
 (define-type maybe-corner (U False corner))
 (define-type tile-vector (Vectorof maybe-tile))
 (define-type corner-vector (Vectorof maybe-corner))
+(define-type tile-set (Setof tile))
 
 (struct: tile
   ([parent : (U False tile corner)]
@@ -21,4 +22,3 @@
    [tiles : tile-vector]
    [corners : corner-vector])
   #:mutable)
-
