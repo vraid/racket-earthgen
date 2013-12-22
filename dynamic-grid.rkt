@@ -12,7 +12,9 @@
          math/flonum)
 
 (require/typed "image-overlay.rkt"
-               (tile-color (flvector3 -> flcolor)))
+               (coord->color (flvector3 -> flcolor)))
+
+(define-type grid-constraint (flvector3 -> Boolean))
 
 (define icosahedron-coordinates
   (let* ([x 0.525731112119133606]
@@ -102,8 +104,7 @@
                      coord
                      (vector)
                      (make-vector 5 empty-corner)
-                     (lambda ()
-                       (data (tile-color coord)))))))])
+                     (coord->color coord)))))])
     (begin
       (for ([n 12])
         (set-tile-tiles!
@@ -129,7 +130,7 @@
                 (tile+dist (set-first tiles))
                 (set-map tiles tile+dist))))
 
-(: tile-section-coordinates (tile Index -> flvector3))
+(: tile-section-coordinates (tile Integer -> flvector3))
 (define (tile-section-coordinates t i)
   (flvector3-normal
    (flvector3+
@@ -137,7 +138,7 @@
     (corner-coordinates (tile-corner t i))
     (corner-coordinates (tile-corner t (- i 1))))))
 
-(: corner-section-coordinates (corner Index -> flvector3))
+(: corner-section-coordinates (corner Integer -> flvector3))
 (define (corner-section-coordinates c i)
   (flvector3-normal
    (flvector3+
@@ -145,7 +146,7 @@
     (coordinates (parent-corner-at c i))
     (coordinates (parent-corner-at c (- i 1))))))
 
-(: section-coordinates ((U tile corner) Index -> flvector3))
+(: section-coordinates ((U tile corner) Integer -> flvector3))
 (define (section-coordinates t i)
   (if (tile? t)
       (tile-section-coordinates t i)
@@ -169,7 +170,7 @@
         (vector-set! (corner-corners c) (corner-index c (+ i 1))
                      (tile-corner t (- n 1)))))))
 
-(: push (tile -> tile-set))
+(: push (tile -> tile))
 (define (push t)
   (let ([new-tile
          (tile
@@ -177,10 +178,10 @@
           (tile-coordinates t)
           (make-vector (edge-count t) empty-tile)
           (make-vector (edge-count t) empty-corner)
-          (tile-data t))])
+          (tile-color t))])
     (begin
       (cornerize new-tile)
-      (set new-tile))))
+      new-tile)))
 
 (: pop (tile -> tile-set))
 (define (pop t)
@@ -252,7 +253,7 @@
             (add-tile n (tile-index n i))))))
     t))
 
-(: add-tile (tile Index -> tile))
+(: add-tile (tile Integer -> tile))
 (define (add-tile t i)
   (let* ([parent (guarantee (parent-at (tile-parent t) i))]
          [edge-count (if (corner? parent) 6 (edge-count parent))]
@@ -263,9 +264,8 @@
            (make-vector edge-count empty-tile)
            (make-vector edge-count empty-corner)
            (if (tile? parent)
-               (tile-data parent)
-               (lambda ()
-                 (data (tile-color (coordinates parent))))))])
+               (tile-color parent)
+               (coord->color (coordinates parent))))])
     (begin
       (let ([n (parent-parent-index parent (tile-parent t))])
         (vector-set! (tile-tiles t) i new-tile)
@@ -304,10 +304,31 @@
         tiles
         (set-add tiles (add-tile (first ls) (second ls))))))
 
-(: prune ((tile -> Boolean) tile-set -> tile-set))
+(: expand-to (flvector3 tile -> tile))
+(define (expand-to v t)
+  (let* ([coordinates (build-vector
+                       (edge-count t)
+                       (lambda: ([n : Integer])
+                         (coordinates (parent-at (tile-parent t) n))))]
+         [dist (lambda: ([n : (U False Integer)])
+                 (flvector3-distance-squared
+                  v (if (not n)
+                        (tile-coordinates t)
+                        (vector-ref coordinates n))))]
+         [i (foldl (lambda: ([n : Integer]
+                             [k : (U False Integer)])
+                     (if (< (dist n) (dist k))
+                         n k))
+                   false
+                   (range (edge-count t)))])
+    (if (not i)
+        t
+        (expand-to v (add-tile t i)))))
+
+(: prune (grid-constraint tile-set -> tile-set))
 (define (prune f t)
   t)
 
-(: expand ((tile -> Boolean) tile-set -> tile-set))
-(define (expand f t)
-  t)
+(: expand (flvector3 Flonum tile-set -> tile-set))
+(define (expand f radius tiles)
+  tiles)

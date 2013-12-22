@@ -24,7 +24,7 @@
         (corner-corner c n)
         (corner-tile c n))))
 
-(: parent-at ((U tile corner) Index -> (U tile corner)))
+(: parent-at ((U tile corner) Integer -> (U tile corner)))
 (define (parent-at t i)
   (if (tile? t)
       (tile-corner t i)

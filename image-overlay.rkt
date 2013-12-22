@@ -1,11 +1,10 @@
 #lang racket
 
-(provide tile-color)
+(provide coord->color)
 
 (require "load-image.rkt"
          "projection.rkt"
          "vector3.rkt"
-         "dynamic-grid-structs.rkt"
          math/flonum)
 
 (define image (load-image/file "C:/Users/vraid/Pictures/earth-satellite.jpg"))
@@ -23,7 +22,7 @@
 
 (define pxcolor (pixel-color image))
 
-(define (tile-color coordinates)
+(define (coord->color coordinates)
   (let* ([lat (latitude coordinates)]
          [lon (longitude coordinates)]
          [coord (equirectangular-projection lon lat)]

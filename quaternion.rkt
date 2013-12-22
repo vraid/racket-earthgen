@@ -11,7 +11,6 @@
          angle-axis->quaternion)
 
 (require math/flonum
-         racket/vector
          "vector3.rkt"
          "matrix3.rkt")
 

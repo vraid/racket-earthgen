@@ -5,18 +5,25 @@
          "vector3.rkt"
          "quaternion.rkt"
          "matrix3.rkt"
-         "logic.rkt"
          "color.rkt"
          math/flonum
          sgl/gl)
 
 (define longitude pi)
 (define latitude 0.0)
-(define (rotation) (quaternion->matrix3
-                    (quaternion*
-                     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
-                     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-                     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
+(define (rotation)
+  (quaternion->matrix3
+   (quaternion*
+    (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
+    (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
+    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
+(define (inverse-rotation)
+  (quaternion->matrix3
+   (quaternion-inverse
+    (quaternion*
+     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
+     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
+     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))))
 (define rotation-matrix (rotation))
 (define scale 0.9)
 (define scale-max 100.0)
@@ -75,7 +82,7 @@
         
         (for ([tile grid])
           (glBegin GL_TRIANGLE_FAN)
-          (set-gl-color! (data-color ((tile-data tile))))
+          (set-gl-color! (tile-color tile))
           (tile-vertices tile)
           (glEnd))
         (void)
@@ -113,15 +120,18 @@
                 (set! grid (add-one-tile grid))
                 (repaint!))]
          [#\w (begin
-                (set! grid (push (closest-tile grid (flvector -0.5 0.75 0.75))))
+                (let ([level 8]
+                      [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
+                  (set! grid (set (foldl (lambda (n t)
+                                           (push (expand-to v t)))
+                                         (push (set-first (top-grid)))
+                                         (range level)))))
                 (repaint!))]
          [#\e (begin
                 (set! grid (pop (closest-tile grid (flvector 0.0 1.0 0.0))))
                 (repaint!))]
          ['wheel-up (begin
-                      (set! scale
-                            (min scale-max
-                                 (* scale 1.05)))
+                      (set! scale (* scale 1.05))
                       (on-paint))]
          ['wheel-down (begin
                         (set! scale

@@ -14,7 +14,7 @@
    [coordinates : flvector3]
    [tiles : tile-vector]
    [corners : corner-vector]
-   [data : (-> data)])
+   [color : flcolor])
   #:mutable)
 
 (struct: corner
@@ -29,14 +29,11 @@
 (define empty-corner
   (corner (flvector3-zero) (vector) (vector)))
 
-(define undefined-data
-  (data (flcolor 0.7 0.7 0.7)))
-
-(define (empty-data)
-  undefined-data)
+(define no-color
+  (flcolor 0.0 0.0 0.0))
 
 (define empty-tile
-  (tile empty-corner (flvector3-zero) (vector) (vector) empty-data))
+  (tile empty-corner (flvector3-zero) (vector) (vector) no-color))
 
 (define (empty-tile? t)
   (eq? t empty-tile))
