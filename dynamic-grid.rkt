@@ -15,6 +15,8 @@
                (coord->color (flvector3 -> flcolor)))
 
 (define-type grid-constraint (flvector3 -> Boolean))
+(: empty-tile-set tile-set)
+(define empty-tile-set (set))
 
 (define icosahedron-coordinates
   (let* ([x 0.525731112119133606]
@@ -329,6 +331,31 @@
 (define (prune f t)
   t)
 
-(: expand (flvector3 Flonum tile-set -> tile-set))
-(define (expand f radius tiles)
-  tiles)
+(: expand-tile (tile -> tile-set))
+(define (expand-tile t)
+  (foldl (lambda: ([n : Integer]
+                   [st : tile-set])
+           (if (empty-tile? (tile-tile t n))
+               (set-add st (add-tile t n))
+               st))
+         empty-tile-set
+         (range (edge-count t))))
+
+(: expand-all (grid-constraint tile-set tile-set -> tile-set))
+(define (expand-all f tiles new-tiles)
+  (if (set-empty? new-tiles)
+      tiles
+      (expand-all f (set-union tiles new-tiles)
+                  (foldl (lambda: ([t : tile]
+                                   [st : tile-set])
+                           (if (f (tile-coordinates t))
+                               (set-union st (expand-tile t))
+                               st))
+                         empty-tile-set
+                         (set->list new-tiles)))))
+
+(: expand (flvector3 Flonum tile -> tile-set))
+(define (expand v radius t)
+  (expand-all (lambda: ([coord : flvector3])
+                (>= radius (flvector3-distance v coord)))
+              (set t) (expand-tile t)))

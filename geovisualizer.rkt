@@ -120,12 +120,12 @@
                 (set! grid (add-one-tile grid))
                 (repaint!))]
          [#\w (begin
-                (let ([level 8]
+                (let ([level 6]
                       [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
-                  (set! grid (set (foldl (lambda (n t)
-                                           (push (expand-to v t)))
-                                         (push (set-first (top-grid)))
-                                         (range level)))))
+                  (set! grid (expand v 1.0 (foldl (lambda (n t)
+                                                    (push (expand-to v t)))
+                                                  (push (set-first (top-grid)))
+                                                  (range level)))))
                 (repaint!))]
          [#\e (begin
                 (set! grid (pop (closest-tile grid (flvector 0.0 1.0 0.0))))
