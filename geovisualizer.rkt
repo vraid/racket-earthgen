@@ -29,6 +29,38 @@
 (define scale-max 100.0)
 (define scale-min 0.5)
 
+(define (subdivision-level-tile-count n)
+  (+ 2 (* 10 (expt 3 n))))
+
+(define base-level 4)
+(define level (+ base-level 0))
+
+(define grid (top-grid))
+
+(define (set-scale!)
+  (set! scale (* 0.9 (sqrt (/ (subdivision-level-tile-count (max base-level
+                                                                level))
+                            (subdivision-level-tile-count base-level))))))
+
+(define (set-level! n)
+  (begin
+    (set! level (max base-level n))
+    (set-scale!)))
+
+(define (make-grid!)
+  (let* ([base-radius (sqrt 3.9)]
+         [radius (* base-radius
+                    (sqrt (/ (subdivision-level-tile-count base-level)
+                             (subdivision-level-tile-count (max base-level
+                                                                level)))))]
+         [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
+    (set! grid (expand v radius (foldl (lambda (n t)
+                                         (push (expand-to v t)))
+                                       (push (set-first (top-grid)))
+                                       (range level))))))
+
+(make-grid!)
+
 (define mouse-down? false)
 (define mouse-down-x 0)
 (define mouse-down-y 0)
@@ -36,8 +68,6 @@
 (define mouse-down-longitude longitude)
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
-
-(define grid (top-grid))
 
 (define-values
   (display-width display-height)
@@ -117,27 +147,16 @@
        (match key-code
          ['escape (exit)]
          [#\q (begin
-                (set! grid (add-one-tile grid))
+                (make-grid!)
                 (repaint!))]
          [#\w (begin
-                (let ([level 6]
-                      [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
-                  (set! grid (expand v 1.0 (foldl (lambda (n t)
-                                                    (push (expand-to v t)))
-                                                  (push (set-first (top-grid)))
-                                                  (range level)))))
+                (set-level! (+ level 1))
+                (make-grid!)
                 (repaint!))]
          [#\e (begin
-                (set! grid (pop (closest-tile grid (flvector 0.0 1.0 0.0))))
+                (set-level! (max (- level 1) base-level))
+                (make-grid!)
                 (repaint!))]
-         ['wheel-up (begin
-                      (set! scale (* scale 1.05))
-                      (on-paint))]
-         ['wheel-down (begin
-                        (set! scale
-                              (max scale-min
-                                   (/ scale 1.05)))
-                        (on-paint))]
          [_ (void)]))
      (define/override (on-event event)
        (if (send event button-up? 'left)
