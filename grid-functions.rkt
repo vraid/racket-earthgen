@@ -1,43 +1,11 @@
 #lang typed/racket
 
-(require "utilities.rkt"
-         "types.rkt"
-         "index-vector.rkt"
+(require "types.rkt"
          "vector-util.rkt"
          "grid-structs.rkt"
          racket/fixnum)
 
-(provide tile-edge-count
-         tile-tile
-         tile-corner
-         tile-edge
-         tile-tile-position
-         tile-corner-position
-         tile-edge-position
-         
-         corner-edge-count
-         corner-tile
-         corner-corner
-         corner-edge
-         corner-tile-position
-         corner-corner-position
-         corner-edge-position
-         
-         edge-tile
-         edge-corner
-         edge-tile-sign
-         edge-corner-sign
-         
-         subdivision-level-tile-count
-         subdivision-level-corner-count
-         subdivision-level-edge-count
-         grid-tile-count
-         grid-corner-count
-         grid-edge-count
-         
-         grid-tile
-         grid-corner
-         grid-edge)
+(provide (all-defined-out))
 
 (: subdivision-level-tile-count (index -> natural))
 (define (subdivision-level-tile-count n)
