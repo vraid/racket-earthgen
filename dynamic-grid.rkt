@@ -7,8 +7,12 @@
 (require "dynamic-grid-structs.rkt"
          "dynamic-grid-access.rkt"
          "vector3.rkt"
+         "color.rkt"
          "typed-logic.rkt"
          math/flonum)
+
+(require/typed "image-overlay.rkt"
+               (tile-color (flvector3 -> flcolor)))
 
 (define icosahedron-coordinates
   (let* ([x 0.525731112119133606]
@@ -92,11 +96,14 @@
   (let ([tiles (build-vector
                 12
                 (lambda: ([n : Integer])
-                  (tile
-                   empty-tile
-                   (vector-ref icosahedron-coordinates n)
-                   (vector)
-                   (make-vector 5 empty-corner))))])
+                  (let ([coord (vector-ref icosahedron-coordinates n)])
+                    (tile
+                     empty-tile
+                     coord
+                     (vector)
+                     (make-vector 5 empty-corner)
+                     (lambda ()
+                       (data (tile-color coord)))))))])
     (begin
       (for ([n 12])
         (set-tile-tiles!
@@ -169,7 +176,8 @@
           t
           (tile-coordinates t)
           (make-vector (edge-count t) empty-tile)
-          (make-vector (edge-count t) empty-corner))])
+          (make-vector (edge-count t) empty-corner)
+          (tile-data t))])
     (begin
       (cornerize new-tile)
       (set new-tile))))
@@ -203,35 +211,33 @@
 
 (: add-corners (tile tile -> Void))
 (define (add-corners old new)
-  (let* ([i (tile-tile-index old new)]
-         [k (tile-tile-index new old)]
-         [a (tile-corner old i)]
-         [b (tile-corner old (+ i 1))])
-    (begin
-      (vector-set! (tile-corners new) k b)
-      (vector-set! (tile-corners new) (tile-index new (+ k 1)) a)
-      (vector-set! (corner-tiles a) (corner-index a (- (corner-tile-index a old) 1)) new)
-      (vector-set! (corner-tiles b) (corner-index b (+ (corner-tile-index b old) 1)) new))))
+  (begin
+    (add-right-corner old new)
+    (add-left-corner old new)))
+
+(: connect-tiles (tile tile tile -> Void))
+(define (connect-tiles reference left right)
+  (begin
+    (vector-set! (tile-tiles left) (tile-index left (+ (tile-tile-index left reference) 1)) right)
+    (vector-set! (tile-tiles right) (tile-index right (- (tile-tile-index right reference) 1)) left)))
 
 (: add-left (tile tile -> Void))
 (define (add-left t new)
   (let ([left (tile-tile t (+ (tile-tile-index t new) 1))])
     (unless (one-or-both true? (empty-tile? left) (no-empty? new))
       (begin
-        (vector-set! (tile-tiles left) (tile-index left (+ (tile-tile-index left t) 1)) new)
-        (vector-set! (tile-tiles new) (tile-index new (- (tile-tile-index new t) 1)) left)
+        (connect-tiles t left new)
         (add-left-corner left new)
-        (add-left (tile-tile t (+ (tile-tile-index t new) 1)) new)))))
+        (add-left left new)))))
 
 (: add-right (tile tile -> Void))
 (define (add-right t new)
   (let ([right (tile-tile t (- (tile-tile-index t new) 1))])
     (unless (one-or-both true? (empty-tile? right) (no-empty? new))
       (begin
-        (vector-set! (tile-tiles right) (tile-index right (- (tile-tile-index right t) 1)) new)
-        (vector-set! (tile-tiles new) (tile-index new (+ (tile-tile-index new t) 1)) right)
+        (connect-tiles t new right)
         (add-right-corner right new)
-        (add-right (tile-tile t (- (tile-tile-index t new) 1)) new)))))
+        (add-right right new)))))
 
 (: guarantee ((U tile corner) -> (U tile corner)))
 (define (guarantee t)
@@ -255,14 +261,18 @@
            parent
            (coordinates parent)
            (make-vector edge-count empty-tile)
-           (make-vector edge-count empty-corner))])
+           (make-vector edge-count empty-corner)
+           (if (tile? parent)
+               (tile-data parent)
+               (lambda ()
+                 (data (tile-color (coordinates parent))))))])
     (begin
       (let ([n (parent-parent-index parent (tile-parent t))])
         (vector-set! (tile-tiles t) i new-tile)
         (vector-set! (tile-tiles new-tile) n t))
       (add-corners t new-tile)
-      (add-left t new-tile)
       (add-right t new-tile)
+      (add-left t new-tile)
       (cornerize new-tile)
       new-tile)))
 

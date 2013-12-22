@@ -7,12 +7,9 @@
          "matrix3.rkt"
          "logic.rkt"
          "color.rkt"
-         "load-image.rkt"
-         "projection.rkt"
          math/flonum
          sgl/gl)
 
-(define image-path "C:/directory/image.ext")
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation) (quaternion->matrix3
@@ -78,11 +75,7 @@
         
         (for ([tile grid])
           (glBegin GL_TRIANGLE_FAN)
-          (set-gl-color! (let ([v (tile-coordinates tile)]
-                               [m (lambda (n) (/ (+ 1.0 n) 2.0))])
-                           (flcolor (m (flvector-ref v 0))
-                                    (m (flvector-ref v 1))
-                                    (m (flvector-ref v 2)))))
+          (set-gl-color! (data-color ((tile-data tile))))
           (tile-vertices tile)
           (glEnd))
         (void)
@@ -97,16 +90,6 @@
        [style '(no-resize-border
                 no-caption
                 no-system-menu)]))
-
-(define (tile-latitude t)
-  (- (/ pi 2.0)
-     (acos (flvector3-dot-product (tile-coordinates t) (flvector 0.0 0.0 1.0)))))
-
-(define (tile-longitude t)
-  (let* ([coord (tile-coordinates t)]
-         [x (flvector-ref coord 0)]
-         [y (flvector-ref coord 1)])
-    (atan y x)))
 
 (define canvas
   (new
@@ -130,7 +113,7 @@
                 (set! grid (add-one-tile grid))
                 (repaint!))]
          [#\w (begin
-                (set! grid (push (closest-tile grid (flvector 0.0 1.0 0.0))))
+                (set! grid (push (closest-tile grid (flvector -0.5 0.75 0.75))))
                 (repaint!))]
          [#\e (begin
                 (set! grid (pop (closest-tile grid (flvector 0.0 1.0 0.0))))
