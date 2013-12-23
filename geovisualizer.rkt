@@ -2,15 +2,12 @@
 
 (require racket/gui/base
          "dynamic-grid.rkt"
-         "vector3.rkt"
          "quaternion.rkt"
          "matrix3.rkt"
-         "color.rkt"
          math/flonum
          ffi/vector
          ffi/cvector
          ffi/unsafe
-         "gl-vector.rkt"
          (planet stephanh/RacketGL:1:4/rgl))
 
 (define-cstruct _vertex
@@ -21,6 +18,11 @@
    [green _byte]
    [blue _byte]
    [alpha _byte]))
+
+(define uint-size 4)
+(define byte-size 1)
+(define float-size 4)
+(define vertex-size (+ (* 3 float-size) (* 4 byte-size)))
 
 (define longitude pi)
 (define latitude 0.0)
@@ -71,12 +73,12 @@
 (define (init-gl)  
   (set! vertex-buffer (get-buffer-name))
   (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
-  (glBufferData GL_ARRAY_BUFFER (* 16 (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
+  (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
   (glBindBuffer GL_ARRAY_BUFFER 0)
 
   (set! index-buffer (get-buffer-name))
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
-  (glBufferData GL_ELEMENT_ARRAY_BUFFER (* 4 (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
+  (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
 
   (glClearColor 1.0 1.0 1.0 1.0)
@@ -157,9 +159,9 @@
         
         (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
         
-        (glVertexPointer 3 GL_FLOAT 16 0)
+        (glVertexPointer 3 GL_FLOAT vertex-size 0)
         
-        (glColorPointer 4 GL_UNSIGNED_BYTE 16 12)
+        (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
         
         (glBindBuffer GL_ARRAY_BUFFER 0)
         (glEnableClientState GL_VERTEX_ARRAY)
