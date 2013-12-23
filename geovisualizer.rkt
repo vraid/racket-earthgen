@@ -32,7 +32,7 @@
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
 
-(define base-level 4)
+(define base-level 5)
 (define level (+ base-level 0))
 
 (define grid (top-grid))
@@ -48,7 +48,7 @@
     (set-scale!)))
 
 (define (make-grid!)
-  (let* ([base-radius (sqrt 3.9)]
+  (let* ([base-radius (sqrt 3.4)]
          [radius (* base-radius
                     (sqrt (/ (subdivision-level-tile-count base-level)
                              (subdivision-level-tile-count (max base-level
