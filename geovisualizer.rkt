@@ -146,9 +146,6 @@
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
-         [#\q (begin
-                (make-grid!)
-                (repaint!))]
          [#\w (begin
                 (set-level! (+ level 1))
                 (make-grid!)
@@ -160,7 +157,10 @@
          [_ (void)]))
      (define/override (on-event event)
        (if (send event button-up? 'left)
-           (set! mouse-down? false)
+           (begin
+             (set! mouse-down? false)
+             (make-grid!)
+             (repaint!))
            (if mouse-down?
                (begin
                  (set! longitude
