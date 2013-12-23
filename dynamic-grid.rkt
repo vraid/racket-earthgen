@@ -15,8 +15,10 @@
                (coord->color (flvector3 -> flcolor)))
 
 (define-type grid-constraint (flvector3 -> Boolean))
-(: empty-tile-set tile-set)
-(define empty-tile-set (set))
+(define-type tile-list (Listof tile))
+
+(: empty-tile-list tile-list)
+(define empty-tile-list (list))
 
 (define icosahedron-coordinates
   (let* ([x 0.525731112119133606]
@@ -331,28 +333,28 @@
 (define (prune f t)
   t)
 
-(: expand-tile (tile -> tile-set))
+(: expand-tile (tile -> tile-list))
 (define (expand-tile t)
   (foldl (lambda: ([n : Integer]
-                   [st : tile-set])
+                   [ls : tile-list])
            (if (empty-tile? (tile-tile t n))
-               (set-add st (add-tile t n))
-               st))
-         empty-tile-set
+               (cons (add-tile t n) ls)
+               ls))
+         empty-tile-list
          (range (edge-count t))))
 
-(: expand-all (grid-constraint tile-set tile-set -> tile-set))
+(: expand-all (grid-constraint tile-set tile-list -> tile-set))
 (define (expand-all f tiles new-tiles)
-  (if (set-empty? new-tiles)
+  (if (empty? new-tiles)
       tiles
-      (expand-all f (set-union tiles new-tiles)
+      (expand-all f (set-union tiles (list->set new-tiles))
                   (foldl (lambda: ([t : tile]
-                                   [st : tile-set])
+                                   [ls : tile-list])
                            (if (f (tile-coordinates t))
-                               (set-union st (expand-tile t))
-                               st))
-                         empty-tile-set
-                         (set->list new-tiles)))))
+                               (append (expand-tile t) ls)
+                               ls))
+                         empty-tile-list
+                         new-tiles))))
 
 (: expand (flvector3 Flonum tile -> tile-set))
 (define (expand v radius t)

@@ -7,6 +7,8 @@
          "vector3.rkt"
          math/flonum)
 
+; download http://snowy.arsc.alaska.edu/nasa/bmng/world_8km/world.topo.bathy.200405.3x5400x2700.jpg
+; and replace the path
 (define image (load-image/file "C:/Users/vraid/Pictures/earth-satellite.jpg"))
 (define rel->rect
   (relative->rectangular (image-width image) (image-height image)))

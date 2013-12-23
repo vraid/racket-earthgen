@@ -26,8 +26,6 @@
      (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))))
 (define rotation-matrix (rotation))
 (define scale 0.9)
-(define scale-max 100.0)
-(define scale-min 0.5)
 
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
@@ -72,7 +70,6 @@
 (define-values
   (display-width display-height)
   (get-display-size))
-(define planet-entity #f)
 
 (define (flvector->vertex v)
   (glVertex3d (flvector-ref v 0)
@@ -115,7 +112,6 @@
           (set-gl-color! (tile-color tile))
           (tile-vertices tile)
           (glEnd))
-        (void)
         (set! last-draw (current-inexact-milliseconds)))
       (void)))
 
