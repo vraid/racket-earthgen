@@ -12,7 +12,7 @@
          math/flonum)
 
 (require/typed "image-overlay.rkt"
-               (coord->color (flvector3 -> flcolor)))
+               (coord->color (flvector3 -> Bytes)))
 
 (define-type grid-constraint (flvector3 -> Boolean))
 (define-type tile-list (Listof tile))

@@ -7,7 +7,20 @@
          "matrix3.rkt"
          "color.rkt"
          math/flonum
-         sgl/gl)
+         ffi/vector
+         ffi/cvector
+         ffi/unsafe
+         "gl-vector.rkt"
+         (planet stephanh/RacketGL:1:4/rgl))
+
+(define-cstruct _vertex
+  ([x _float]
+   [y _float]
+   [z _float]
+   [red _byte]
+   [green _byte]
+   [blue _byte]
+   [alpha _byte]))
 
 (define longitude pi)
 (define latitude 0.0)
@@ -45,17 +58,68 @@
     (set! level (max base-level n))
     (set-scale!)))
 
+(define vertices #f)
+(define indices #f)
+
+(define vertex-buffer #f)
+(define index-buffer #f)
+
+(define (get-buffer-name)
+  (let ((buffer (glGenBuffers 1)))
+    (u32vector-ref buffer 0)))
+
+(define (init-gl)  
+  (set! vertex-buffer (get-buffer-name))
+  (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
+  (glBufferData GL_ARRAY_BUFFER (* 16 (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
+  (glBindBuffer GL_ARRAY_BUFFER 0)
+
+  (set! index-buffer (get-buffer-name))
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
+  (glBufferData GL_ELEMENT_ARRAY_BUFFER (* 4 (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
+
+  (glClearColor 1.0 1.0 1.0 1.0)
+  )  
+
+(define (->vertex coord color)
+  (make-vertex
+   (flvector-ref coord 0)
+   (flvector-ref coord 1)
+   (flvector-ref coord 2)
+   (bytes-ref color 1)
+   (bytes-ref color 2)
+   (bytes-ref color 3)
+   (bytes-ref color 0)))
+
+(define (make-vertices!)
+  (begin
+    (set! vertices (make-cvector _vertex (* 7 (set-count grid))))
+    (set! indices (make-cvector _uint (* 18 (set-count grid))))
+    (for ([n (set-count grid)]
+          [tile (in-set grid)])
+      (begin
+        (cvector-set! vertices (* n 7) (->vertex (tile-coordinates tile) (tile-color tile)))
+        (for ([i 6])
+          (cvector-set! vertices (+ 1 i (* n 7)) (->vertex (corner-coordinates (tile-corner tile i)) (tile-color tile)))
+          (let ([k (+ (* i 3) (* n 18))])
+            (cvector-set! indices k (* n 7))
+            (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+            (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))))
+
 (define (make-grid!)
-  (let* ([base-radius (sqrt 3.4)]
+  (let* ([base-radius (sqrt 3.2)]
          [radius (* base-radius
                     (sqrt (/ (subdivision-level-tile-count base-level)
                              (subdivision-level-tile-count (max base-level
                                                                 level)))))]
          [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
-    (set! grid (expand v radius (foldl (lambda (n t)
-                                         (push (expand-to v t)))
-                                       (push (set-first (top-grid)))
-                                       (range level))))))
+    (begin
+      (set! grid (expand v (min (sqrt 2.0) radius) (foldl (lambda (n t)
+                                                            (push (expand-to v t)))
+                                                          (push (set-first (top-grid)))
+                                                          (range level))))
+      (make-vertices!))))
 
 (make-grid!)
 
@@ -70,22 +134,6 @@
 (define-values
   (display-width display-height)
   (get-display-size))
-
-(define (flvector->vertex v)
-  (glVertex3d (flvector-ref v 0)
-              (flvector-ref v 1)
-              (flvector-ref v 2)))
-
-(define (tile-vertices tile)
-  (flvector->vertex (tile-coordinates tile))
-  (for ([c (tile-corners tile)])
-    (flvector->vertex (corner-coordinates c)))
-  (flvector->vertex (corner-coordinates (vector-ref (tile-corners tile) 0))))
-
-(define (set-gl-color! c)
-  (glColor3f (flcolor-red c)
-             (flcolor-green c)
-             (flcolor-blue c)))
 
 (define (draw-opengl)
   (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
@@ -107,12 +155,29 @@
         (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
         (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
         
-        (for ([tile grid])
-          (glBegin GL_TRIANGLE_FAN)
-          (set-gl-color! (tile-color tile))
-          (tile-vertices tile)
-          (glEnd))
-        (set! last-draw (current-inexact-milliseconds)))
+        (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
+        
+        (glVertexPointer 3 GL_FLOAT 16 0)
+        
+        (glColorPointer 4 GL_UNSIGNED_BYTE 16 12)
+        
+        (glBindBuffer GL_ARRAY_BUFFER 0)
+        (glEnableClientState GL_VERTEX_ARRAY)
+        (glEnableClientState GL_COLOR_ARRAY)
+        
+        (glClear GL_COLOR_BUFFER_BIT)
+        
+        (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
+        
+        (glDrawElements GL_TRIANGLES
+                        (cvector-length indices)
+                        GL_UNSIGNED_INT
+                        0)
+        
+        (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
+        
+        (glDisableClientState GL_VERTEX_ARRAY)
+        (glDisableClientState GL_COLOR_ARRAY))
       (void)))
 
 (define frame
@@ -145,10 +210,12 @@
          [#\w (begin
                 (set-level! (+ level 1))
                 (make-grid!)
+                (with-gl-context init-gl)
                 (repaint!))]
          [#\e (begin
                 (set-level! (max (- level 1) base-level))
                 (make-grid!)
+                (with-gl-context init-gl)
                 (repaint!))]
          [_ (void)]))
      (define/override (on-event event)
@@ -156,6 +223,7 @@
            (begin
              (set! mouse-down? false)
              (make-grid!)
+             (with-gl-context init-gl)
              (repaint!))
            (if mouse-down?
                (begin
@@ -188,3 +256,5 @@
 (send frame maximize #t) 
 (send frame show #t)
 (send canvas focus)
+
+(send canvas with-gl-context init-gl)

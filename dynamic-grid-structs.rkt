@@ -9,12 +9,18 @@
 (define-type corner-vector (Vectorof corner))
 (define-type tile-set (Setof tile))
 
+(struct: color
+  ([red : Byte]
+   [green : Byte]
+   [blue : Byte]
+   [alpha : Byte]))
+
 (struct: tile
   ([parent : (U tile corner)]
    [coordinates : flvector3]
    [tiles : tile-vector]
    [corners : corner-vector]
-   [color : flcolor])
+   [color : Bytes])
   #:mutable)
 
 (struct: corner
@@ -30,7 +36,7 @@
   (corner (flvector3-zero) (vector) (vector)))
 
 (define no-color
-  (flcolor 0.0 0.0 0.0))
+  (make-bytes 4 0))
 
 (define empty-tile
   (tile empty-corner (flvector3-zero) (vector) (vector) no-color))
