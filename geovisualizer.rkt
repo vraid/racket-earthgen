@@ -4,25 +4,12 @@
          "dynamic-grid.rkt"
          "quaternion.rkt"
          "matrix3.rkt"
+         "opengl.rkt"
          math/flonum
          ffi/vector
          ffi/cvector
          ffi/unsafe
          (planet stephanh/RacketGL:1:4/rgl))
-
-(define-cstruct _vertex
-  ([x _float]
-   [y _float]
-   [z _float]
-   [red _byte]
-   [green _byte]
-   [blue _byte]
-   [alpha _byte]))
-
-(define uint-size 4)
-(define byte-size 1)
-(define float-size 4)
-(define vertex-size (+ (* 3 float-size) (* 4 byte-size)))
 
 (define longitude pi)
 (define latitude 0.0)
@@ -60,32 +47,8 @@
     (set! level (max base-level n))
     (set-scale!)))
 
-(define vertices #f)
-(define indices #f)
-
-(define vertex-buffer #f)
-(define index-buffer #f)
-
-(define (get-buffer-name)
-  (let ((buffer (glGenBuffers 1)))
-    (u32vector-ref buffer 0)))
-
-(define (init-gl)  
-  (set! vertex-buffer (get-buffer-name))
-  (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
-  (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
-  (glBindBuffer GL_ARRAY_BUFFER 0)
-
-  (set! index-buffer (get-buffer-name))
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
-  (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
-
-  (glClearColor 1.0 1.0 1.0 1.0)
-  )  
-
 (define (->vertex coord color)
-  (make-vertex
+  (make-gl-vertex
    (flvector-ref coord 0)
    (flvector-ref coord 1)
    (flvector-ref coord 2)
@@ -95,19 +58,21 @@
    (bytes-ref color 0)))
 
 (define (make-vertices!)
-  (begin
-    (set! vertices (make-cvector _vertex (* 7 (set-count grid))))
-    (set! indices (make-cvector _uint (* 18 (set-count grid))))
-    (for ([n (set-count grid)]
-          [tile (in-set grid)])
-      (begin
-        (cvector-set! vertices (* n 7) (->vertex (tile-coordinates tile) (tile-color tile)))
-        (for ([i 6])
-          (cvector-set! vertices (+ 1 i (* n 7)) (->vertex (corner-coordinates (tile-corner tile i)) (tile-color tile)))
-          (let ([k (+ (* i 3) (* n 18))])
-            (cvector-set! indices k (* n 7))
-            (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
-            (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))))
+  (let ([vertices (make-cvector _gl-vertex (* 7 (set-count grid)))]
+        [indices (make-cvector _uint (* 18 (set-count grid)))])
+    (begin
+      (for ([n (set-count grid)]
+            [tile (in-set grid)])
+        (begin
+          (cvector-set! vertices (* n 7) (->vertex (tile-coordinates tile) (tile-color tile)))
+          (for ([i 6])
+            (cvector-set! vertices (+ 1 i (* n 7)) (->vertex (corner-coordinates (tile-corner tile i)) (tile-color tile)))
+            (let ([k (+ (* i 3) (* n 18))])
+              (cvector-set! indices k (* n 7))
+              (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+              (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))
+      (set-gl-vertex-data vertices)
+      (set-gl-index-data indices))))
 
 (define (make-grid!)
   (let* ([base-radius (sqrt 3.2)]
@@ -117,70 +82,25 @@
                                                                 level)))))]
          [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
     (begin
-      (set! grid (expand v (min (sqrt 2.0) radius) (foldl (lambda (n t)
+      (set! grid (if (zero? level)
+                     (top-grid)
+                     (expand v (min (sqrt 2.0) radius) (foldl (lambda (n t)
                                                             (push (expand-to v t)))
                                                           (push (set-first (top-grid)))
-                                                          (range level))))
+                                                          (range level)))))
       (make-vertices!))))
-
-(make-grid!)
 
 (define mouse-down? false)
 (define mouse-down-x 0)
 (define mouse-down-y 0)
 (define mouse-down-latitude latitude)
 (define mouse-down-longitude longitude)
-(define milliseconds-between-frames 70.0)
+(define milliseconds-between-frames 20.0)
 (define last-draw (current-inexact-milliseconds))
 
 (define-values
   (display-width display-height)
   (get-display-size))
-
-(define (draw-opengl)
-  (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
-      (begin
-        (glFrontFace GL_CCW)
-        (glEnable GL_CULL_FACE)
-        (glCullFace GL_BACK)
-        (glClearColor 0.0 0.0 0.0 0.0)
-        (glClear GL_COLOR_BUFFER_BIT)
-        
-        (glShadeModel GL_SMOOTH)
-        
-        (glMatrixMode GL_PROJECTION)
-        (glLoadIdentity)
-        (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
-              [my (fl/ 1.0 scale)])
-          (glOrtho (- mx) mx (- my) my -2.0 2.0))
-        (glRotatef 90.0 -1.0 0.0 0.0)
-        (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
-        (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
-        
-        (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
-        
-        (glVertexPointer 3 GL_FLOAT vertex-size 0)
-        
-        (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
-        
-        (glBindBuffer GL_ARRAY_BUFFER 0)
-        (glEnableClientState GL_VERTEX_ARRAY)
-        (glEnableClientState GL_COLOR_ARRAY)
-        
-        (glClear GL_COLOR_BUFFER_BIT)
-        
-        (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
-        
-        (glDrawElements GL_TRIANGLES
-                        (cvector-length indices)
-                        GL_UNSIGNED_INT
-                        0)
-        
-        (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
-        
-        (glDisableClientState GL_VERTEX_ARRAY)
-        (glDisableClientState GL_COLOR_ARRAY))
-      (void)))
 
 (define frame
   (new frame%
@@ -196,7 +116,19 @@
    (class* canvas% ()
      (inherit with-gl-context swap-gl-buffers)
      (define/override (on-paint)
-       (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
+       (when (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
+         (begin
+           (with-gl-context (lambda ()
+                              (begin
+                                (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
+                                      [my (fl/ 1.0 scale)])
+                                  (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0))
+                                (for ([quat (list (list 90.0 -1.0 0.0 0.0)
+                                                  (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
+                                                  (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
+                                  (rotate-gl quat))
+                                (draw-gl) (swap-gl-buffers))))
+           (set! last-draw (current-inexact-milliseconds)))))
      (define/override (on-size width height)
        (begin
          (set! display-width width)
@@ -211,21 +143,18 @@
          ['escape (exit)]
          [#\w (begin
                 (set-level! (+ level 1))
-                (make-grid!)
-                (with-gl-context init-gl)
+                (send canvas with-gl-context make-grid!)
                 (repaint!))]
          [#\e (begin
                 (set-level! (max (- level 1) base-level))
-                (make-grid!)
-                (with-gl-context init-gl)
+                (send canvas with-gl-context make-grid!)
                 (repaint!))]
          [_ (void)]))
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
              (set! mouse-down? false)
-             (make-grid!)
-             (with-gl-context init-gl)
+             (send canvas with-gl-context make-grid!)
              (repaint!))
            (if mouse-down?
                (begin
@@ -258,5 +187,5 @@
 (send frame maximize #t) 
 (send frame show #t)
 (send canvas focus)
-
-(send canvas with-gl-context init-gl)
+(send canvas with-gl-context make-grid!)
+(send canvas on-paint)
