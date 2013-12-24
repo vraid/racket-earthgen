@@ -116,7 +116,8 @@
    (class* canvas% ()
      (inherit with-gl-context swap-gl-buffers)
      (define/override (on-paint)
-       (when (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
+       (when (fl< milliseconds-between-frames
+                  (fl- (current-inexact-milliseconds) last-draw))
          (begin
            (with-gl-context (lambda ()
                               (begin
@@ -184,7 +185,7 @@
 
 (define gl-context canvas)
 
-(send frame maximize #t) 
+(send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
 (send canvas with-gl-context make-grid!)

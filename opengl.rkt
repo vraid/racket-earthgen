@@ -6,8 +6,7 @@
          set-gl-index-data
          set-gl-ortho-projection
          rotate-gl
-         draw-gl
-         init-gl)
+         draw-gl)
 
 (require math/flonum
          ffi/vector
@@ -41,22 +40,17 @@
 
 (define (set-gl-vertex-data vertices)
   (set! vertex-data vertices)
-  (set! vertex-buffer (get-buffer-name))
+  (when (not vertex-buffer) (set! vertex-buffer (get-buffer-name)))
   (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
   (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertex-data)) (cvector-ptr vertex-data) GL_STATIC_DRAW)
   (glBindBuffer GL_ARRAY_BUFFER 0))
 
 (define (set-gl-index-data indices)
   (set! index-data indices)
-  (set! index-buffer (get-buffer-name))
+  (when (not index-buffer) (set! index-buffer (get-buffer-name)))
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
   (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length index-data)) (cvector-ptr index-data) GL_DYNAMIC_DRAW)
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0))
-
-(define (init-gl)
-  (set-gl-vertex-data (make-cvector _gl-vertex 0))
-  (set-gl-index-data (make-cvector _uint 0))
-  (glClearColor 1.0 1.0 1.0 1.0))
 
 (define (rotate-gl rotation)
   (apply glRotatef rotation))
