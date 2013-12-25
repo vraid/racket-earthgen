@@ -6,10 +6,10 @@
          set-gl-index-data
          set-gl-ortho-projection
          rotate-gl
+         set-gl-viewport
          draw-gl)
 
-(require math/flonum
-         ffi/vector
+(require ffi/vector
          ffi/cvector
          ffi/unsafe
          (planet stephanh/RacketGL:1:4/rgl))
@@ -59,6 +59,9 @@
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
   (glOrtho left right bottom top near far))
+
+(define (set-gl-viewport left top width height)
+  (glViewport left top width height))
 
 (define (draw-gl)
   (begin

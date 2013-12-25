@@ -6,10 +6,8 @@
          "matrix3.rkt"
          "opengl.rkt"
          math/flonum
-         ffi/vector
          ffi/cvector
-         ffi/unsafe
-         (planet stephanh/RacketGL:1:4/rgl))
+         ffi/unsafe)
 
 (define longitude pi)
 (define latitude 0.0)
@@ -134,7 +132,7 @@
        (begin
          (set! display-width width)
          (set! display-height height)
-         (with-gl-context (lambda () (glViewport 0 0 width height)))))
+         (with-gl-context (lambda () (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))
