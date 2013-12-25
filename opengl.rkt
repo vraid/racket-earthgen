@@ -64,29 +64,28 @@
   (glViewport left top width height))
 
 (define (draw-gl)
-  (begin
-    (glFrontFace GL_CCW)
-    (glEnable GL_CULL_FACE)
-    (glCullFace GL_BACK)
-    (glClearColor 0.0 0.0 0.0 0.0)
-    (glClear GL_COLOR_BUFFER_BIT)
-    (glShadeModel GL_SMOOTH)
-    
-    (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
-    (glVertexPointer 3 GL_FLOAT vertex-size 0)
-    (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
-    (glBindBuffer GL_ARRAY_BUFFER 0)
-    
-    (glEnableClientState GL_VERTEX_ARRAY)
-    (glEnableClientState GL_COLOR_ARRAY)
-    (glClear GL_COLOR_BUFFER_BIT)
-    (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
-    
-    (glDrawElements GL_TRIANGLES
-                    (cvector-length index-data)
-                    GL_UNSIGNED_INT
-                    0)
-    
-    (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
-    (glDisableClientState GL_VERTEX_ARRAY)
-    (glDisableClientState GL_COLOR_ARRAY)))
+  (glFrontFace GL_CCW)
+  (glEnable GL_CULL_FACE)
+  (glCullFace GL_BACK)
+  (glClearColor 0.0 0.0 0.0 0.0)
+  (glClear GL_COLOR_BUFFER_BIT)
+  (glShadeModel GL_SMOOTH)
+  
+  (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
+  (glVertexPointer 3 GL_FLOAT vertex-size 0)
+  (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
+  (glBindBuffer GL_ARRAY_BUFFER 0)
+  
+  (glEnableClientState GL_VERTEX_ARRAY)
+  (glEnableClientState GL_COLOR_ARRAY)
+  (glClear GL_COLOR_BUFFER_BIT)
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
+  
+  (glDrawElements GL_TRIANGLES
+                  (cvector-length index-data)
+                  GL_UNSIGNED_INT
+                  0)
+  
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)
+  (glDisableClientState GL_VERTEX_ARRAY)
+  (glDisableClientState GL_COLOR_ARRAY))

@@ -3,7 +3,6 @@
 (require racket/gui/base
          "dynamic-grid.rkt"
          "quaternion.rkt"
-         "matrix3.rkt"
          "opengl.rkt"
          math/flonum
          ffi/cvector
@@ -12,33 +11,30 @@
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation)
-  (quaternion->matrix3
    (quaternion*
     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
+    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))
 (define (inverse-rotation)
-  (quaternion->matrix3
    (quaternion-inverse
     (quaternion*
      (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
      (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))))
-(define rotation-matrix (rotation))
+     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
 (define scale 0.9)
 
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
 
-(define base-level 5)
+(define base-level 6)
 (define level (+ base-level 0))
 
 (define grid (top-grid))
 
 (define (set-scale!)
   (set! scale (* 0.9 (sqrt (/ (subdivision-level-tile-count (max base-level
-                                                                level))
-                            (subdivision-level-tile-count base-level))))))
+                                                                 level))
+                              (subdivision-level-tile-count base-level))))))
 
 (define (set-level! n)
   (begin
@@ -78,14 +74,16 @@
                     (sqrt (/ (subdivision-level-tile-count base-level)
                              (subdivision-level-tile-count (max base-level
                                                                 level)))))]
-         [v (matrix3-vector3* (inverse-rotation) (flvector 0.0 0.0 1.0))])
+         [v (quaternion-vector* (inverse-rotation) (flvector 0.0 0.0 1.0))])
     (begin
       (set! grid (if (zero? level)
                      (top-grid)
-                     (expand v (min (sqrt 2.0) radius) (foldl (lambda (n t)
-                                                            (push (expand-to v t)))
-                                                          (push (set-first (top-grid)))
-                                                          (range level)))))
+                     (expand v
+                             (min (sqrt 2.0) radius)
+                             (foldl (lambda (n t)
+                                      (push (expand-to v t)))
+                                    (push (set-first (top-grid)))
+                                    (range level)))))
       (make-vertices!))))
 
 (define mouse-down? false)
@@ -132,13 +130,13 @@
        (begin
          (set! display-width width)
          (set! display-height height)
-         (with-gl-context (lambda () (set-gl-viewport 0 0 width height)))))
+         (with-gl-context (lambda ()
+                            (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))
      (define/override (on-char event)
-       (define key-code (send event get-key-code))
-       (match key-code
+       (match (send event get-key-code)
          ['escape (exit)]
          [#\w (begin
                 (set-level! (+ level 1))
@@ -170,14 +168,13 @@
                                             (- mouse-down-y (send event get-y)))
                                            (fl/ pi (* scale -740.0)))))))
                  (on-paint))
-               (if (send event button-down? 'left)
-                   (begin
-                     (set! mouse-down? true)
-                     (set! mouse-down-x (send event get-x))
-                     (set! mouse-down-y (send event get-y))
-                     (set! mouse-down-latitude latitude)
-                     (set! mouse-down-longitude longitude))
-                   (void)))))
+               (when (send event button-down? 'left)
+                 (begin
+                   (set! mouse-down? true)
+                   (set! mouse-down-x (send event get-x))
+                   (set! mouse-down-y (send event get-y))
+                   (set! mouse-down-latitude latitude)
+                   (set! mouse-down-longitude longitude))))))
      (super-instantiate () (style '(gl))))
    [parent frame]))
 

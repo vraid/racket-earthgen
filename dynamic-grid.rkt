@@ -88,7 +88,7 @@
       (connect b n)
       (connect c n)
       n)))
-  
+
 (: cornerize-top (tile -> Void))
 (define (cornerize-top t)
   (for ([n (edge-count t)])
@@ -190,7 +190,9 @@
 (: pop (tile -> tile-set))
 (define (pop t)
   (let ([parent (guarantee (tile-parent t))])
-    (if (or (empty-tile? parent) (and (tile? parent) (empty-tile? (tile-parent parent))))
+    (if (or (empty-tile? parent)
+            (and (tile? parent)
+                 (empty-tile? (tile-parent parent))))
         (top-grid)
         (set (if (tile? parent)
                  parent
@@ -247,7 +249,8 @@
 (: guarantee ((U tile corner) -> (U tile corner)))
 (define (guarantee t)
   (begin
-    (when (and (corner? t) (has-empty? t))
+    (when (and (corner? t)
+               (has-empty? t))
       (let ([n (first (filter (lambda (a)
                                 (not (empty-tile? a)))
                               (vector->list (corner-tiles t))))])
@@ -360,4 +363,5 @@
 (define (expand v radius t)
   (expand-all (lambda: ([coord : flvector3])
                 (>= radius (flvector3-distance v coord)))
-              (set t) (expand-tile t)))
+              (set t)
+              (expand-tile t)))
