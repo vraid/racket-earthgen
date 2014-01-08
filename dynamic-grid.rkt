@@ -71,8 +71,7 @@
 (define (add-corner a b c)
   (let ([n (corner
             (flvector3-normal
-             (apply flvector3+ (map (lambda: ([t : tile])
-                                      (tile-coordinates t))
+             (apply flvector3+ (map tile-coordinates
                                     (list a b c))))
             (vector a b c)
             (make-vector 3 empty-corner))])
@@ -251,8 +250,7 @@
   (begin
     (when (and (corner? t)
                (has-empty? t))
-      (let ([n (first (filter (lambda (a)
-                                (not (empty-tile? a)))
+      (let ([n (first (filter (compose not empty-tile?)
                               (vector->list (corner-tiles t))))])
         (for ([i (list (tile-corner-index n t)
                        (- (tile-corner-index n t) 1))])

@@ -115,23 +115,25 @@
        (when (fl< milliseconds-between-frames
                   (fl- (current-inexact-milliseconds) last-draw))
          (begin
-           (with-gl-context (lambda ()
-                              (begin
-                                (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
-                                      [my (fl/ 1.0 scale)])
-                                  (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0))
-                                (for ([quat (list (list 90.0 -1.0 0.0 0.0)
-                                                  (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
-                                                  (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
-                                  (rotate-gl quat))
-                                (draw-gl) (swap-gl-buffers))))
+           (with-gl-context
+            (lambda ()
+              (begin
+                (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
+                      [my (fl/ 1.0 scale)])
+                  (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0))
+                (for ([quat (list (list 90.0 -1.0 0.0 0.0)
+                                  (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
+                                  (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
+                  (rotate-gl quat))
+                (draw-gl) (swap-gl-buffers))))
            (set! last-draw (current-inexact-milliseconds)))))
      (define/override (on-size width height)
        (begin
          (set! display-width width)
          (set! display-height height)
-         (with-gl-context (lambda ()
-                            (set-gl-viewport 0 0 width height)))))
+         (with-gl-context
+          (lambda ()
+            (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))

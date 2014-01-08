@@ -3,8 +3,7 @@
 (provide (all-defined-out))
 
 (require "types.rkt"
-         "planet-structs.rkt"
-         racket/flonum)
+         "planet-structs.rkt")
 
 (: tile-water-depth (planet index -> Flonum))
 (define (tile-water-depth p n)

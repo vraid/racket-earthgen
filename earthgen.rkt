@@ -1,6 +1,10 @@
 #lang racket
 
 (require racket/gui/base
+         "logic.rkt"
+         "vector3.rkt"
+         "quaternion.rkt"
+         "matrix3.rkt"
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
          "heightmap-functions.rkt"
@@ -8,27 +12,20 @@
          "planet-create.rkt"
          "climate-create.rkt"
          "grid.rkt"
-         "vector3.rkt"
-         "quaternion.rkt"
-         "matrix3.rkt"
-         "logic.rkt"
          "color.rkt"
          "planet-color.rkt"
          "draw-structs.rkt"
-         "load-image.rkt"
-         "projection.rkt"
+         "opengl.rkt"
          math/flonum
-         sgl/gl)
+         ffi/cvector
+         ffi/unsafe)
 
-(define image-path "C:/directory/image.ext")
 (define longitude pi)
 (define latitude 0.0)
-(define (rotation) (quaternion->matrix3
-                    (quaternion*
-                     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
-                     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-                     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
-(define rotation-matrix (rotation))
+(define (rotation) (quaternion*
+                    (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
+                    (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
+                    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))
 (define scale 0.9)
 (define scale-max 100.0)
 (define scale-min 0.5)
@@ -44,6 +41,11 @@
 (define grids (n-grid-list null 0))
 (define draw-tiles (vector))
 (define color-mode color-topography)
+
+(define-values
+  (display-width display-height)
+  (get-display-size))
+(define planet-entity #f)
 
 (define (terrain-gen)
   (begin
@@ -61,55 +63,40 @@
            (grid-tiles->vector (first grids))))
     (method grids)))
 
-(define-values
-  (display-width display-height)
-  (get-display-size))
-(define planet-entity #f)
+(define (color->byte c)
+  (max 0
+       (min 255
+            (inexact->exact
+             (round (fl* 255.0 c))))))
 
-(define (flvector->vertex v)
-  (glVertex3d (flvector-ref v 0)
-              (flvector-ref v 1)
-              (flvector-ref v 2)))
+(define (->gl-vertex coord color)
+  (make-gl-vertex
+   (flvector-ref coord 0)
+   (flvector-ref coord 1)
+   (flvector-ref coord 2)
+   (color->byte (flcolor-red color))
+   (color->byte (flcolor-green color))
+   (color->byte (flcolor-blue color))
+   0))
 
-(define (tile-vertices tile)
-  (flvector->vertex (draw-tile-center tile))
-  (for ([c (draw-tile-corners tile)])
-    (flvector->vertex c))
-  (flvector->vertex (vector-ref (draw-tile-corners tile) 0)))
-
-(define (set-gl-color! c)
-  (glColor3f (flcolor-red c)
-             (flcolor-green c)
-             (flcolor-blue c)))
-
-(define (draw-opengl)
-  (if (fl< milliseconds-between-frames (fl- (current-inexact-milliseconds) last-draw))
-      (begin
-        (glFrontFace GL_CCW)
-        (glEnable GL_CULL_FACE)
-        (glCullFace GL_BACK)
-        (glClearColor 0.0 0.0 0.0 0.0)
-        (glClear GL_COLOR_BUFFER_BIT)
-        
-        (glShadeModel GL_SMOOTH)
-        
-        (glMatrixMode GL_PROJECTION)
-        (glLoadIdentity)
-        (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
-              [my (fl/ 1.0 scale)])
-          (glOrtho (- mx) mx (- my) my -2.0 2.0))
-        (glRotatef 90.0 -1.0 0.0 0.0)
-        (glRotatef (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
-        (glRotatef (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0)
-        
-            (for ([tile draw-tiles])
-              (glBegin GL_TRIANGLE_FAN)
-              (set-gl-color! (draw-tile-color tile))
-              (tile-vertices tile)
-              (glEnd))
-            (void)
-        (set! last-draw (current-inexact-milliseconds)))
-      (void)))
+(define (make-vertices!)
+  (let* ([grid (first grids)]
+         [vertices (make-cvector _gl-vertex (* 7 (grid-tile-count grid)))]
+         [indices (make-cvector _uint (* 18 (grid-tile-count grid)))])
+    (begin
+      (for ([n (grid-tile-count grid)]
+            [tile (grid-tiles grid)])
+        (begin
+          (let ([color (draw-tile-color (vector-ref draw-tiles (tile-id tile)))])
+            (cvector-set! vertices (* n 7) (->gl-vertex (tile-coordinates tile) color))
+            (for ([i 6])
+              (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex (corner-coordinates (grid-corner grid (tile-corner tile i))) color))
+              (let ([k (+ (* i 3) (* n 18))])
+                (cvector-set! indices k (* n 7))
+                (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+                (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))))
+      (set-gl-vertex-data vertices)
+      (set-gl-index-data indices))))
 
 (define frame
   (new frame%
@@ -138,12 +125,28 @@
    (class* canvas% ()
      (inherit with-gl-context swap-gl-buffers)
      (define/override (on-paint)
-       (with-gl-context (lambda () (draw-opengl) (swap-gl-buffers))))
+       (when (fl< milliseconds-between-frames
+                  (fl- (current-inexact-milliseconds) last-draw))
+         (begin
+           (with-gl-context
+            (lambda ()
+              (begin
+                (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
+                      [my (fl/ 1.0 scale)])
+                  (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0))
+                (for ([quat (list (list 90.0 -1.0 0.0 0.0)
+                                  (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
+                                  (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
+                  (rotate-gl quat))
+                (draw-gl) (swap-gl-buffers))))
+           (set! last-draw (current-inexact-milliseconds)))))
      (define/override (on-size width height)
        (begin
          (set! display-width width)
          (set! display-height height)
-         (with-gl-context (lambda () (glViewport 0 0 width height)))))
+         (with-gl-context
+          (lambda ()
+            (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
        (on-paint))
@@ -154,6 +157,7 @@
            (for ([n (tile-count planet-entity)])
              (let ([d-tile (vector-ref draw-tiles n)])
                (set-draw-tile-color! d-tile (f planet-entity n))))
+           (with-gl-context make-vertices!)
            (repaint!))))
      (define (generate-terrain!)
        (begin
@@ -171,24 +175,8 @@
          [#\w (begin
                 (set! planet-entity (climate-next (climate-parameters) planet-entity))
                 (color-planet! planet-entity
-                              color-mode)
+                               color-mode)
                 (repaint!))]
-         [#\e (color-planet! planet-entity
-                             ((lambda ()
-                                (let* ([image (load-image/file image-path)]
-                                       [width (image-width image)]
-                                       [height (image-height image)]
-                                       [rel->rect (relative->rectangular width height)]
-                                       [pixel-color (pixel-color image)])
-                                  (lambda (tile)
-                                    (let* ([lat (tile-latitude tile (planet-grid planet-entity))]
-                                           [lon (tile-longitude tile (planet-grid planet-entity))]
-                                           [coord (equirectangular-projection lon lat)]
-                                           [px (rel->rect coord)]
-                                           [x (vector-ref px 0)]
-                                           [y (vector-ref px 1)])
-                                      (pixel-color x y)
-                                      ))))))]
          [#\a (color-planet! planet-entity
                              base-color)]
          [#\s (color-planet! planet-entity
@@ -242,3 +230,5 @@
 (send frame maximize #t) 
 (send frame show #t)
 (send canvas focus)
+(send canvas with-gl-context (lambda () (set-gl-vertex-data (make-cvector _gl-vertex 0))))
+(send canvas with-gl-context (lambda () (set-gl-index-data (make-cvector _uint 0))))

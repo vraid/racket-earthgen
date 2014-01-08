@@ -55,7 +55,7 @@
    [edges : partial-tile-index-vector])
   #:transparent)
 
-(: partial-tile-edge-count (partial-tile -> natural))
+(: partial-tile-edge-count (partial-tile -> index))
 (define (partial-tile-edge-count partial-tile)
   (if (> 12 (partial-tile-id partial-tile))
       5
@@ -97,7 +97,8 @@
 
 (: partial-corner-tile (partial-corner index -> maybe-index))
 (define (partial-corner-tile c n)
-  (vector-ref (partial-corner-tiles c) (fxmodulo n corner-edge-count)))
+  (vector-ref (partial-corner-tiles c)
+              (fxmodulo n corner-edge-count)))
 
 (struct: partial-edge
   ([id : index]
@@ -253,7 +254,7 @@
                                         false-vector2
                                         false-vector2) edges) edges)))))
           (f (+ 1 tile-id) (next-tile 0 null null corners edges)))))
-
+  
   (let* ([ls (f 0 (list null null null))]
          [tiles (first ls)]
          [corners (second ls)]
@@ -358,7 +359,7 @@
     0
     (build-vector
      12
-     (lambda: ([n : Nonnegative-Fixnum])
+     (lambda: ([n : index])
        (partial-tile
         n
         (vector-ref 0-grid-coordinates n)

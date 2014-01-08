@@ -52,10 +52,10 @@
   (lambda: ([h : heightmap])
     (define empty (lambda: ([n : index]) 0.0))
     (define void-set (lambda: ([n : index]
-                               [f : Flonum]) (void)))
+                               [f : Flonum])
+                       (void)))
     (planet
      grid
-     
      false
      
      (tile-data 

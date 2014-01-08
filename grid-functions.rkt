@@ -2,8 +2,7 @@
 
 (require "types.rkt"
          "vector-util.rkt"
-         "grid-structs.rkt"
-         racket/fixnum)
+         "grid-structs.rkt")
 
 (provide (all-defined-out))
 

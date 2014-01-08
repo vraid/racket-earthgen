@@ -7,7 +7,13 @@
          pseudo-random-list-rest
          make-pseudo-random-list)
 
-(define-type state-vector (Vector Positive-Integer Positive-Integer Positive-Integer Positive-Integer Positive-Integer Positive-Integer))
+(define-type state-vector
+  (Vector Positive-Integer
+          Positive-Integer
+          Positive-Integer
+          Positive-Integer
+          Positive-Integer
+          Positive-Integer))
 
 (: char-max (Integer -> Integer))
 (define (char-max byte-length)
@@ -49,8 +55,10 @@
   (current-pseudo-random-generator
    (vector->pseudo-random-generator
     (pseudo-random-list-state r)))
-  (let ([numbers (build-list n (lambda: ([n : Integer]) (random)))]
-        [state (pseudo-random-generator->vector (current-pseudo-random-generator))])
+  (let ([numbers (build-list n (lambda: ([n : Integer])
+                                 (random)))]
+        [state (pseudo-random-generator->vector
+                (current-pseudo-random-generator))])
     (pseudo-random-list
      numbers
      state)))

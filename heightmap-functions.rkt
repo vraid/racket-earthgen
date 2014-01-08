@@ -43,8 +43,7 @@
 (define (heightmap-raise n h)
   (lambda: ([grids : grid-list])
     ((heightmap-map
-       (lambda: ([a : Flonum])
-         (fl+ a (exact->inexact n)))
+      (curry fl+ (exact->inexact n))
       h)
      grids)))
 

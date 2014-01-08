@@ -6,10 +6,10 @@
 (require "typed-struct-kw.rkt")
 
 (struct:/kw climate-characteristics
-  ([time-of-year : Flonum]
-   [solar-equator : Flonum])
-  #:transparent)
+            ([time-of-year : Flonum]
+             [solar-equator : Flonum])
+            #:transparent)
 
 (struct:/kw climate-parameters
-  ()
-  #:transparent)
+            ()
+            #:transparent)
