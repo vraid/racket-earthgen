@@ -1,10 +1,10 @@
 #lang typed/racket
 
-(require math/flonum
-         racket/vector)
+(require math/flonum)
 
 (provide flvector3
          flvector3-zero
+         flvector3-negative
          flvector3-scale
          flvector3-length
          flvector3-length-squared
@@ -13,15 +13,23 @@
          flvector3-normal
          flvector3+
          flvector3-
+         flvector3-subtract
          flvector3-dot-product
          flvector3-cross-product
-         flvector3-map-mult)
+         flvector3-map-mult
+         flvector3-angle
+         flvector3-projection
+         flvector3-rejection)
 
 (define-type flvector3 FlVector)
 
 (: flvector3-zero (-> flvector3))
 (define (flvector3-zero)
   (flvector 0.0 0.0 0.0))
+
+(: flvector3-negative (flvector3 -> flvector3))
+(define (flvector3-negative v)
+  (flvector3-scale v -1.0))
 
 (: flvector3-length-squared (flvector3 -> Flonum))
 (define (flvector3-length-squared v)
@@ -47,7 +55,7 @@
 
 (: flvector3-normal (flvector3 -> flvector3))
 (define (flvector3-normal a)
-  (if (zero? (flvector3-length a))
+  (if (zero? (flvector3-length-squared a))
       a
       (flvector3-scale a (/ (flvector3-length a)))))
 
@@ -64,6 +72,10 @@
                        [a : flvector3])
                (flvector- a b))
              v vecs)))
+
+(: flvector3-subtract (flvector3 flvector3 -> flvector3))
+(define (flvector3-subtract a b)
+  (flvector- b a))
 
 (: mult (Flonum Flonum * -> Flonum))
 (define (mult a . n)
@@ -101,5 +113,20 @@
 (define (flvector3-cross-product v u)
   (let* ([m (vector 1 2 0)]
          [n (vector 2 0 1)])
-    (flvector3- (col v m u n) 
+    (flvector3- (col v m u n)
               (col v n u m))))
+
+(: flvector3-angle (flvector3 flvector3 -> Flonum))
+(define (flvector3-angle a b)
+  (flacos (fl/ (flvector3-dot-product a b)
+               (flsqrt (+ (flvector3-length-squared a)
+                          (flvector3-length-squared b))))))
+
+(: flvector3-projection (flvector3 flvector3 -> flvector3))
+(define (flvector3-projection target v)
+  (let ([n (flvector3-normal target)])
+    (flvector3-scale n (flvector3-dot-product n v))))
+
+(: flvector3-rejection (flvector3 flvector3 -> flvector3))
+(define (flvector3-rejection rejector v)
+  (flvector3-subtract (flvector3-projection rejector v) v))

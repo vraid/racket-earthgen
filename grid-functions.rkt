@@ -42,9 +42,13 @@
 (define (grid-edge grid n)
   (vector-ref (grid-edges->vector grid) n))
 
+(: tile-id-edge-count (index -> natural))
+(define (tile-id-edge-count tile-id)
+  (if (> 12 tile-id) 5 6))
+
 (: tile-edge-count (tile -> natural))
 (define (tile-edge-count t)
-  (if (> 12 (tile-id t)) 5 6))
+  (tile-id-edge-count (tile-id t)))
 
 (: corner-edge-count natural)
 (define corner-edge-count 3)
