@@ -1,13 +1,7 @@
 #lang racket
 
 (require racket/gui/base
-         "logic.rkt"
-         "vector3.rkt"
          "quaternion.rkt"
-         "matrix3.rkt"
-         "heightmap-structs.rkt"
-         "heightmap-create.rkt"
-         "heightmap-functions.rkt"
          "planet.rkt"
          "planet-create.rkt"
          "climate-create.rkt"
@@ -46,6 +40,12 @@
   (display-width display-height)
   (get-display-size))
 (define planet-entity #f)
+
+; required by terrain-gen
+(require "logic.rkt"
+         "heightmap-structs.rkt"
+         "heightmap-create.rkt"
+         "heightmap-functions.rkt")
 
 (define (terrain-gen)
   (begin
@@ -173,7 +173,7 @@
          ['escape (exit)]
          [#\q (generate-terrain!)]
          [#\w (begin
-                (set! planet-entity (climate-next (climate-parameters) planet-entity))
+                (set! planet-entity (climate-next (climate-default-parameters) planet-entity))
                 (color-planet! planet-entity
                                color-mode)
                 (repaint!))]

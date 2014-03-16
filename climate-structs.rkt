@@ -11,5 +11,5 @@
             #:transparent)
 
 (struct:/kw climate-parameters
-            ()
+            ([season-count : Positive-Integer])
             #:transparent)
