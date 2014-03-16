@@ -1,18 +1,44 @@
 (values
- 6
+ 7
  (let* ([continent (heightmap-map
                     (lambda (a)
                       (if (< 0 a)
                           a
                           (* 2.0 a)))
                     (heightmap-lower
-                     70.0
+                     170.0
                      (heightmap-create
                       (heightmap-parameters/kw
-                       #:seed "earth04"
+                       #:seed "earth0"
                        #:base-level 2
                        #:amplitude 800.0
                        #:persistence 0.65))))]
+        [snakey (let ([width 0.4])
+                  (heightmap-map
+                   (lambda (a)
+                     (/ (- width
+                           (min width
+                                (abs a)))
+                        width))
+                   (heightmap-create
+                    (heightmap-parameters/kw
+                     #:seed "snake"
+                     #:base-level 4
+                     #:amplitude 1.0
+                     #:persistence 0.5))))]
+        [snake-mountain (heightmap-map*
+                         (lambda (a b . ns)
+                           (* a
+                              (abs b)))
+                         snakey
+                         (heightmap-create
+                          (heightmap-parameters/kw
+                           #:seed "mtn"
+                           #:base-level 3
+                           #:amplitude 2200.0
+                           #:persistence 0.6)))]
+                     
+                 
         [mountain-base (heightmap-map*
                         (lambda (a b . ns)
                           (if (both
@@ -54,4 +80,8 @@
          (heightmap-combine
           mountain
           trench-base)])
-   final-terrain))
+;   final-terrain
+
+   (heightmap-combine
+    continent
+ snake-mountain)))
