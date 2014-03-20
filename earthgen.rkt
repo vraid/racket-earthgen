@@ -14,6 +14,10 @@
          ffi/cvector
          ffi/unsafe)
 
+(require profile
+         profile/render-text
+         );profile/render-graphviz)
+
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation) (quaternion*
@@ -50,17 +54,18 @@
 (define (terrain-gen)
   (begin
     (define-values (size method) (load "terrain-gen.rkt"))
-    (set! grids (n-grid-list grids size))
-    (let ([grid (first grids)])
-      (set! draw-tiles
-            (build-vector (grid-tile-count grid)
-                          (lambda (tile)
-                            (draw-tile
-                             (flcolor 0.0 0.0 0.0)
-                             ((grid-tile-coordinates grid) tile)
-                             (build-vector 6
-                                           (lambda (n)
-                                             ((grid-corner-coordinates (first grids)) ((grid-tile-corner grid) tile n)))))))))
+    (unless (and (< 0 (vector-length draw-tiles)) (= size (grid-subdivision-level (first grids))))
+      (set! grids (n-grid-list grids size))
+      (let ([grid (first grids)])
+        (set! draw-tiles
+              (build-vector (grid-tile-count grid)
+                            (lambda (tile)
+                              (draw-tile
+                               (flcolor 0.0 0.0 0.0)
+                               ((grid-tile-coordinates grid) tile)
+                               (build-vector 6
+                                             (lambda (n)
+                                               ((grid-corner-coordinates (first grids)) ((grid-tile-corner grid) tile n))))))))))
     (method grids)))
 
 (define (color->byte c)

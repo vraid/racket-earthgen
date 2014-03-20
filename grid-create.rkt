@@ -105,18 +105,8 @@
       (begin
         (for ([n (* 6 tile-count)])
           (begin
-            (tile-tile-set! n -1)
             (tile-corner-set! n -1)
             (tile-edge-set! n -1)))
-        (for ([n (* 3 corner-count)])
-          (begin
-            (corner-tile-set! n -1)
-            (corner-corner-set! n -1)
-            (corner-edge-set! n -1)))
-        (for ([n (* 2 edge-count)])
-          (begin
-            (edge-tile-set! n -1)
-            (edge-corner-set! n -1)))
         (mutable-grid
          (tile-set! tile-tile-set!)
          (tile-set! tile-corner-set!)

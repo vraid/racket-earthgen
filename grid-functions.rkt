@@ -39,10 +39,14 @@
 
 (: grid-access-position ((grid -> get-grid-index) (index -> natural) grid index index -> Integer))
 (define (grid-access-position f count g n i)
-  (let ([pos (vector-member i (grid-access-vector f count g n))])
-    (if (number? pos)
-        pos
-        -1)))
+  (: iterate (index -> Integer))
+  (define (iterate k)
+    (if (= k (count n))
+        -1
+        (if (= i ((f g) n k))
+            k
+            (iterate (+ 1 k)))))
+  (iterate 0))
 
 (: grid-access-list ((grid -> get-grid-index) (index -> natural) grid index -> index-list))
 (define (grid-access-list f count g n)
