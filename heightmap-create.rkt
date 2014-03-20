@@ -1,18 +1,17 @@
 #lang typed/racket
 
+(provide heightmap-create
+         heightmap-function
+         (struct-out heightmap-parameters)
+         heightmap-parameters/kw)
+
 (require "types.rkt"
          "grid.rkt"
          "pseudo-random-list.rkt"
          "heightmap-structs.rkt"
          "grid-list.rkt"
          "typed-struct-kw.rkt"
-         math/flonum
-         racket/unsafe/ops)
-
-(provide heightmap-create
-         heightmap-function
-         (struct-out heightmap-parameters)
-         heightmap-parameters/kw)
+         math/flonum)
 
 (define-type heightmap-function (grid-list -> heightmap))
 
@@ -29,8 +28,8 @@
 (: average-elevation (grid FlVector index -> Flonum))
 (define (average-elevation g tile-elevation corner)
   (let ([f (grid-corner-tile g)])
-    (unsafe-fl/ (unsafe-fl+ (flvector-ref tile-elevation (f corner 0))
-              (unsafe-fl+ (flvector-ref tile-elevation (f corner 1))
+    (fl/ (fl+ (flvector-ref tile-elevation (f corner 0))
+              (fl+ (flvector-ref tile-elevation (f corner 1))
                    (flvector-ref tile-elevation (f corner 2))))
          inexact-corner-edge-count)))
 
