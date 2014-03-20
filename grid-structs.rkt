@@ -5,99 +5,21 @@
 (require racket/fixnum
          racket/vector
          "types.rkt"
-         "index-vector.rkt"
          "vector3.rkt")
 
-(define-type tile-list (Listof tile))
-(define-type corner-list (Listof corner))
-(define-type edge-list (Listof edge))
-(define-type tile-vector (Vectorof tile))
-(define-type corner-vector (Vectorof corner))
-(define-type edge-vector (Vectorof edge))
-(define-type tile-index-vector index-vector)
-(define-type corner-index-vector index-vector3)
-(define-type edge-index-vector index-vector2)
-
-(struct: tile
-  ([id : index]
-   [coordinates : flvector3]
-   [tiles->vector : tile-index-vector]
-   [corners->vector : tile-index-vector]
-   [edges->vector : tile-index-vector])
-  #:transparent)
-
-(struct: corner
-  ([id : index]
-   [coordinates : flvector3]
-   [tiles->vector : corner-index-vector]
-   [corners->vector : corner-index-vector]
-   [edges->vector : corner-index-vector])
-  #:transparent)
-
-(struct: edge
-  ([id : index]
-   [tiles->vector : edge-index-vector]
-   [corners->vector : edge-index-vector])
-  #:transparent)
+(define-type get-grid-flvector3 (index -> flvector3))
+(define-type get-grid-index (Integer Integer -> Integer))
 
 (struct: grid
-  ([subdivision-level : index]
-   [tiles->vector : tile-vector]
-   [corners->vector : corner-vector]
-   [edges->vector : edge-vector])
+  ([subdivision-level : natural]
+   [tile-coordinates : get-grid-flvector3]
+   [corner-coordinates : get-grid-flvector3]
+   [tile-tile : get-grid-index]
+   [tile-corner : get-grid-index]
+   [tile-edge : get-grid-index]
+   [corner-tile : get-grid-index]
+   [corner-corner : get-grid-index]
+   [corner-edge : get-grid-index]
+   [edge-tile : get-grid-index]
+   [edge-corner : get-grid-index])
   #:transparent)
-
-(: tile-tiles (tile -> index-list))
-(define (tile-tiles a)
-  (vector->list
-   (tile-tiles->vector a)))
-
-(: tile-corners (tile -> index-list))
-(define (tile-corners a)
-  (vector->list
-   (tile-corners->vector a)))
-
-(: tile-edges (tile -> index-list))
-(define (tile-edges a)
-  (vector->list
-   (tile-edges->vector a)))
-
-(: corner-tiles (corner -> index-list))
-(define (corner-tiles a)
-  (vector->list
-   (corner-tiles->vector a)))
-
-(: corner-corners (corner -> index-list))
-(define (corner-corners a)
-  (vector->list
-   (corner-corners->vector a)))
-
-(: corner-edges (corner -> index-list))
-(define (corner-edges a)
-  (vector->list
-   (corner-edges->vector a)))
-
-(: edge-tiles (edge -> index-list))
-(define (edge-tiles a)
-  (vector->list
-   (edge-tiles->vector a)))
-
-(: edge-corners (edge -> index-list))
-(define (edge-corners a)
-  (vector->list
-   (edge-corners->vector a)))
-
-(: grid-tiles (grid -> tile-list))
-(define (grid-tiles a)
-  (vector->list
-   (grid-tiles->vector a)))
-
-(: grid-corners (grid -> corner-list))
-(define (grid-corners a)
-  (vector->list
-   (grid-corners->vector a)))
-
-(: grid-edges (grid -> edge-list))
-(define (grid-edges a)
-  (vector->list
-   (grid-edges->vector a)))

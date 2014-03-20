@@ -9,6 +9,7 @@
 
 (require "types.rkt"
          "grid.rkt"
+         "vector3.rkt"
          "planet-typed-data-structs.rkt")
 
 (struct: planet
@@ -32,6 +33,57 @@
 
 (require (for-syntax racket/syntax
                      racket/list))
+
+(define-syntax (planet-grid-access stx)
+  (syntax-case stx ()
+    [(_ id struct ([field] ...))
+     (with-syntax ([(function ...) (map (lambda (field)
+                                          (format-id stx "~a-~a" #'struct field))
+                                        (syntax->list #'(field ...)))]
+                   [(struct-function ...) (map (lambda (field)
+                                                 (format-id stx "grid-~a-~a" #'struct field))
+                                               (syntax->list #'(field ...)))])
+       #'(begin
+           (provide function ...)
+           (: function (id index index -> index)) ...
+           (define (function p n i)
+             ((struct-function (planet-grid p)) n i)) ...))]))
+
+(planet-grid-access planet tile
+                    ([tile]
+                     [corner]
+                     [edge]))
+
+(planet-grid-access planet corner
+                    ([tile]
+                     [corner]
+                     [edge]))
+
+(planet-grid-access planet edge
+                    ([tile]
+                     [corner]))
+
+(define-syntax (grid-field-access stx)
+  (syntax-case stx ()
+    [(_ id struct ([field type] ...))
+     (with-syntax ([(function ...) (map (lambda (field)
+                                          (format-id stx "~a-~a" #'struct field))
+                                        (syntax->list #'(field ...)))]
+                   [(struct-function ...) (map (lambda (field)
+                                                 (format-id stx "grid-~a-~a" #'struct field))
+                                               (syntax->list #'(field ...)))])
+       
+       #'(begin
+           (provide function ...)
+           (: function (id index -> type)) ...
+           (define (function p n)
+             ((struct-function (planet-grid p)) n)) ...))]))
+
+(grid-field-access planet tile
+                   ([coordinates flvector3]))
+
+(grid-field-access planet corner
+                   ([coordinates flvector3]))
 
 (define-syntax (direct-access stx)
   (syntax-case stx ()

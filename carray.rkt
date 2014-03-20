@@ -1,10 +1,24 @@
 #lang racket
 
-(provide struct-array)
+(provide struct-array
+         make-c-array
+         make-int-array)
 
 (require ffi/unsafe)
 (require (for-syntax racket/syntax
                      racket/list))
+
+(define (make-c-array type length)
+  (let* ([arr-type (_array type length)]
+         [arr (malloc arr-type)]
+         [ref (lambda (n)
+                (ptr-ref arr type n))]
+         [set! (lambda (n k)
+                 (ptr-set! arr type n k))])
+    (values ref set!)))
+
+(define (make-int-array length)
+  (make-c-array _int length))
 
 (define-syntax (struct-array stx)
   (syntax-case stx ()

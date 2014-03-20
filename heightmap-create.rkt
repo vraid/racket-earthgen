@@ -22,12 +22,12 @@
              [persistence : Flonum])
             #:transparent)
 
-(: average-elevation (FlVector corner -> Flonum))
-(define (average-elevation tile-elevation corner)
+(: average-elevation (grid FlVector index -> Flonum))
+(define (average-elevation g tile-elevation corner)
   (fl/ (foldl fl+
               0.0
               (map (lambda: ([n : index]) (flvector-ref tile-elevation n))
-                   (corner-tiles corner)))
+                   (grid-corner-tile-list g corner)))
        (exact->inexact corner-edge-count)))
 
 (: elevation-from-number (Flonum Flonum -> Flonum))
@@ -70,14 +70,14 @@
                                     (make-pseudo-random-list (heightmap-parameters-seed parameters)))]
                        [numbers (list->flvector (pseudo-random-list-numbers random-gen))]
                        [tile-elevation (vector->flvector
-                                        (vector-map (lambda: ([t : tile])
-                                                      (elevation-from numbers (heightmap-parameters-amplitude parameters) (tile-id t)))
-                                                    (grid-tiles->vector grid)))]
+                                        (build-vector (grid-tile-count grid)
+                                                      (lambda: ([t : index])
+                                                        (elevation-from numbers (heightmap-parameters-amplitude parameters) t))))]
                        [corner-elevation (vector->flvector
-                                          (vector-map (lambda: ([c : corner])
-                                                        (fl+ (average-elevation tile-elevation c)
-                                                             (elevation-from numbers scale (+ (corner-id c) (grid-tile-count grid)))))
-                                                      (grid-corners->vector grid)))])
+                                          (build-vector (grid-corner-count grid)
+                                                        (lambda: ([c : index])
+                                                          (fl+ (average-elevation grid tile-elevation c)
+                                                               (elevation-from numbers scale (+ c (grid-tile-count grid)))))))])
                   (list
                    (heightmap
                     tile-elevation
@@ -96,10 +96,10 @@
                                         (heightmap-tiles previous-terrain)
                                         (heightmap-corners previous-terrain))]
                        [corner-elevation (vector->flvector 
-                                          (vector-map (lambda: ([c : corner])
-                                                        (fl+ (average-elevation tile-elevation c)
-                                                             (elevation-from numbers scale (corner-id c))))
-                                                      (grid-corners->vector grid)))])
+                                          (build-vector (grid-corner-count grid)
+                                                        (lambda: ([c : index])
+                                                          (fl+ (average-elevation grid tile-elevation c)
+                                                               (elevation-from numbers scale c)))))])
                   (list
                    (heightmap
                     tile-elevation

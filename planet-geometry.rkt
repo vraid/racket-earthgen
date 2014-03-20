@@ -16,30 +16,36 @@
 
 (: tile-latitude (planet index -> Flonum))
 (define (tile-latitude p n)
-  (coordinate-latitude p (tile-coordinates (grid-tile (planet-grid p) n))))
+  (coordinate-latitude p (tile-coordinates p n)))
 
-(: tile-corner-angle (index index -> Flonum))
-(define (tile-corner-angle n i)
+(: tile-corner-angle (planet index index -> Flonum))
+(define (tile-corner-angle p n i)
   (* tau
      (exact->inexact
-      (/ i (tile-id-edge-count n)))))
+      (/ i (tile-edge-count n)))))
 
-(: tile-tile-angle (index index -> Flonum))
-(define (tile-tile-angle n i)
-  (let ([count (tile-id-edge-count n)])
+(: tile-tile-angle (planet index index -> Flonum))
+(define (tile-tile-angle p n i)
+  (let ([count (tile-edge-count n)])
     (* tau
        (exact->inexact
         (/ (+ i (/ 1 2 count))
            count)))))
 
+(: tile-polar? (planet index -> Boolean))
+(define (tile-polar? p n)
+  (let* ([v (tile-coordinates p n)]
+         [axis (planet-axis p)]
+         [corner-dist (flvector3-distance-squared v (corner-coordinates p (tile-corner p n 0)))])
+    (or (> corner-dist (flvector3-distance-squared v axis))
+        (> corner-dist (flvector3-distance-squared v (flvector3-negative axis))))))
+
 (: tile-north (planet index -> Flonum))
 (define (tile-north p n)
   (let* ([axis (planet-axis p)]
-         [grid (planet-grid p)]
-         [tile (grid-tile grid n)]
-         [v (tile-coordinates tile)]
+         [v (tile-coordinates p n)]
          [u (flvector3-rejection axis v)]
-         [c (flvector3-rejection u (corner-coordinates (grid-corner grid (tile-corner tile 0))))]
+         [c (flvector3-rejection u (corner-coordinates p (tile-corner p n 0)))]
          [angle (flvector3-angle axis c)]
          [cross (flvector3-cross-product u axis)]
          [sign (if (< (flvector3-distance-squared c cross)

@@ -24,18 +24,16 @@
 
 (: tile-area (planet index -> Flonum))
 (define (tile-area p t)
-  (define grid (planet-grid p))
-  (define tile (grid-tile grid t))
   (foldl
    fl+
    0.0
    (map (lambda: ([n : Integer])
           (segment-area
            (planet-radius p)
-           (tile-coordinates tile)
-           (corner-coordinates (grid-corner grid (tile-corner tile n)))
-           (corner-coordinates (grid-corner grid (tile-corner tile (+ n 1))))))
-        (range 1 (tile-edge-count tile)))))
+           (tile-coordinates p t)
+           (corner-coordinates p (tile-corner p t n))
+           (corner-coordinates p (tile-corner p t (+ n 1)))))
+        (range 1 (tile-edge-count t)))))
 
 (: natural->integer (natural -> Integer))
 (define (natural->integer n)

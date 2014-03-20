@@ -2,8 +2,7 @@
 
 (provide (all-defined-out))
 
-(define-type index natural)
-(define-type natural Nonnegative-Integer)
+(define-type natural Natural)
 (define-type (maybe a) (U False a))
 
 (: nothing False)
@@ -20,3 +19,25 @@
   (if (not maybe-value)
       default
       maybe-value))
+
+(require (for-syntax racket/syntax
+                     racket/list))
+
+(define-syntax (define-contained-type stx)
+  (syntax-case stx ()
+    [(_ id type)
+     (with-syntax ([type-list (format-id stx "~a-list" #'id)]
+                   [type-set (format-id stx "~a-set" #'id)]
+                   [type-vector (format-id stx "~a-vector" #'id)])
+       #'(begin
+           (provide id)
+           (provide type-list)
+           (provide type-set)
+           (provide type-vector)
+           (define-type id type)
+           (define-type type-list (Listof type))
+           (define-type type-set (Setof type))
+           (define-type type-vector (Vectorof type))))]))
+
+(define-contained-type index Integer)
+(define-contained-type maybe-index (maybe index))

@@ -51,16 +51,16 @@
   (begin
     (define-values (size method) (load "terrain-gen.rkt"))
     (set! grids (n-grid-list grids size))
-    (set! draw-tiles
-          (vector-map
-           (lambda (tile)
-             (draw-tile
-              (flcolor 0.0 0.0 0.0)
-              (tile-coordinates tile)
-              (build-vector 6
-                            (lambda (n)
-                              (corner-coordinates (grid-corner (first grids) (tile-corner tile n)))))))
-           (grid-tiles->vector (first grids))))
+    (let ([grid (first grids)])
+      (set! draw-tiles
+            (build-vector (grid-tile-count grid)
+                          (lambda (tile)
+                            (draw-tile
+                             (flcolor 0.0 0.0 0.0)
+                             ((grid-tile-coordinates grid) tile)
+                             (build-vector 6
+                                           (lambda (n)
+                                             ((grid-corner-coordinates (first grids)) ((grid-tile-corner grid) tile n)))))))))
     (method grids)))
 
 (define (color->byte c)
@@ -84,13 +84,12 @@
          [vertices (make-cvector _gl-vertex (* 7 (grid-tile-count grid)))]
          [indices (make-cvector _uint (* 18 (grid-tile-count grid)))])
     (begin
-      (for ([n (grid-tile-count grid)]
-            [tile (grid-tiles grid)])
+      (for ([n (grid-tile-count grid)])
         (begin
-          (let ([color (draw-tile-color (vector-ref draw-tiles (tile-id tile)))])
-            (cvector-set! vertices (* n 7) (->gl-vertex (tile-coordinates tile) color))
+          (let ([color (draw-tile-color (vector-ref draw-tiles n))])
+            (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
             (for ([i 6])
-              (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex (corner-coordinates (grid-corner grid (tile-corner tile i))) color))
+              (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i)) color))
               (let ([k (+ (* i 3) (* n 18))])
                 (cvector-set! indices k (* n 7))
                 (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
@@ -112,13 +111,6 @@
    (vector-length (grid-tile-count (planet-grid planet-entity)))
    (lambda (n)
      (f planet-entity n))))
-
-(define (tile-longitude tile-id grid)
-  (let* ([t (grid-tile grid tile-id)]
-         [coord (tile-coordinates t)]
-         [x (flvector-ref coord 0)]
-         [y (flvector-ref coord 1)])
-    (atan y x)))
 
 (define canvas
   (new

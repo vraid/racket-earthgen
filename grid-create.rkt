@@ -3,7 +3,7 @@
 (require racket/fixnum
          racket/flonum
          "types.rkt"
-         "index-vector.rkt"
+         "typed-arrays.rkt"
          "vector-util.rkt"
          "vector3.rkt"
          "grid-structs.rkt"
@@ -12,113 +12,22 @@
 (provide n-grid
          subdivided-grid)
 
-(define-type partial-tile-list (Listof partial-tile))
-(define-type partial-corner-list (Listof partial-corner))
-(define-type partial-edge-list (Listof partial-edge))
-(define-type partial-tile-vector (Vectorof partial-tile))
-(define-type partial-corner-vector (Vectorof partial-corner))
-(define-type partial-edge-vector (Vectorof partial-edge))
-(define-type partial-tile-index-vector maybe-index-vector)
-(define-type partial-corner-index-vector maybe-index-vector3)
-(define-type partial-edge-index-vector maybe-index-vector2)
+(define-type set-grid-index (index Integer index -> Void))
 
-(: false-vector2 maybe-index-vector2)
-(define false-vector2
-  (vector #f #f))
-(: false-vector3 maybe-index-vector3)
-(define false-vector3
-  (vector #f #f #f))
-(: false-vector5 maybe-index-vector)
-(define false-vector5
-  (vector #f #f #f #f #f))
-(: false-vector6 maybe-index-vector)
-(define false-vector6
-  (vector #f #f #f #f #f #f))
+(struct: mutable-grid
+  ([tile-tile-set! : set-grid-index]
+   [tile-corner-set! : set-grid-index]
+   [tile-edge-set! : set-grid-index]
+   [corner-tile-set! : set-grid-index]
+   [corner-corner-set! : set-grid-index]
+   [corner-edge-set! : set-grid-index]
+   [edge-tile-set! : set-grid-index]
+   [edge-corner-set! : set-grid-index]
+   [grid : grid]))
 
-(: zero-vector2 index-vector2)
-(define zero-vector2
-  (vector 0 0))
+(define-type flvector-vector (Vectorof FlVector))
 
-(: zero-vector3 index-vector3)
-(define zero-vector3
-  (vector 0 0 0))
-
-(: zero-vector6 index-vector)
-(define zero-vector6
-  (vector 0 0 0 0 0 0))
-
-(struct: partial-tile
-  ([id : index]
-   [coordinates : flvector3]
-   [tiles : tile-index-vector]
-   [corners : partial-tile-index-vector]
-   [edges : partial-tile-index-vector])
-  #:transparent)
-
-(: partial-tile-edge-count (partial-tile -> index))
-(define (partial-tile-edge-count partial-tile)
-  (if (> 12 (partial-tile-id partial-tile))
-      5
-      6))
-
-(: partial-tile-tile (partial-tile Integer -> index))
-(define (partial-tile-tile t n)
-  (vector-ref (partial-tile-tiles t) (modulo n (partial-tile-edge-count t))))
-
-(: partial-tile-corner (partial-tile Integer -> maybe-index))
-(define (partial-tile-corner t n)
-  (vector-ref (partial-tile-corners t) (modulo n (partial-tile-edge-count t))))
-
-(: partial-tile-edge (partial-tile Integer -> maybe-index))
-(define (partial-tile-edge t n)
-  (vector-ref (partial-tile-edges t) (modulo n (partial-tile-edge-count t))))
-
-(: partial-tile-tile-position (partial-tile index -> index))
-(define (partial-tile-tile-position r t)
-  (vector-index t (partial-tile-tiles r)))
-
-(: partial-tile-corner-position (partial-tile index -> maybe-index))
-(define (partial-tile-corner-position t c)
-  (vector-member c (partial-tile-corners t)))
-
-(: partial-tile-edge-position (partial-tile index -> maybe-index))
-(define (partial-tile-edge-position t e)
-  (vector-member e (partial-tile-edges t)))
-
-(struct: partial-corner
-  ([id : index]
-   [first-tile : index]
-   [position : index]
-   [coordinates : (maybe flvector3)]
-   [tiles : partial-corner-index-vector]
-   [corners : partial-corner-index-vector]
-   [edges : partial-corner-index-vector])
-  #:transparent)
-
-(: partial-corner-tile (partial-corner index -> maybe-index))
-(define (partial-corner-tile c n)
-  (vector-ref (partial-corner-tiles c)
-              (fxmodulo n corner-edge-count)))
-
-(struct: partial-edge
-  ([id : index]
-   [first-tile : index]
-   [position : index]
-   [tiles : partial-edge-index-vector]
-   [corners : partial-edge-index-vector])
-  #:transparent)
-
-(struct: partial-grid
-  ([subdivision-level : index]
-   [tiles : (maybe partial-tile-vector)]
-   [corners : (maybe partial-corner-vector)]
-   [edges : (maybe partial-edge-vector)])
-  #:transparent)
-
-(: not-none? (maybe-index -> Boolean))
-(define (not-none? n)
-  (not (false? n)))
-
+(: 0-grid-coordinates flvector-vector)
 (define 0-grid-coordinates
   (let* ([x 0.525731112119133606]
          [z 0.850650808352039932]
@@ -154,225 +63,216 @@
    (vector 1 8 3 7 6)
    (vector 0 6 7 2 9)))
 
-(: maybe-index->index (maybe-index -> index))
-(define (maybe-index->index n)
-  (if (not n)
-      0
-      n))
+(: allocate-grid (Natural flvector-vector -> mutable-grid))
+(define (allocate-grid subdivision-level tile-coordinates)
+  (let* ([tile-count (subdivision-level-tile-count subdivision-level)]
+         [corner-count (subdivision-level-corner-count subdivision-level)]
+         [edge-count (subdivision-level-edge-count subdivision-level)]
+         [empty-coordinates (lambda: ([n : Integer]) (flvector))]
+         [tile-get (lambda: ([f : (Integer -> Integer)])
+                     (lambda: ([n : Integer]
+                               [i : Integer])
+                       (f (+ (* 6 n) (modulo i (tile-edge-count n))))))]
+         [fixed-get (lambda: ([count : Natural]
+                              [f : (Integer -> Integer)])
+                      (lambda: ([n : Integer]
+                                [i : Integer])
+                        (f (+ (* count n) (modulo i count)))))]
+         [corner-get (curry fixed-get 3)]
+         [edge-get (curry fixed-get 2)]
+         [tile-set! (lambda: ([f : (Integer Integer -> Void)])
+                      (lambda: ([n : Integer]
+                                [i : Integer]
+                                [k : Integer])
+                        (f (+ (* 6 n) (modulo i (tile-edge-count n))) k)))]
+         [fixed-set! (lambda: ([count : Natural]
+                               [f : (Integer Integer -> Void)])
+                       (lambda: ([n : Integer]
+                                 [i : Integer]
+                                 [k : Integer])
+                         (f (+ (* count n) (modulo i count)) k)))]
+         [corner-set! (curry fixed-set! 3)]
+         [edge-set! (curry fixed-set! 2)])
+    (let-values
+        ([(tile-tile tile-tile-set!) (make-int-array (* 6 tile-count))]
+         [(tile-corner tile-corner-set!) (make-int-array (* 6 tile-count))]
+         [(tile-edge tile-edge-set!) (make-int-array (* 6 tile-count))]
+         [(corner-tile corner-tile-set!) (make-int-array (* 3 corner-count))]
+         [(corner-corner corner-corner-set!) (make-int-array (* 3 corner-count))]
+         [(corner-edge corner-edge-set!) (make-int-array (* 3 corner-count))]
+         [(edge-tile edge-tile-set!) (make-int-array (* 2 edge-count))]
+         [(edge-corner edge-corner-set!) (make-int-array (* 2 edge-count))])
+      (begin
+        (for ([n (* 6 tile-count)])
+          (begin
+            (tile-tile-set! n -1)
+            (tile-corner-set! n -1)
+            (tile-edge-set! n -1)))
+        (for ([n (* 3 corner-count)])
+          (begin
+            (corner-tile-set! n -1)
+            (corner-corner-set! n -1)
+            (corner-edge-set! n -1)))
+        (for ([n (* 2 edge-count)])
+          (begin
+            (edge-tile-set! n -1)
+            (edge-corner-set! n -1)))
+        (mutable-grid
+         (tile-set! tile-tile-set!)
+         (tile-set! tile-corner-set!)
+         (tile-set! tile-edge-set!)
+         (corner-set! corner-tile-set!)
+         (corner-set! corner-corner-set!)
+         (corner-set! corner-edge-set!)
+         (edge-set! edge-tile-set!)
+         (edge-set! edge-corner-set!)
+         (grid
+          subdivision-level
+          (lambda: ([n : index]) (vector-ref tile-coordinates n))
+          empty-coordinates
+          (tile-get tile-tile)
+          (tile-get tile-corner)
+          (tile-get tile-edge)
+          (corner-get corner-tile)
+          (corner-get corner-corner)
+          (corner-get corner-edge)
+          (edge-get edge-tile)
+          (edge-get edge-corner)))))))
 
-(: tile+corners+edges (partial-tile partial-tile-index-vector partial-tile-index-vector -> partial-tile))
-(define (tile+corners+edges t c e)
-  (partial-tile
-   (partial-tile-id t)
-   (partial-tile-coordinates t)
-   (partial-tile-tiles t)
-   c
-   e))
+(: tile-coordinates (grid -> flvector-vector))
+(define (tile-coordinates grid)
+  (let* ([tile-count (grid-tile-count grid)]
+         [corner-count (grid-corner-count grid)]
+         [total (+ tile-count corner-count)])
+    (build-vector total
+                  (lambda: ([n : index])
+                    (if (< n tile-count)
+                        ((grid-tile-coordinates grid) n)
+                        ((grid-corner-coordinates grid) (- n tile-count)))))))
 
-(: partial-tiles (grid -> partial-tile-vector))
-(define (partial-tiles grid)
-  (define tiles (grid-tiles->vector grid))
-  (define corners (grid-corners->vector grid))
-  (define tile-count (grid-tile-count grid))
-  (define corner-count (grid-corner-count grid))
-  (vector-append
-   (vector-map
-    (lambda: ([t : tile])
-      (let ([n-false-vector (if (= 5 (tile-edge-count t))
-                                false-vector5
-                                false-vector6)])
-        (partial-tile
-         (tile-id t)
-         (tile-coordinates t)
-         (vector-map (lambda: ([n : index]) 
-                       (+ n tile-count))
-                     (tile-corners->vector t))
-         n-false-vector
-         n-false-vector)))
-    tiles)
-   (vector-map
-    (lambda: ([c : corner])
-      (partial-tile
-       (+ tile-count (corner-id c))
-       (corner-coordinates c)
-       (build-vector 6 (lambda: ([n : index])
-                         (if (even? n)
-                             (+ tile-count (corner-corner c (round (/ n 2))))
-                             (corner-tile c (round (/ (- n 1) 2))))))
-       false-vector6
-       false-vector6))
-    (grid-corners->vector grid))))
+(: corner-coordinates (grid -> flvector-vector))
+(define (corner-coordinates grid)
+  (build-vector
+   (grid-corner-count grid)
+   (lambda: ([n : index])
+     (flvector3-normal
+      (apply flvector3+
+             (map (lambda: ([i : index])
+                    ((grid-tile-coordinates grid) i))
+                  (grid-corner-tile-list grid n)))))))
 
-(: part-grid (index partial-tile-vector -> partial-grid))
-(define (part-grid subdivision-level tile-structure)  
-  (: f (index (List partial-tile-list partial-corner-list partial-edge-list) -> (List partial-tile-list partial-corner-list partial-edge-list)))
-  (define (f tile-id ls)
-    (define tiles (first ls))
-    (define corners (second ls))
-    (define edges (third ls))
-    (if (= tile-id (subdivision-level-tile-count subdivision-level))
-        (list tiles corners edges)
-        (let ([tile (vector-ref tile-structure tile-id)])
-          (: next-tile (index maybe-index-list maybe-index-list partial-corner-list partial-edge-list -> (List partial-tile-list partial-corner-list partial-edge-list)))
-          (define (next-tile n tile-corners tile-edges corners edges)
-            (let ([next-corner-id (if (empty? corners)
-                                      0
-                                      (+ 1 (partial-corner-id (first corners))))]
-                  [next-edge-id (if (empty? edges)
-                                    0
-                                    (+ 1 (partial-edge-id (first edges))))]
-                  [new-corner? (= tile-id (min tile-id (partial-tile-tile tile n) (partial-tile-tile tile (- n 1))))]
-                  [new-edge? (< tile-id (partial-tile-tile tile n))])
-              (if (= n (partial-tile-edge-count tile))
-                  (list (cons 
-                         (tile+corners+edges
-                          tile
-                          (list->vector (reverse tile-corners))
-                          (list->vector (reverse tile-edges)))
-                         tiles)
-                        corners
-                        edges)
-                  (next-tile (+ 1 n)
-                             (cons (if new-corner? next-corner-id false) tile-corners)
-                             (cons (if new-edge? next-edge-id false) tile-edges)
-                             (if new-corner?
-                                 (cons (partial-corner 
-                                        next-corner-id
-                                        tile-id
-                                        n
-                                        #f
-                                        false-vector3
-                                        false-vector3
-                                        false-vector3)
-                                       corners)
-                                 corners)
-                             (if new-edge?
-                                 (cons (partial-edge
-                                        next-edge-id
-                                        tile-id
-                                        n
-                                        false-vector2
-                                        false-vector2) edges) edges)))))
-          (f (+ 1 tile-id) (next-tile 0 null null corners edges)))))
-  
-  (let* ([ls (f 0 (list null null null))]
-         [tiles (first ls)]
-         [corners (second ls)]
-         [edges (third ls)])
-    (partial-grid subdivision-level
-                  (list->vector (reverse tiles))
-                  (list->vector (reverse corners))
-                  (list->vector (reverse edges)))))
+(: grid-with-corner-coordinates (grid -> grid))
+(define (grid-with-corner-coordinates g)
+  (let ([corners (corner-coordinates g)])
+    (grid
+     (grid-subdivision-level g)
+     (grid-tile-coordinates g)
+     (lambda: ([n : index])
+       (vector-ref corners n))
+     (grid-tile-tile g)
+     (grid-tile-corner g)
+     (grid-tile-edge g)
+     (grid-corner-tile g)
+     (grid-corner-corner g)
+     (grid-corner-edge g)
+     (grid-edge-tile g)
+     (grid-edge-corner g))))
 
-(: complete-tiles (partial-tile-vector -> tile-vector))
-(define (complete-tiles tiles)
-  (vector-map
-   (lambda: ([t : partial-tile])
-     (tile
-      (partial-tile-id t)
-      (partial-tile-coordinates t)
-      (partial-tile-tiles t)
-      (build-vector
-       (partial-tile-edge-count t)
-       (lambda: ([n : index])
-         (maybe-index->index
-          (if (not-none? (partial-tile-corner t n))
-              (partial-tile-corner t n)
-              (let* ([tn (vector-ref tiles (min (partial-tile-tile t n)
-                                                (partial-tile-tile t (- n 1))))]
-                     [offset (if (= n (partial-tile-tile-position t (partial-tile-id tn)))
-                                 1
-                                 0)])
-                (partial-tile-corner tn (+ offset (partial-tile-tile-position tn (partial-tile-id t)))))))))
-      (build-vector
-       (partial-tile-edge-count t)
-       (lambda: ([n : index])
-         (maybe-index->index
-          (if (not-none? (partial-tile-edge t n))
-              (partial-tile-edge t n)
-              (let ([tn (vector-ref tiles (partial-tile-tile t n))])
-                (partial-tile-edge tn (partial-tile-tile-position tn (partial-tile-id t))))))))))
-   tiles))
-
-(: list->vector3 (All (a) ((Listof a) -> (vector3 a))))
-(define (list->vector3 ls)
-  (vector
-   (first ls)
-   (second ls)
-   (third ls)))
-
-(: complete-corners (tile-vector partial-corner-vector -> corner-vector))
-(define (complete-corners tiles partial-corners)
-  (vector-map
-   (lambda: ([c : partial-corner])
-     (let* ([id (partial-corner-id c)]
-            [n (partial-corner-position c)]
-            [t1 (vector-ref tiles (partial-corner-first-tile c))]
-            [t2 (vector-ref tiles (tile-tile t1 (- n 1)))]
-            [t3 (vector-ref tiles (tile-tile t1 n))])
-       (define: tiles : tile-list (list t1 t2 t3))
-       (corner
-        id
-        (flvector3-normal (foldl flvector3+ (flvector3-zero) (map tile-coordinates tiles)))
-        (list->vector3
-         (map tile-id
-              tiles))
-        (list->vector3
-         (map (lambda: ([t : tile])
-                (tile-corner t (+ 1 (tile-corner-position t id))))
-              tiles))
-        (list->vector3
-         (map (lambda: ([t : tile])
-                (tile-edge t (tile-corner-position t id)))
-              tiles)))))
-   partial-corners))
-
-(: complete-edges (tile-vector partial-edge-vector -> edge-vector))
-(define (complete-edges tiles edges)
-  (vector-map
-   (lambda: ([e : partial-edge])
-     (let* ([id (partial-edge-id e)]
-            [t (vector-ref tiles (partial-edge-first-tile e))]
-            [pos (partial-edge-position e)])
-       (edge
-        id
-        (vector (tile-id t) (tile-tile t pos))
-        (vector (tile-corner t pos) (tile-corner t (+ 1 pos))))))
-   edges))
-
-(: complete-grid (partial-grid -> grid))
-(define (complete-grid partial)
-  (define tiles (complete-tiles (certainly (partial-grid-tiles partial)
-                                           (vector))))
-  (grid
-   (partial-grid-subdivision-level partial)
-   tiles
-   (complete-corners tiles (certainly (partial-grid-corners partial)
-                                      (vector)))
-   (complete-edges tiles (certainly (partial-grid-edges partial)
-                                    (vector)))))
+(: complete-grid (mutable-grid -> grid))
+(define (complete-grid mgrid)
+  (let ([grid (mutable-grid-grid mgrid)])
+    (: first-empty-corner (index -> Integer))
+    (define (first-empty-corner tile)
+      (grid-tile-corner-position grid tile -1))
+    (: has-empty-corner? (index -> Boolean))
+    (define (has-empty-corner? n)
+      (< -1 (first-empty-corner n)))
+    (: first-empty-edge (index -> Integer))
+    (define (first-empty-edge tile)
+      (grid-tile-edge-position grid tile -1))
+    (: has-empty-edge? (index -> Boolean))
+    (define (has-empty-edge? n)
+      (< -1 (first-empty-edge n)))
+    (: make-corners! (index index -> Void))
+    (define (make-corners! tile corner)
+      (define (make-corner!)
+        (let* ([i (first-empty-corner tile)]
+               [tiles (vector tile
+                              ((grid-tile-tile grid) tile (- i 1))
+                              ((grid-tile-tile grid) tile i))])
+          (begin
+            (for ([n corner-edge-count])
+              (let ([t (vector-ref tiles n)])
+                (begin
+                  ((mutable-grid-corner-tile-set! mgrid) corner n t)
+                  ((mutable-grid-tile-corner-set! mgrid) t
+                                                         (grid-tile-tile-position grid t (vector-ref tiles (modulo (- n 1) corner-edge-count)))
+                                                         corner)))))
+          (void)))
+      (if (= tile (grid-tile-count grid))
+          (void)
+          (if (has-empty-corner? tile)
+              (begin
+                (make-corner!)
+                (make-corners! tile (+ 1 corner)))
+              (make-corners! (+ 1 tile) corner))))
+    (: make-edges! (index index -> Void))
+    (define (make-edges! tile edge)
+      (: make-edge! (index -> Void))
+      (define (make-edge! i)
+        (let* ([tiles (list tile ((grid-tile-tile grid) tile i))]
+               [corners (map (curry (grid-tile-corner grid) tile) (list i (+ 1 i)))]
+               [pos (map (curry grid-tile-tile-position grid) tiles (list (second tiles) (first tiles)))]
+               [corner-pos (map (curry grid-corner-tile-position grid) corners tiles)])
+          (begin
+            (map (mutable-grid-tile-edge-set! mgrid) tiles pos (list edge edge))
+            (map (curry (mutable-grid-edge-tile-set! mgrid) edge) (range 2) tiles)
+            (map (curry (mutable-grid-edge-corner-set! mgrid) edge) (range 2) corners)
+            (map (mutable-grid-corner-edge-set! mgrid) corners corner-pos (list edge edge))
+            (map (mutable-grid-corner-corner-set! mgrid) corners corner-pos (reverse corners))
+            (void))))
+      (if (= tile (grid-tile-count grid))
+          (void)
+          (if (has-empty-edge? tile)
+              (begin
+                (make-edge! (first-empty-edge tile))
+                (make-edges! tile (+ 1 edge)))
+              (make-edges! (+ 1 tile) edge))))
+    (begin
+      (make-corners! 0 0)
+      (make-edges! 0 0)
+      (grid-with-corner-coordinates grid))))
 
 (: 0-grid grid)
 (define 0-grid
-  (complete-grid
-   (part-grid
-    0
-    (build-vector
-     12
-     (lambda: ([n : index])
-       (partial-tile
-        n
-        (vector-ref 0-grid-coordinates n)
-        (vector-ref 0-grid-tile-tiles n)
-        false-vector5
-        false-vector5))))))
+  (let* ([mgrid (allocate-grid 0 0-grid-coordinates)]
+         [grid (mutable-grid-grid mgrid)])
+    (begin
+      (for ([n (grid-tile-count grid)])
+        (for ([i 5])
+          (begin
+            ((mutable-grid-tile-tile-set! mgrid) n i (vector-ref (vector-ref 0-grid-tile-tiles n) i))))))
+    (complete-grid mgrid)))
 
 (: subdivided-grid (grid -> grid))
 (define (subdivided-grid g)
-  (complete-grid
-   (part-grid
-    (+ 1 (grid-subdivision-level g))
-    (partial-tiles g))))
+  (let* ([mgrid (allocate-grid (+ 1 (grid-subdivision-level g)) (tile-coordinates g))]
+         [grid (mutable-grid-grid mgrid)]
+         [tile-count (grid-tile-count g)])
+    (: connect-tiles! (-> Void))
+    (define (connect-tiles!)
+      (begin
+        (for ([n tile-count])
+          (for ([i (tile-edge-count n)])
+            ((mutable-grid-tile-tile-set! mgrid) n i (+ tile-count ((grid-tile-corner g) n i)))))
+        (for ([n (grid-corner-count g)])
+          (for ([i corner-edge-count])
+            (begin
+              ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (* 2 i) (+ tile-count ((grid-corner-corner g) n i)))
+              ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (+ 1 (* 2 i)) ((grid-corner-tile g) n i)))))
+        (void)))
+    (connect-tiles!)
+    (complete-grid mgrid)))
 
 (: n-grid (Nonnegative-Fixnum -> grid))
 (define (n-grid n)
