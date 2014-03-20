@@ -7,6 +7,8 @@
          pseudo-random-list-rest
          make-pseudo-random-list)
 
+(require math/flonum)
+
 (define-type state-vector
   (Vector Positive-Integer
           Positive-Integer
@@ -46,7 +48,7 @@
 
 
 (struct: pseudo-random-list
-  ([numbers : (Listof Flonum)]
+  ([numbers : FlVector]
    [state : state-vector])
   #:transparent)
 
@@ -55,8 +57,8 @@
   (current-pseudo-random-generator
    (vector->pseudo-random-generator
     (pseudo-random-list-state r)))
-  (let ([numbers (build-list n (lambda: ([n : Integer])
-                                 (random)))]
+  (let ([numbers (build-flvector n (lambda: ([n : Integer])
+                                     (random)))]
         [state (pseudo-random-generator->vector
                 (current-pseudo-random-generator))])
     (pseudo-random-list
@@ -66,13 +68,13 @@
 (: pseudo-random-list-rest (pseudo-random-list -> pseudo-random-list))
 (define (pseudo-random-list-rest r)
   (pseudo-random-list
-   null
+   (flvector)
    (pseudo-random-list-state r)))
 
 (: make-pseudo-random-list (String -> pseudo-random-list))
 (define (make-pseudo-random-list seed)
   (random-seed (string->seed seed))
   (pseudo-random-list
-   null
+   (flvector)
    (pseudo-random-generator->vector
     (current-pseudo-random-generator))))
