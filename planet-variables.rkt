@@ -3,7 +3,7 @@
 (provide (all-defined-out))
 
 (require "planet-structs.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          math/flonum)
 
 (: planet-axis (planet -> flvector3))

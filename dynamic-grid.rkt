@@ -6,7 +6,7 @@
 
 (require "dynamic-grid-structs.rkt"
          "dynamic-grid-access.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          "color.rkt"
          "typed-logic.rkt"
          math/flonum)

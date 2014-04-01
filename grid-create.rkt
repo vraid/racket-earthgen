@@ -5,7 +5,7 @@
          "types.rkt"
          "typed-arrays.rkt"
          "vector-util.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          "grid-structs.rkt"
          "grid-functions.rkt")
 

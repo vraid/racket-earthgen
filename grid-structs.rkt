@@ -5,7 +5,7 @@
 (require racket/fixnum
          racket/vector
          "types.rkt"
-         "vector3.rkt")
+         "flvector3.rkt")
 
 (define-type get-grid-flvector3 (integer -> flvector3))
 (define-type get-grid-integer (Integer Integer -> Integer))

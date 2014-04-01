@@ -10,7 +10,7 @@
          axis-angle->quaternion)
 
 (require math/flonum
-         "vector3.rkt"
+         "flvector3.rkt"
          "matrix3.rkt")
 
 (define-type quaternion FlVector)

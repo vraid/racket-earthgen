@@ -4,7 +4,7 @@
 
 (require "load-image.rkt"
          "projection.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          math/flonum)
 
 ; download http://snowy.arsc.alaska.edu/nasa/bmng/world_8km/world.topo.bathy.200405.3x5400x2700.jpg

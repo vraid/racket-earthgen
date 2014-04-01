@@ -7,7 +7,7 @@
          "planet-structs.rkt"
          "planet-variables.rkt"
          "grid.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          math/flonum)
 
 (: coordinate-latitude (flvector3 flvector3 -> Flonum))

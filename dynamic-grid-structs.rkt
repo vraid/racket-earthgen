@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(require "vector3.rkt"
+(require "flvector3.rkt"
          "color.rkt")
 
 (define-type tile-vector (Vectorof tile))

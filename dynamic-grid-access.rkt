@@ -3,7 +3,7 @@
 (provide (all-defined-out))
 
 (require "dynamic-grid-structs.rkt"
-         "vector3.rkt")
+         "flvector3.rkt")
 
 (: edge-count ((U tile corner) -> Index))
 (define (edge-count t)

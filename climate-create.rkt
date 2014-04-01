@@ -12,7 +12,7 @@
          "typed-arrays.rkt"
          "climate-structs.rkt"
          "planet-rotation.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          "quaternion.rkt"
          "wind.rkt")
 
@@ -185,24 +185,13 @@
                                            (flvector-set! (climate-data-tile-humidity to) n a))]
                      [tile-humidity (lambda: ([n : integer])
                                       (flvector-ref (climate-data-tile-humidity from) n))]
-                     [incoming-humidity (lambda: ([n : integer])
-                                          (let ([incoming-winds (map (lambda: ([e : integer])
-                                                                       (max 0.0 (* (edge-wind e)
-                                                                                   (edge-tile-sign p e n))))
-                                                                     (grid-tile-edge-list (planet-grid p) n))])
-                                            (fl (/ (apply + (map (lambda: ([i : integer]
-                                                                           [edge-wind : Flonum])
-                                                                   (* (tile-humidity (tile-tile p n i))
-                                                                      edge-wind))
-                                                                 (range (tile-edge-count n))
-                                                                 incoming-winds))
-                                                   (total-incoming-wind n)))))])
+                     [incoming-humidity (lambda (n) 0.0)])
                 (begin
                   (for ([n (tile-count p)])
                     (for ([i (tile-edge-count n)])
                       (set-tile-humidity! n (if (tile-water? p n)
                                                 (saturation-humidity (tile-temperature p n))
-                                                0.0))))
+                                                (incoming-humidity n)))))
                   (display delta)
                   (iterate! from to (apply max (map (lambda: ([n : Integer])
                                                       (let ([current (flvector-ref (climate-data-tile-humidity to) n)]

@@ -7,7 +7,7 @@
          "planet-rotation.rkt"
          "planet-geometry.rkt"
          "math.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          math/flonum)
 
 (define wind-speed-constant 1.0)

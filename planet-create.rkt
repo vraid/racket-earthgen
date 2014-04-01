@@ -5,7 +5,7 @@
 (require "types.rkt"
          "planet.rkt"
          "grid.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          "heightmap-structs.rkt"
          racket/flonum)
 

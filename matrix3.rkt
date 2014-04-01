@@ -1,7 +1,7 @@
 #lang typed/racket
 
 (require math/flonum
-         "vector3.rkt")
+         "flvector3.rkt")
 
 (provide matrix3
          matrix3-identity

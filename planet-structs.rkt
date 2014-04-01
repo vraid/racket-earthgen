@@ -8,7 +8,7 @@
 (require "typed-struct-kw.rkt"
          "types.rkt"
          "grid.rkt"
-         "vector3.rkt"
+         "flvector3.rkt"
          "planet-typed-data-structs.rkt"
          "climate-structs.rkt"
          math/flonum)
