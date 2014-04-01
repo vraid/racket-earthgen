@@ -7,19 +7,19 @@
          "types.rkt"
          "vector3.rkt")
 
-(define-type get-grid-flvector3 (index -> flvector3))
-(define-type get-grid-index (Integer Integer -> Integer))
+(define-type get-grid-flvector3 (integer -> flvector3))
+(define-type get-grid-integer (Integer Integer -> Integer))
 
 (struct: grid
   ([subdivision-level : natural]
    [tile-coordinates : get-grid-flvector3]
    [corner-coordinates : get-grid-flvector3]
-   [tile-tile : get-grid-index]
-   [tile-corner : get-grid-index]
-   [tile-edge : get-grid-index]
-   [corner-tile : get-grid-index]
-   [corner-corner : get-grid-index]
-   [corner-edge : get-grid-index]
-   [edge-tile : get-grid-index]
-   [edge-corner : get-grid-index])
+   [tile-tile : get-grid-integer]
+   [tile-corner : get-grid-integer]
+   [tile-edge : get-grid-integer]
+   [corner-tile : get-grid-integer]
+   [corner-corner : get-grid-integer]
+   [corner-edge : get-grid-integer]
+   [edge-tile : get-grid-integer]
+   [edge-corner : get-grid-integer])
   #:transparent)

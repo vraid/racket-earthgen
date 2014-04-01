@@ -1,12 +1,10 @@
 #lang racket
 
 (provide struct-array
-         make-c-array
          make-int-array)
 
 (require ffi/unsafe)
-(require (for-syntax racket/syntax
-                     racket/list))
+(require (for-syntax racket/syntax))
 
 (define (make-c-array type length)
   (let* ([arr-type (_array type length)]
@@ -34,10 +32,7 @@
                     [(set-field! ...) (map (lambda (field)
                                              (format-id stx "~a-set!" field))
                                            (syntax->list #'(field ...)))]
-                    [array-id (format-id stx "~a-array" #'id)]
-                    [module-id (format-id stx "m~a" #'id)]
                     [make-array (format-id stx "make-~a" #'id)])
-                   
                    #'(begin
                        (define-cstruct cstruct-id
                          ([field type] ...))
@@ -45,7 +40,8 @@
                          (field ... set-field! ...))
                        (define (make-array n)
                          (let* ([arr-type (_array cstruct-id n)]
-                                [arr (malloc arr-type)]
+                                [arr (let ([a (malloc arr-type)])
+                                       (begin (memset a 0 n cstruct-id) a))]
                                 [ref (lambda (i)
                                        (ptr-ref arr cstruct-id i))])
                            (id

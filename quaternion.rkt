@@ -1,14 +1,13 @@
 #lang typed/racket
 
-(provide quaternion
-         quaternion*
+(provide quaternion*
          quaternion-vector*
          quaternion-identity
          quaternion-inverse
          quaternion-length
          quaternion-normal
          quaternion->matrix3
-         angle-axis->quaternion)
+         axis-angle->quaternion)
 
 (require math/flonum
          "vector3.rkt"
@@ -34,8 +33,8 @@
             (el q 2)
             (el q 3)))
 
-(: angle-axis->quaternion (Flonum flvector3 -> quaternion))
-(define (angle-axis->quaternion a v)
+(: axis-angle->quaternion (flvector3 Flonum -> quaternion))
+(define (axis-angle->quaternion v a)
   (fl->vector->quaternion 
    (flcos (fl* 0.5 a))
    (flvector3-scale v (flsin (fl* 0.5 a)))))

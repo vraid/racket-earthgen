@@ -3,7 +3,7 @@
 (require "types.rkt"
          "planet-structs.rkt"
          "tile-terrain.rkt"
-         "tile-atmosphere.rkt"
+         "atmosphere.rkt"
          racket/flonum)
 
 (provide tile-albedo)

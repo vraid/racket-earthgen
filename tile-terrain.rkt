@@ -29,3 +29,9 @@
 (: tile-vegetation-cover (planet index -> Flonum))
 (define (tile-vegetation-cover p n)
   0.0)
+
+(: tile-surface-friction (planet index -> Flonum))
+(define (tile-surface-friction p n)
+  (if (tile-land? p n)
+      0.000045
+      0.000040))

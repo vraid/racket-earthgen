@@ -1,25 +1,9 @@
 #lang typed/racket
 
-(require math/flonum)
+(provide (all-defined-out))
 
-(provide flvector3
-         flvector3-zero
-         flvector3-negative
-         flvector3-scale
-         flvector3-length
-         flvector3-length-squared
-         flvector3-distance
-         flvector3-distance-squared
-         flvector3-normal
-         flvector3+
-         flvector3-
-         flvector3-subtract
-         flvector3-dot-product
-         flvector3-cross-product
-         flvector3-map-mult
-         flvector3-angle
-         flvector3-projection
-         flvector3-rejection)
+(require "flvector3-local.rkt"
+         math/flonum)
 
 (define-type flvector3 FlVector)
 
@@ -77,10 +61,6 @@
 (define (flvector3-subtract a b)
   (flvector- b a))
 
-(: mult (Flonum Flonum * -> Flonum))
-(define (mult a . n)
-  (foldl * a n))
-
 (: flvector3-map-mult (flvector3 * -> flvector3))
 (define (flvector3-map-mult . vecs)
   (foldl (lambda: ([v : flvector3]
@@ -93,22 +73,6 @@
   (flvector-sum
    (flvector-map mult v u)))
 
-(: remap (flvector3 (Vectorof Integer) -> flvector3))
-(define (remap v m)
-  (let ([elm (lambda: ([v : flvector3]
-                       [m : (Vectorof Integer)]
-                       [i : Integer])
-               (flvector-ref v (vector-ref m i)))])
-    (flvector (elm v m 0)
-              (elm v m 1) 
-              (elm v m 2))))
-
-(: col (flvector3 (Vectorof Integer) flvector3 (Vectorof Integer) -> flvector3))
-(define (col v m u n)
-  (flvector-map mult
-                (remap v m)
-                (remap u n)))
-
 (: flvector3-cross-product (flvector3 flvector3 -> flvector3))
 (define (flvector3-cross-product v u)
   (let* ([m (vector 1 2 0)]
@@ -119,7 +83,7 @@
 (: flvector3-angle (flvector3 flvector3 -> Flonum))
 (define (flvector3-angle a b)
   (flacos (fl/ (flvector3-dot-product a b)
-               (flsqrt (+ (flvector3-length-squared a)
+               (flsqrt (* (flvector3-length-squared a)
                           (flvector3-length-squared b))))))
 
 (: flvector3-projection (flvector3 flvector3 -> flvector3))

@@ -15,7 +15,7 @@
 
 (define-type heightmap-function (grid-list -> heightmap))
 
-(struct:/kw heightmap-parameters
+(struct/kw: heightmap-parameters
             ([seed : String]
              [base-level : index]
              [amplitude : Flonum]

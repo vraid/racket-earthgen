@@ -4,13 +4,19 @@
           "planet-structs.rkt"
           "planet-variables.rkt"
           "planet-geometry.rkt"
+          "climate-structs.rkt"
           "tile-terrain.rkt"
-          "tile-atmosphere.rkt"
+          "atmosphere.rkt"
+          "temperature.rkt"
+          "humidity.rkt"
           "albedo.rkt"))
 
 (require "planet-structs.rkt"
          "planet-variables.rkt"
          "planet-geometry.rkt"
+         "climate-structs.rkt"
          "tile-terrain.rkt"
-         "tile-atmosphere.rkt"
+         "atmosphere.rkt"
+         "temperature.rkt"
+         "humidity.rkt"
          "albedo.rkt")

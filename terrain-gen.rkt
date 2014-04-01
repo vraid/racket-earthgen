@@ -1,15 +1,15 @@
 (values
- 7
+ 3
  (let* ([continent (heightmap-map
                     (lambda (a)
                       (if (< 0 a)
                           a
                           (* 2.0 a)))
                     (heightmap-lower
-                     170.0
+                     250.0
                      (heightmap-create
                       (heightmap-parameters/kw
-                       #:seed "earth0"
+                       #:seed "dzig"
                        #:base-level 2
                        #:amplitude 800.0
                        #:persistence 0.65))))]
@@ -23,9 +23,9 @@
                    (heightmap-create
                     (heightmap-parameters/kw
                      #:seed "snake"
-                     #:base-level 4
+                     #:base-level 3
                      #:amplitude 1.0
-                     #:persistence 0.5))))]
+                     #:persistence 0.6))))]
         [snake-mountain (heightmap-map*
                          (lambda (a b . ns)
                            (* a

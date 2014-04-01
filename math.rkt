@@ -5,8 +5,14 @@
 
 (require "constants.rkt")
 
-(: divide (case-> (Number Zero -> Zero)
-                  (Flonum Flonum -> Flonum)
+(: negative (case-> (Flonum -> Flonum)
+                    (Integer -> Integer)
+                    (Number -> Number)))
+(define (negative a)
+  (- a))
+
+(: divide (case-> (Flonum Flonum -> Flonum)
+                  (Number Zero -> Zero)
                   (Integer Integer -> Exact-Rational)
                   (Number Number -> Number)))
 (define (divide a b)
@@ -18,8 +24,16 @@
 (define (subtract a b)
   (- b a))
 
+(define sum +)
+
+(define product *)
+
 (: angle-distance (Flonum Flonum -> Flonum))
 (define (angle-distance a b)
   (abs
    (subtract tau
              (abs (- a b)))))
+
+(: near-zero? (Real -> Boolean))
+(define (near-zero? a)
+  (<= (abs a) 1.0e-100)) ; comparing to completely arbitrary number

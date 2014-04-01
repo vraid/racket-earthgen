@@ -1,35 +1,45 @@
 #lang typed/racket
 
-(provide (struct-out planet)
-         tile-count
-         corner-count
-         edge-count
-         (all-from-out "planet-typed-data-structs.rkt"
-                       "grid.rkt"))
+(provide (all-defined-out)
+         (all-from-out "grid.rkt"
+                       "planet-typed-data-structs.rkt"
+                       "climate-structs.rkt"))
 
-(require "types.rkt"
+(require "typed-struct-kw.rkt"
+         "types.rkt"
          "grid.rkt"
          "vector3.rkt"
-         "planet-typed-data-structs.rkt")
+         "planet-typed-data-structs.rkt"
+         "climate-structs.rkt"
+         math/flonum)
 
-(struct: planet
+(struct/kw: planet
   ([grid : grid]
    [has-climate? : Boolean]
+   [climate-variables : climate-variables]
    [tile : tile-data]
    [corner : corner-data]
    [edge : edge-data]))
 
-(: tile-count (planet -> Integer))
+(: tile-count (planet -> natural))
 (define (tile-count p)
   (grid-tile-count (planet-grid p)))
 
-(: corner-count (planet -> Integer))
+(: corner-count (planet -> natural))
 (define (corner-count p)
   (grid-corner-count (planet-grid p)))
 
-(: edge-count (planet -> Integer))
+(: edge-count (planet -> natural))
 (define (edge-count p)
   (grid-edge-count (planet-grid p)))
+
+(: edge-tile-sign (planet integer integer -> Flonum))
+(define (edge-tile-sign p e t)
+  (fl (grid-edge-tile-sign (planet-grid p) e t)))
+
+(: edge-corner-sign (planet integer integer -> Flonum))
+(define (edge-corner-sign p e c)
+  (fl (grid-edge-corner-sign (planet-grid p) e c)))
 
 (require (for-syntax racket/syntax
                      racket/list))
@@ -45,7 +55,7 @@
                                                (syntax->list #'(field ...)))])
        #'(begin
            (provide function ...)
-           (: function (id index index -> index)) ...
+           (: function (id integer integer -> integer)) ...
            (define (function p n i)
              ((struct-function (planet-grid p)) n i)) ...))]))
 
@@ -75,7 +85,7 @@
        
        #'(begin
            (provide function ...)
-           (: function (id index -> type)) ...
+           (: function (id integer -> type)) ...
            (define (function p n)
              ((struct-function (planet-grid p)) n)) ...))]))
 
@@ -98,7 +108,7 @@
        
        #'(begin
            (provide function ...)
-           (: function (id index -> type)) ...
+           (: function (id integer -> type)) ...
            (define (function a i)
              ((struct-function (id-alias a)) i)) ...))]))
 

@@ -1,95 +1,250 @@
 #lang typed/racket
 
+(provide climate-next
+         climate-parameters/kw
+         default-climate-parameters)
+
 (require math/flonum
          "types.rkt"
+         "math.rkt"
          "planet.rkt"
-         "grid.rkt"
+         "planet-typed-data-structs.rkt"
+         "typed-arrays.rkt"
          "climate-structs.rkt"
-         "wind.rkt"
+         "planet-rotation.rkt"
          "vector3.rkt"
-         "parallel-util.rkt")
+         "quaternion.rkt"
+         "wind.rkt")
 
-(provide climate-next
-         climate-parameters
-         climate-default-parameters)
+(: default-climate-parameters (-> climate-parameters))
+(define (default-climate-parameters)
+  (climate-parameters/kw
+   #:acceptable-delta 0.1
+   #:axial-tilt (/ pi 8.0)
+   #:seasons-per-cycle 12))
 
-(: climate-default-parameters (-> climate-parameters))
-(define (climate-default-parameters)
-  (climate-parameters 12))
+(: next-climate-variables (climate-parameters climate-variables -> climate-variables))
+(define (next-climate-variables par prev)
+  (let* ([season (+ 1 (climate-variables-season prev))]
+         [seasons-per-cycle (climate-parameters-seasons-per-cycle par)]
+         [time-of-year (exact->inexact (/ (modulo season seasons-per-cycle)
+                                          seasons-per-cycle))]
+         [solar-equator (* (sin (* tau time-of-year))
+                           (climate-parameters-axial-tilt par))])
+    (climate-variables/kw
+     #:season season
+     #:time-of-year time-of-year
+     #:solar-equator solar-equator)))
 
-(: temperature-first (planet index -> Flonum))
-(define (temperature-first p n)
+(: copy-geography! (planet planet -> Void))
+(define (copy-geography! prev p)
+  (let ([init-tile-array (init-array (tile-count p))])
+    (begin
+      (init-tile-array (tile-data-elevation-set! (planet-tile p))
+                       (curry tile-elevation prev))
+      (init-tile-array (tile-data-water-level-set! (planet-tile p))
+                       (curry tile-water-level prev))
+      ((init-array (corner-count p)) (corner-data-elevation-set! (planet-corner p))
+                                     (curry corner-elevation prev)))))
+
+(: default-temperature (planet index -> Flonum))
+(define (default-temperature p n)
   (let ([light (cos (tile-latitude p n))])
     (+ 200.0
        (* 130.0 light))))
 
-(define zero-wind (wind 0.0 0.0))
+(: default-pressure-gradient-force (Flonum Flonum -> flvector3))
+(define (default-pressure-gradient-force tropical-equator latitude)
+  (let* ([c (fl/ (fl* 3.0 pi)
+                 (fl+ (fl/ pi 2.0) (if (> tropical-equator latitude)
+                                       tropical-equator
+                                       (- tropical-equator))))]
+         [pressure-deviation (fl/ 20.0 15000.0)]
+         [pressure-derivate (fl/ (fl* pressure-deviation
+                                      (flsin (fl* c (fl- latitude tropical-equator))))
+                                 (if (< (fl- tropical-equator (fl/ (fl+ (fl/ pi 2.0) tropical-equator) 3.0))
+                                        latitude
+                                        (fl- tropical-equator (fl/ (fl- (fl/ pi 2.0) tropical-equator) 3.0)))
+                                     3.0
+                                     1.0))])
+    (flvector 0.0 0.0 0.0)))
 
-(define (default-wind)
-  zero-wind)
+(: default-wind (Flonum planet integer -> flvector3))
+(define (default-wind tropical-equator p n)
+  (prevailing-wind p
+                   (tile-coordinates p n)
+                   (default-pressure-gradient-force tropical-equator (tile-latitude p n))
+                   (tile-surface-friction p n)))
 
 (: climate-first (climate-parameters planet -> planet))
 (define (climate-first par prev)
-  (let ([p (planet
-            (planet-grid prev)
-            true
-            (make-tile-data (tile-count prev))
-            (make-corner-data (corner-count prev))
-            (make-edge-data (edge-count prev)))])
+  (let ([p (planet/kw
+            #:grid (planet-grid prev)
+            #:has-climate? true
+            #:climate-variables initial-climate-variables
+            #:tile (make-tile-data (tile-count prev))
+            #:corner (make-corner-data (corner-count prev))
+            #:edge (make-edge-data (edge-count prev)))])
     (begin
-      (for ([n (tile-count p)])
-        ((tile-data-elevation-set! (planet-tile p)) n (tile-elevation prev n))
-        ((tile-data-temperature-set! (planet-tile p)) n (temperature-first p n)))
-      (for ([n (corner-count p)])
-        ((corner-data-elevation-set! (planet-corner p)) n (corner-elevation prev n)))
-      (for ([n (edge-count p)])
-        (void))
+      (copy-geography! prev p)
+      (let ([init-tile-array (init-array (tile-count p))])
+        (init-tile-array (tile-data-temperature-set! (planet-tile p))
+                         (curry default-temperature p)))
       p)))
+
+(: climate-next (climate-parameters planet -> planet))
+(define (climate-next par prev)
+  (let ([p (initial-values par prev)])
+    (begin
+      (generate-climate! par prev p)
+      p)))
+
+(struct: climate-data
+  ([tile-humidity : FlVector]
+   [tile-precipitation : FlVector]))
+
+(: make-climate-data (planet -> climate-data))
+(define (make-climate-data p)
+  (let ([tile-vector (lambda () (make-flvector (tile-count p) 0.0))])
+    (climate-data
+     (tile-vector)
+     (tile-vector))))
+
+(: generate-climate! (climate-parameters planet planet -> Void))
+(define (generate-climate! par prev p)
+  (let* ([tile-areas (build-flvector (tile-count p) (curry tile-area p))]
+         [tile-area (lambda: ([n : integer])
+                      (flvector-ref tile-areas n))]
+         [edge-lengths (build-flvector (edge-count p) (curry edge-length p))]
+         [edge-length (lambda: ([n : integer])
+                        (flvector-ref edge-lengths n))]
+         [edge-tile-distances (build-flvector (edge-count p) (curry edge-tile-distance p))]
+         [tile-tile-distance (lambda: ([p : planet]
+                                       [n : integer]
+                                       [i : integer])
+                               (flvector-ref edge-tile-distances (tile-edge p n i)))])
+    (define edge-wind (make-flvector (edge-count p) 0.0))
+    (define (set-wind!)
+      (let* ([init-edge-array (init-array (edge-count p))]
+             [add (lambda: ([n : index]
+                            [a : Flonum])
+                    (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))])
+        (begin
+          (for ([n (tile-count p)])
+            (let* ([wind-vector (default-wind 0.0 p n)]
+                   [tile-vector (tile-coordinates p n)]
+                   [negative-wind-vector (flvector3-negative wind-vector)]
+                   [tile-wind (build-flvector (tile-edge-count n)
+                                              (lambda (i)
+                                                (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
+                                                                                             (tile-coordinates p (tile-tile p n i))))])
+                                                  (* (if (< (flvector3-distance-squared neighbour-vector wind-vector)
+                                                            (flvector3-distance-squared neighbour-vector negative-wind-vector))
+                                                         1.0
+                                                         -1.0)
+                                                     (flvector3-length (flvector3-projection neighbour-vector wind-vector))))))])
+              (for ([i (tile-edge-count n)])
+                (let ([e (tile-edge p n i)])
+                  (add e (* (edge-tile-sign p e n)
+                            (flvector-ref tile-wind i)))))))
+          (init-edge-array (edge-data-surface-air-flow-set! (planet-edge p))
+                           (lambda: ([n : index]) (flvector-ref edge-wind n))))))
+    (define (climate-iterate!)
+      (let* ([edge-winds (build-flvector (edge-count p)
+                                         (lambda: ([n : integer])
+                                           (* (flvector-ref edge-wind n)
+                                              (edge-length n))))]
+             [edge-wind (lambda: ([n : integer])
+                          (flvector-ref edge-winds n))]
+             [tile-convections (build-flvector (tile-count p)
+                                               (lambda: ([n : integer])
+                                                 (fl (/ (apply + (map (lambda: ([e : integer])
+                                                                        (* (edge-wind e)
+                                                                           (edge-tile-sign p e n)))
+                                                                      (grid-tile-edge-list (planet-grid p) n)))
+                                                        (tile-area n)))))]
+             [tile-convection (lambda: ([n : integer])
+                                (flvector-ref tile-convections n))]
+             [incoming-winds (build-flvector (tile-count p)
+                                             (lambda: ([n : integer])
+                                               (foldl fl+ 0.0
+                                                      (map (lambda: ([a : Flonum])
+                                                             (max 0.0 a))
+                                                                 (map (lambda: ([e : integer])
+                                                                        (* (edge-wind e)
+                                                                           (edge-tile-sign p e n)))
+                                                                      (grid-tile-edge-list (planet-grid p) n))))))]
+             [total-incoming-wind (lambda: ([n : integer])
+                                    (flvector-ref incoming-winds n))])
+        (: iterate! (climate-data climate-data Real -> climate-data))
+        (define (iterate! to from delta)
+          (if (< delta (climate-parameters-acceptable-delta par))
+              from
+              (let* ([set-tile-humidity! (lambda: ([n : integer]
+                                                   [a : Flonum])
+                                           (flvector-set! (climate-data-tile-humidity to) n a))]
+                     [tile-humidity (lambda: ([n : integer])
+                                      (flvector-ref (climate-data-tile-humidity from) n))]
+                     [incoming-humidity (lambda: ([n : integer])
+                                          (let ([incoming-winds (map (lambda: ([e : integer])
+                                                                       (max 0.0 (* (edge-wind e)
+                                                                                   (edge-tile-sign p e n))))
+                                                                     (grid-tile-edge-list (planet-grid p) n))])
+                                            (fl (/ (apply + (map (lambda: ([i : integer]
+                                                                           [edge-wind : Flonum])
+                                                                   (* (tile-humidity (tile-tile p n i))
+                                                                      edge-wind))
+                                                                 (range (tile-edge-count n))
+                                                                 incoming-winds))
+                                                   (total-incoming-wind n)))))])
+                (begin
+                  (for ([n (tile-count p)])
+                    (for ([i (tile-edge-count n)])
+                      (set-tile-humidity! n (if (tile-water? p n)
+                                                (saturation-humidity (tile-temperature p n))
+                                                0.0))))
+                  (display delta)
+                  (iterate! from to (apply max (map (lambda: ([n : Integer])
+                                                      (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
+                                                            [previous (flvector-ref (climate-data-tile-humidity from) n)])
+                                                        (if (near-zero? current)
+                                                            0.0
+                                                            (if (near-zero? previous)
+                                                                1.0
+                                                                (flabs
+                                                                 (fl/ (fl- current
+                                                                           previous)
+                                                                      previous))))))
+                                                    (range (tile-count p)))))))))
+        (let ([from (make-climate-data p)])
+          (begin
+            (for ([n (tile-count p)])
+              (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? p n)
+                                                                     (saturation-humidity (tile-temperature p n))
+                                                                     0.0)))
+            (iterate! (make-climate-data p)
+                      from
+                      1.0)))))
+    (begin
+      (set-wind!)
+      (climate-iterate!)
+      (void))))
 
 (: initial-values (climate-parameters planet -> planet))
 (define (initial-values par prev)
   (if (not (planet-has-climate? prev))
       (climate-first par prev)
-      (let ([p (planet
-                (planet-grid prev)
-                true
-                (make-tile-data (tile-count prev))
-                (make-corner-data (corner-count prev))
-                (make-edge-data (edge-count prev)))])
+      (let* ([p (planet/kw
+                 #:grid (planet-grid prev)
+                 #:has-climate? true
+                 #:climate-variables (next-climate-variables par (planet-climate-variables prev))
+                 #:tile (make-tile-data (tile-count prev))
+                 #:corner (make-corner-data (corner-count prev))
+                 #:edge (make-edge-data (edge-count prev)))]
+             [init-tile-array (init-array (tile-count p))]
+             [init-corner-array (init-array (corner-count p))]
+             [init-edge-array (init-array (edge-count p))])
         (begin
-          (for ([n (tile-count p)])
-            ((tile-data-elevation-set! (planet-tile p)) n (tile-elevation prev n))
-            ((tile-data-temperature-set! (planet-tile p)) n (tile-temperature prev n)))
-          (for ([n (corner-count p)])
-            ((corner-data-elevation-set! (planet-corner p)) n (corner-elevation prev n)))
-          (for ([n (edge-count p)])
-            (void))
+          (copy-geography! prev p)
+          (init-tile-array (tile-data-temperature-set! (planet-tile p)) (curry tile-temperature prev))
           p))))
-
-(struct: climate-values
-  ([tiles : tile-values]))
-
-(struct: tile-values
-  ([humidity : FlVector]
-   [precipitation : FlVector]))
-
-(: climate-next (climate-parameters planet -> planet))
-(define (climate-next par prev)
-  (let* ([p (initial-values par prev)])
-    (define (set-wind!)
-      (let* ([tile-wind (make-vector (tile-count prev)
-                                     (default-wind))]
-             [edge-wind (make-vector (edge-count prev)
-                                     0.0)])
-        (for ([n (edge-count p)])
-          ((edge-data-surface-air-flow-set! (planet-edge p)) n (vector-ref edge-wind n)))))
-    (define (climate-iterate! p)
-      (: iterate! (climate-values climate-values Flonum -> climate-values))
-      (define (iterate! to from delta)
-        to)
-      (begin
-        (void)))
-    (begin
-      (set-wind!)
-      (climate-iterate! p)
-      p)))

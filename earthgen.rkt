@@ -13,12 +13,16 @@
          ffi/cvector
          ffi/unsafe)
 
+(require plot
+         profile
+         profile/render-text)
+
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation) (quaternion*
-                    (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
-                    (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-                    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))
+                    (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
+                    (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
+                    (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))
 (define scale 0.9)
 (define scale-max 100.0)
 (define scale-min 0.5)
@@ -31,26 +35,23 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
-(define grids (n-grid-list null 0))
+(define planet-box (box #f))
+(define grid-box (box (n-grid-list null 0)))
 (define color-mode color-topography)
 
 (define-values
   (display-width display-height)
   (get-display-size))
-(define planet-entity #f)
+
+(define-values
+  (window-width window-height)
+  (values 800 600))
 
 ; required by terrain-gen
 (require "logic.rkt"
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
          "heightmap-functions.rkt")
-
-(define (terrain-gen)
-  (let-values ([(size method) (load "terrain-gen.rkt")])
-    (begin
-      (unless (= size (grid-subdivision-level (first grids)))
-        (set! grids (n-grid-list grids size)))
-      (method grids))))
 
 (define (color->byte c)
   (max 0
@@ -68,17 +69,18 @@
    (color->byte (flcolor-blue color))
    0))
 
-(define (make-vertices! colors)
-  (let* ([vertices (make-cvector _gl-vertex (* 7 (tile-count planet-entity)))]
-         [indices (make-cvector _uint (* 18 (tile-count planet-entity)))])
+(define (make-vertices! color-mode)
+  (let* ([p (unbox planet-box)]
+         [vertices (make-cvector _gl-vertex (* 7 (tile-count p)))]
+         [indices (make-cvector _uint (* 18 (tile-count p)))])
     (begin
-      (for ([n (tile-count planet-entity)])
-        (let ([color (vector-ref colors n)])
+      (for ([n (tile-count p)])
+        (let ([color (color-mode n)])
           (begin
-            (cvector-set! vertices (* n 7) (->gl-vertex (tile-coordinates planet-entity n) color))
+            (cvector-set! vertices (* n 7) (->gl-vertex (tile-coordinates p n) color))
             (for ([i 6])
               (begin
-                (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex (corner-coordinates planet-entity (tile-corner planet-entity n i)) color))
+                (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex (corner-coordinates p (tile-corner p n i)) color))
                 (let ([k (+ (* i 3) (* n 18))])
                   (cvector-set! indices k (* n 7))
                   (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
@@ -89,17 +91,15 @@
 (define frame
   (new frame%
        [label "earthgen"]
-       [width display-width]
-       [height display-height]
-       [style '(no-resize-border
-                no-caption
-                no-system-menu)]))
+       [width window-width]
+       [height window-height]))
 
 (define (color-vector planet f)
-  (build-vector
-   (vector-length (grid-tile-count (planet-grid planet-entity)))
-   (lambda (n)
-     (f planet-entity n))))
+  (let ([p (unbox planet-box)])
+    (build-vector
+     (vector-length (grid-tile-count (planet-grid p)))
+     (lambda (n)
+       (f p n)))))
 
 (define canvas
   (new
@@ -108,9 +108,9 @@
      (define/override (on-paint)
        (when (fl< milliseconds-between-frames
                   (fl- (current-inexact-milliseconds) last-draw))
-         (begin
-           (thread
-            (lambda ()
+         (thread
+          (lambda ()
+            (begin
               (with-gl-context
                (lambda ()
                  (begin
@@ -122,8 +122,8 @@
                                      (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
                      (rotate-gl quat))
                    (draw-gl)
-                   (swap-gl-buffers))))))
-           (set! last-draw (current-inexact-milliseconds)))))
+                   (swap-gl-buffers))))
+              (set! last-draw (current-inexact-milliseconds)))))))
      (define/override (on-size width height)
        (begin
          (set! display-width width)
@@ -136,47 +136,49 @@
          (set! last-draw 0.0)
          (on-paint)))
      (define (color-planet! f)
-       (when (planet? planet-entity)
+       (when (planet? (unbox planet-box))
          (thread
           (lambda ()
             (begin
               (set! color-mode f)
               (with-gl-context
                (lambda ()
-                 (make-vertices! (build-vector (tile-count planet-entity)
-                                               (lambda (n)
-                                                 (color-mode planet-entity n))))))
+                 (make-vertices! (curry color-mode (unbox planet-box)))))
               (repaint!))))))
      (define (generate-terrain!)
        (thread
         (lambda ()
-          (begin
-            (terrain-gen)
-            (set! planet-entity ((heightmap->planet (first grids)) (terrain-gen)))
-            (color-planet! color-mode)))))
+          (let-values ([(size method) (load "terrain-gen.rkt")])
+            (let ([grids (n-grid-list (unbox grid-box) size)])
+              (begin
+                (set-box! grid-box grids)
+                (set-box! planet-box ((heightmap->planet (first grids)) (method grids)))
+                (color-planet! color-mode)))))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
          [#\q (generate-terrain!)]
-         [#\w (unless (false? planet-entity)
-                (begin
-                  (set! planet-entity (climate-next (climate-default-parameters) planet-entity))
-                  (color-planet! color-mode)))]
+         [#\w (let ([p (unbox planet-box)])
+                (when (planet? p)
+                  (begin
+                    (set-box! planet-box (climate-next (default-climate-parameters) p))
+                    (color-planet! color-mode))))]
          [#\a (color-planet! base-color)]
          [#\s (color-planet! color-topography)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-albedo)]
+         [#\l (color-planet! color-area)]
          ['wheel-up (begin
                       (set! scale
                             (min scale-max
                                  (* scale 1.05)))
-                      (on-paint))]
+                      (repaint!))]
          ['wheel-down (begin
                         (set! scale
                               (max scale-min
                                    (/ scale 1.05)))
-                        (on-paint))]
+                        (repaint!))]
          [_ (void)]))
      (define/override (on-event event)
        (if (send event button-up? 'left)
@@ -195,7 +197,7 @@
                                       (fl* (exact->inexact
                                             (- mouse-down-y (send event get-y)))
                                            (fl/ pi (* scale -740.0)))))))
-                 (on-paint))
+                 (repaint!))
                (if (send event button-down? 'left)
                    (begin
                      (set! mouse-down? true)
@@ -209,7 +211,7 @@
 
 (define gl-context canvas)
 
-(send frame maximize #t) 
+;(send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
 (send canvas with-gl-context (lambda () (set-gl-vertex-data (make-cvector _gl-vertex 0))))

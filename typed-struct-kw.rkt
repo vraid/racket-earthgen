@@ -3,13 +3,13 @@
 (require (for-syntax racket/syntax
                      racket/list))
 
-(provide struct:/kw)
+(provide struct/kw:)
 
 (begin-for-syntax
   (define (syntax->keyword stx)
     (string->keyword (symbol->string (syntax->datum stx)))))
 
-(define-syntax (struct:/kw stx)
+(define-syntax (struct/kw: stx)
   (syntax-case stx ()
     [(_ id ([field : type] ...) opt ...)
      (with-syntax ([kw-ctor (format-id stx "~a/kw" #'id)]

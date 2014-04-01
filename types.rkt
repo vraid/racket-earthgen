@@ -39,5 +39,6 @@
            (define-type type-set (Setof type))
            (define-type type-vector (Vectorof type))))]))
 
+(define-contained-type integer Integer)
 (define-contained-type index Integer)
 (define-contained-type maybe-index (maybe index))

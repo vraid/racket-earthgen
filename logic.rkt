@@ -16,8 +16,7 @@
 (define (true? a)
   (eq? true a))
 
-(define (false? a)
-  (not (true? a)))
+(define false? not)
 
 (define all 
   stream-andmap)

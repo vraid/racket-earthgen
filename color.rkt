@@ -12,7 +12,8 @@
 (struct: flcolor
   ([red : Flonum]
    [green : Flonum]
-   [blue : Flonum]))
+   [blue : Flonum])
+  #:transparent)
 
 (define flcolor-interpolate
   (lambda: ([col-one : flcolor]

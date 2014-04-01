@@ -30,16 +30,28 @@
 (define (grid-edge-count grid)
   (subdivision-level-edge-count (grid-subdivision-level grid)))
 
-(: tile-edge-count (index -> natural))
+(: tile-edge-count (integer -> natural))
 (define (tile-edge-count t)
   (if (> 12 t) 5 6))
 
 (: corner-edge-count natural)
 (define corner-edge-count 3)
 
-(: grid-access-position ((grid -> get-grid-index) (index -> natural) grid index index -> Integer))
+(: grid-edge-tile-sign (grid integer integer -> (U 0 1 -1)))
+(define (grid-edge-tile-sign g e t)
+  (cond [(eq? t ((grid-edge-tile g) e 0)) 1]
+        [(eq? t ((grid-edge-tile g) e 1)) -1]
+        [else 0]))
+
+(: grid-edge-corner-sign (grid integer integer -> (U 0 1 -1)))
+(define (grid-edge-corner-sign g e c)
+  (cond [(eq? c ((grid-edge-corner g) e 0)) 1]
+        [(eq? c ((grid-edge-corner g) e 1)) -1]
+        [else 0]))
+
+(: grid-access-position ((grid -> get-grid-integer) (integer -> natural) grid integer integer -> Integer))
 (define (grid-access-position f count g n i)
-  (: iterate (index -> Integer))
+  (: iterate (integer -> Integer))
   (define (iterate k)
     (if (= k (count n))
         -1
@@ -48,15 +60,15 @@
             (iterate (+ 1 k)))))
   (iterate 0))
 
-(: grid-access-list ((grid -> get-grid-index) (index -> natural) grid index -> index-list))
+(: grid-access-list ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-list))
 (define (grid-access-list f count g n)
   (map (curry (f g) n) (range (count n))))
 
-(: grid-access-set ((grid -> get-grid-index) (index -> natural) grid index -> index-set))
+(: grid-access-set ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-set))
 (define (grid-access-set f count g n)
   (list->set (grid-access-list f count g n)))
 
-(: grid-access-vector ((grid -> get-grid-index) (index -> natural) grid index -> index-vector))
+(: grid-access-vector ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-vector))
 (define (grid-access-vector f count g n)
   (build-vector (count n) (curry (f g) n)))
 
@@ -77,24 +89,24 @@
                      [(access-vector ...) (map (access-type "~a-vector") fields)]
                      [(access-position ...) (map (access-type "~a-position") fields)])
          #'(begin
-             (: access-list (grid index -> index-list)) ...
+             (: access-list (grid integer -> integer-list)) ...
              (define (access-list g n)
                (grid-access-list access count g n)) ...
-             (: access-set (grid index -> index-set)) ...
+             (: access-set (grid integer -> integer-set)) ...
              (define (access-set g n)
                (grid-access-set access count g n)) ...
-             (: access-vector (grid index -> index-vector)) ...
+             (: access-vector (grid integer -> integer-vector)) ...
              (define (access-vector g n)
                (grid-access-vector access count g n)) ...
-             (: access-position (grid index index -> Integer)) ...
+             (: access-position (grid integer integer -> Integer)) ...
              (define (access-position g n i)
                (grid-access-position access count g n i)) ...)))]))
 
 (grid-access tile tile-edge-count
              ([tile] [corner] [edge]))
 
-(grid-access corner (lambda: ([n : index]) corner-edge-count)
+(grid-access corner (lambda: ([n : integer]) corner-edge-count)
              ([tile] [corner] [edge]))
 
-(grid-access edge (lambda: ([n : index]) 2)
+(grid-access edge (lambda: ([n : integer]) 2)
              ([tile] [corner]))
