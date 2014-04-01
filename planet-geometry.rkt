@@ -38,18 +38,18 @@
 
 (: edge-segment (planet integer -> flvector3))
 (define (edge-segment p n)
-  (flvector3- (corner-coordinates p (edge-corner p n 0))
-              (corner-coordinates p (edge-corner p n 1))))
+  (flvector3-subtract (corner-coordinates p (edge-corner p n 1))
+                      (corner-coordinates p (edge-corner p n 0))))
 
 (: tile-edge-segment (planet integer integer -> flvector3))
 (define (tile-edge-segment p n i)
-  (flvector3- (corner-coordinates p (tile-corner p n (+ i 1)))
-              (corner-coordinates p (tile-corner p n i))))
+  (flvector3-subtract (corner-coordinates p (tile-corner p n i))
+                      (corner-coordinates p (tile-corner p n (+ i 1)))))
 
 (: tile-corner-vector (planet integer integer -> flvector3))
 (define (tile-corner-vector p n i)
-  (flvector3- (corner-coordinates p (tile-corner p n i))
-              (tile-coordinates p n)))
+  (flvector3-subtract (tile-coordinates p n)
+                      (corner-coordinates p (tile-corner p n i))))
 
 (: edge-tile-distance (planet integer -> Flonum))
 (define (edge-tile-distance p n)
@@ -82,8 +82,8 @@
 (: triangle-corner-angle (flvector3 flvector3 flvector3 -> Flonum))
 (define (triangle-corner-angle ref a b)
   (spherical-angle ref
-                   (flvector3- a ref)
-                   (flvector3- b ref)))
+                   (flvector3-subtract ref a)
+                   (flvector3-subtract ref b)))
 
 (: spherical-triangle-excess (flvector3 flvector3 flvector3 -> Flonum))
 (define (spherical-triangle-excess a b c)

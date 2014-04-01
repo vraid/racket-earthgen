@@ -1,26 +1,15 @@
 #lang typed/racket
 
-(provide quaternion*
-         quaternion-vector*
-         quaternion-identity
-         quaternion-inverse
-         quaternion-length
-         quaternion-normal
-         quaternion->matrix3
-         axis-angle->quaternion)
+(provide (all-defined-out))
 
-(require math/flonum
+(require "quaternion-local.rkt"
+         math/flonum
          "flvector3.rkt"
          "matrix3.rkt")
-
-(define-type quaternion FlVector)
 
 (: quaternion-identity (-> quaternion))
 (define (quaternion-identity)
   (flvector 1.0 0.0 0.0 0.0))
-
-(define el 
-  flvector-ref)
 
 (: fl->vector->quaternion (Flonum flvector3 -> quaternion))
 (define (fl->vector->quaternion f v)
@@ -37,12 +26,12 @@
 (define (axis-angle->quaternion v a)
   (fl->vector->quaternion 
    (flcos (fl* 0.5 a))
-   (flvector3-scale v (flsin (fl* 0.5 a)))))
+   (flvector3-scale (flsin (fl* 0.5 a)) v)))
 
 (: quaternion-conjugate (quaternion -> quaternion))
 (define (quaternion-conjugate q)
   (fl->vector->quaternion (el q 0)
-                          (flvector3- (quaternion-vector q))))
+                          (flvector3-negative (quaternion-vector q))))
 
 (: quaternion-length-square (quaternion -> Flonum))
 (define (quaternion-length-square q)
@@ -67,18 +56,8 @@
 (define (vector->quaternion v)
   (fl->vector->quaternion 0.0 v))
 
-(: remap-to-vector (quaternion (Vectorof Integer) -> flvector3))
-(define (remap-to-vector q m)
-  (let ([elm (lambda: ([q : quaternion]
-                       [m : (Vectorof Integer)]
-                       [i : Integer])
-               (el q (vector-ref m i)))])
-    (flvector (elm q m 0) 
-              (elm q m 1) 
-              (elm q m 2))))
-
-(: row-sum (quaternion quaternion -> Flonum))
-(define (row-sum q r)
+(: quaternion-row-sum (quaternion quaternion -> Flonum))
+(define (quaternion-row-sum q r)
   (: m (Flonum Flonum * -> Flonum))
   (define (m a . n) (foldl * a n))
   (flvector-sum
@@ -86,33 +65,28 @@
     (flvector-map m
                   q r))))
 
-(: col (quaternion (Vectorof Integer) quaternion (Vectorof Integer) -> flvector3))
-(define (col q m r n)
-  (flvector3-map-mult (remap-to-vector q m) 
-                      (remap-to-vector r n)))
-
-(: quaternion-single* (quaternion quaternion -> quaternion))
-(define (quaternion-single* q r)
+(: quaternion-single-product (quaternion quaternion -> quaternion))
+(define (quaternion-single-product q r)
   (let ([a (vector 0 0 0)] 
         [b (vector 1 2 3)]
         [c (vector 2 3 1)]
         [d (vector 3 1 2)])
     (fl->vector->quaternion 
-     (row-sum q r)
-     (flvector3+ (col q a r b)
-                 (col q c r d)
-                 (col q b r a)
-                 (flvector3- (col q d r c))))))
+     (quaternion-row-sum q r)
+     (flvector3-sum (col q a r b)
+                    (col q c r d)
+                    (col q b r a)
+                    (flvector3-negative (col q d r c))))))
 
-(: quaternion* (quaternion * -> quaternion))
-(define (quaternion* . quats)
-  (foldl quaternion-single*
+(: quaternion-product (quaternion * -> quaternion))
+(define (quaternion-product . quats)
+  (foldl quaternion-single-product
          (quaternion-identity) quats))
 
-(: quaternion-vector* (quaternion flvector3 -> flvector3))
-(define (quaternion-vector* q v)
+(: quaternion-vector-product (quaternion flvector3 -> flvector3))
+(define (quaternion-vector-product q v)
   (quaternion-vector
-   (quaternion* q (vector->quaternion v) (quaternion-conjugate q))))
+   (quaternion-product q (vector->quaternion v) (quaternion-conjugate q))))
 
 (: quaternion->matrix3 (quaternion -> matrix3))
 (define (quaternion->matrix3 q)

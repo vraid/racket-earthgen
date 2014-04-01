@@ -71,8 +71,8 @@
 (define (add-corner a b c)
   (let ([n (corner
             (flvector3-normal
-             (apply flvector3+ (map tile-coordinates
-                                    (list a b c))))
+             (apply flvector3-sum (map tile-coordinates
+                                       (list a b c))))
             (vector a b c)
             (make-vector 3 empty-corner))])
     (begin
@@ -136,7 +136,7 @@
 (: tile-section-coordinates (tile Integer -> flvector3))
 (define (tile-section-coordinates t i)
   (flvector3-normal
-   (flvector3+
+   (flvector3-sum
     (tile-coordinates t)
     (corner-coordinates (tile-corner t i))
     (corner-coordinates (tile-corner t (- i 1))))))
@@ -144,7 +144,7 @@
 (: corner-section-coordinates (corner Integer -> flvector3))
 (define (corner-section-coordinates c i)
   (flvector3-normal
-   (flvector3+
+   (flvector3-sum
     (corner-coordinates c)
     (coordinates (parent-corner-at c i))
     (coordinates (parent-corner-at c (- i 1))))))

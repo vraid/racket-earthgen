@@ -21,11 +21,11 @@
                          normal
                          pressure-gradient-force
                          friction-coefficient)
-  (if (near-zero? (flvector3-length pressure-gradient-force))
+  (if (flvector3-near-zero? pressure-gradient-force)
       (flvector3-zero)
       (let* ([coriolis-coefficient (coriolis-coefficient (planet-angular-velocity p) (coordinate-latitude (planet-axis p) normal))]
              [perpendicular-component (flvector3-cross-product pressure-gradient-force normal)])
-        (flvector3-scale (flvector3+ pressure-gradient-force
-                                     (flvector3-scale perpendicular-component
-                                                      (/ coriolis-coefficient friction-coefficient)))
-                         wind-speed-constant))))
+        (flvector3-scale wind-speed-constant
+                         (flvector3-sum pressure-gradient-force
+                                        (flvector3-scale (divide friction-coefficient coriolis-coefficient)
+                                                         perpendicular-component))))))

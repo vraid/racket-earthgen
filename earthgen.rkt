@@ -19,7 +19,7 @@
 
 (define longitude pi)
 (define latitude 0.0)
-(define (rotation) (quaternion*
+(define (rotation) (quaternion-product
                     (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
                     (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
                     (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))

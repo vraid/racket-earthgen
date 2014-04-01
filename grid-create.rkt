@@ -146,7 +146,7 @@
    (grid-corner-count grid)
    (lambda: ([n : index])
      (flvector3-normal
-      (apply flvector3+
+      (apply flvector3-sum
              (map (lambda: ([i : index])
                     ((grid-tile-coordinates grid) i))
                   (grid-corner-tile-list grid n)))))))

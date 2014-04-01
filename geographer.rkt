@@ -11,16 +11,16 @@
 (define longitude pi)
 (define latitude 0.0)
 (define (rotation)
-   (quaternion*
-    (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
-    (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-    (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0))))
+  (quaternion-product
+   (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
+   (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
+   (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))
 (define (inverse-rotation)
    (quaternion-inverse
-    (quaternion*
-     (angle-axis->quaternion (fl/ pi 2.0) (flvector 1.0 0.0 0.0))
-     (angle-axis->quaternion latitude (flvector -1.0 0.0 0.0))
-     (angle-axis->quaternion longitude (flvector 0.0 0.0 -1.0)))))
+    (quaternion-product
+     (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
+     (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
+     (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude))))
 (define scale 0.9)
 
 (define (subdivision-level-tile-count n)
@@ -74,7 +74,7 @@
                     (sqrt (/ (subdivision-level-tile-count base-level)
                              (subdivision-level-tile-count (max base-level
                                                                 level)))))]
-         [v (quaternion-vector* (inverse-rotation) (flvector 0.0 0.0 1.0))])
+         [v (quaternion-vector-product (inverse-rotation) (flvector 0.0 0.0 1.0))])
     (begin
       (set! grid (if (zero? level)
                      (top-grid)
