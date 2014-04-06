@@ -105,7 +105,7 @@
 
 (: make-climate-data (planet -> climate-data))
 (define (make-climate-data p)
-  (let ([tile-vector (lambda () (make-flvector (tile-count p) 0.0))])
+  (let ([tile-vector (thunk (make-flvector (tile-count p) 0.0))])
     (climate-data
      (tile-vector)
      (tile-vector))))

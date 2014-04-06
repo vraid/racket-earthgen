@@ -9,7 +9,7 @@
   (define fs (build-vector
               (vector-length vec)
               (lambda (n)
-                (future (lambda () (vector-set! vec n (fn n)))))))
+                (future (thunk (vector-set! vec n (fn n)))))))
   (begin
     (for/vector ([f fs]) (touch f))
     vec))
@@ -19,7 +19,7 @@
   (define fs (build-vector
               (vector-length vec)
               (lambda (n)
-                (future (lambda () (vector-set! vec n (fn (vector-ref vec n))))))))
+                (future (thunk (vector-set! vec n (fn (vector-ref vec n))))))))
   (begin
     (for/vector ([f fs]) (touch f))
     vec))

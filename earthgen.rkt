@@ -109,10 +109,10 @@
        (when (fl< milliseconds-between-frames
                   (fl- (current-inexact-milliseconds) last-draw))
          (thread
-          (lambda ()
+          (thunk
             (begin
               (with-gl-context
-               (lambda ()
+               (thunk
                  (begin
                    (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
                          [my (fl/ 1.0 scale)])
@@ -129,7 +129,7 @@
          (set! display-width width)
          (set! display-height height)
          (with-gl-context
-          (lambda ()
+          (thunk
             (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (begin
@@ -138,16 +138,16 @@
      (define (color-planet! f)
        (when (planet? (unbox planet-box))
          (thread
-          (lambda ()
+          (thunk
             (begin
               (set! color-mode f)
               (with-gl-context
-               (lambda ()
+               (thunk
                  (make-vertices! (curry color-mode (unbox planet-box)))))
               (repaint!))))))
      (define (generate-terrain!)
        (thread
-        (lambda ()
+        (thunk
           (let-values ([(size method) (load "terrain-gen.rkt")])
             (let ([grids (n-grid-list (unbox grid-box) size)])
               (begin
@@ -214,5 +214,5 @@
 ;(send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
-(send canvas with-gl-context (lambda () (set-gl-vertex-data (make-cvector _gl-vertex 0))))
-(send canvas with-gl-context (lambda () (set-gl-index-data (make-cvector _uint 0))))
+(send canvas with-gl-context (thunk (set-gl-vertex-data (make-cvector _gl-vertex 0))))
+(send canvas with-gl-context (thunk (set-gl-index-data (make-cvector _uint 0))))

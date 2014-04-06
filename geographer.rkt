@@ -116,7 +116,7 @@
                   (fl- (current-inexact-milliseconds) last-draw))
          (begin
            (with-gl-context
-            (lambda ()
+            (thunk
               (begin
                 (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ display-width display-height)))]
                       [my (fl/ 1.0 scale)])
@@ -132,7 +132,7 @@
          (set! display-width width)
          (set! display-height height)
          (with-gl-context
-          (lambda ()
+          (thunk
             (set-gl-viewport 0 0 width height)))))
      (define (repaint!)
        (set! last-draw 0.0)
