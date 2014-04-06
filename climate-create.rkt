@@ -112,7 +112,8 @@
 
 (: generate-climate! (climate-parameters planet planet -> Void))
 (define (generate-climate! par prev p)
-  (let* ([tile-areas (build-flvector (tile-count p) (curry tile-area p))]
+  (let* ([tropical-equator 0.0]
+         [tile-areas (build-flvector (tile-count p) (curry tile-area p))]
          [tile-area (lambda: ([n : integer])
                       (flvector-ref tile-areas n))]
          [edge-lengths (build-flvector (edge-count p) (curry edge-length p))]
@@ -131,7 +132,7 @@
                     (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))])
         (begin
           (for ([n (tile-count p)])
-            (let* ([wind-vector (default-wind 0.0 p n)]
+            (let* ([wind-vector (default-wind tropical-equator p n)]
                    [tile-vector (tile-coordinates p n)]
                    [negative-wind-vector (flvector3-negative wind-vector)]
                    [tile-wind (build-flvector (tile-edge-count n)
@@ -145,7 +146,8 @@
                                                      (flvector3-length (flvector3-projection neighbour-vector wind-vector))))))])
               (for ([i (tile-edge-count n)])
                 (let ([e (tile-edge p n i)])
-                  (add e (* (edge-tile-sign p e n)
+                  (add e (* 0.5
+                            (edge-tile-sign p e n)
                             (flvector-ref tile-wind i)))))))
           (init-edge-array (edge-data-surface-air-flow-set! (planet-edge p))
                            (lambda: ([n : index]) (flvector-ref edge-wind n))))))
@@ -158,11 +160,10 @@
                           (flvector-ref edge-winds n))]
              [tile-convections (build-flvector (tile-count p)
                                                (lambda: ([n : integer])
-                                                 (fl (/ (apply + (map (lambda: ([e : integer])
-                                                                        (* (edge-wind e)
-                                                                           (edge-tile-sign p e n)))
-                                                                      (grid-tile-edge-list (planet-grid p) n)))
-                                                        (tile-area n)))))]
+                                                 (fl (apply + (map (lambda: ([e : integer])
+                                                                     (* (edge-wind e)
+                                                                        (edge-tile-sign p e n)))
+                                                                   (grid-tile-edge-list (planet-grid p) n))))))]
              [tile-convection (lambda: ([n : integer])
                                 (flvector-ref tile-convections n))]
              [incoming-winds (build-flvector (tile-count p)
