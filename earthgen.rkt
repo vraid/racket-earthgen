@@ -167,7 +167,7 @@
          [#\a (color-planet! base-color)]
          [#\s (color-planet! color-topography)]
          [#\d (color-planet! color-temperature)]
-         [#\f (color-planet! color-albedo)]
+         [#\f (color-planet! color-humidity)]
          [#\l (color-planet! color-area)]
          ['wheel-up (begin
                       (set! scale

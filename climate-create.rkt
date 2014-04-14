@@ -11,15 +11,13 @@
          "planet-typed-data-structs.rkt"
          "typed-arrays.rkt"
          "climate-structs.rkt"
-         "planet-rotation.rkt"
          "flvector3.rkt"
-         "quaternion.rkt"
          "wind.rkt")
 
 (: default-climate-parameters (-> climate-parameters))
 (define (default-climate-parameters)
   (climate-parameters/kw
-   #:acceptable-delta 0.1
+   #:acceptable-delta 0.00001
    #:axial-tilt (/ pi 8.0)
    #:seasons-per-cycle 12))
 
@@ -67,7 +65,7 @@
                                         (fl- tropical-equator (fl/ (fl- (fl/ pi 2.0) tropical-equator) 3.0)))
                                      3.0
                                      1.0))])
-    (flvector 0.0 0.0 0.0)))
+    (flvector 0.0 0.0 pressure-derivate)))
 
 (: default-wind (Flonum planet integer -> flvector3))
 (define (default-wind tropical-equator p n)
@@ -169,12 +167,11 @@
              [incoming-winds (build-flvector (tile-count p)
                                              (lambda: ([n : integer])
                                                (foldl fl+ 0.0
-                                                      (map (lambda: ([a : Flonum])
-                                                             (max 0.0 a))
-                                                                 (map (lambda: ([e : integer])
-                                                                        (* (edge-wind e)
-                                                                           (edge-tile-sign p e n)))
-                                                                      (grid-tile-edge-list (planet-grid p) n))))))]
+                                                      (map (lambda: ([e : integer])
+                                                             (max 0.0
+                                                                  (fl* (edge-wind e)
+                                                                       (edge-tile-sign p e n))))
+                                                           (grid-tile-edge-list (planet-grid p) n)))))]
              [total-incoming-wind (lambda: ([n : integer])
                                     (flvector-ref incoming-winds n))])
         (: iterate! (climate-data climate-data Real -> climate-data))
@@ -186,20 +183,31 @@
                                            (flvector-set! (climate-data-tile-humidity to) n a))]
                      [tile-humidity (lambda: ([n : integer])
                                       (flvector-ref (climate-data-tile-humidity from) n))]
-                     [incoming-humidity (lambda (n) 0.0)])
+                     [absolute-incoming-humidity (lambda: ([n : integer])
+                                                   (if (zero? (total-incoming-wind n))
+                                                       0.0
+                                                       (fl/
+                                                        (foldl fl+ 0.0 (map (lambda: ([i : integer])
+                                                                              (let ([e (tile-edge p n i)])
+                                                                                (fl* (tile-humidity (tile-tile p n i))
+                                                                                     (max 0.0 (fl* (edge-wind e)
+                                                                                                   (edge-tile-sign p e n))))))
+                                                                            (range (tile-edge-count n))))
+                                                        (total-incoming-wind n))))])
                 (begin
                   (for ([n (tile-count p)])
                     (for ([i (tile-edge-count n)])
                       (set-tile-humidity! n (if (tile-water? p n)
                                                 (saturation-humidity (tile-temperature p n))
-                                                (incoming-humidity n)))))
+                                                (min (saturation-humidity (tile-temperature p n))
+                                                     (absolute-incoming-humidity n))))))
                   (display delta)
                   (iterate! from to (apply max (map (lambda: ([n : Integer])
                                                       (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
                                                             [previous (flvector-ref (climate-data-tile-humidity from) n)])
-                                                        (if (near-zero? current)
+                                                        (if (zero? current)
                                                             0.0
-                                                            (if (near-zero? previous)
+                                                            (if (zero? previous)
                                                                 1.0
                                                                 (flabs
                                                                  (fl/ (fl- current
@@ -212,9 +220,12 @@
               (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? p n)
                                                                      (saturation-humidity (tile-temperature p n))
                                                                      0.0)))
-            (iterate! (make-climate-data p)
-                      from
-                      1.0)))))
+            (let ([climate-values (iterate! (make-climate-data p)
+                                            from
+                                            1.0)])
+              (for ([n (tile-count p)])
+                ((tile-data-humidity-set! (planet-tile p)) n
+                                                           (flvector-ref (climate-data-tile-humidity climate-values) n))))))))
     (begin
       (set-wind!)
       (climate-iterate!)

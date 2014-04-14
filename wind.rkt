@@ -21,7 +21,7 @@
                          normal
                          pressure-gradient-force
                          friction-coefficient)
-  (if (flvector3-near-zero? pressure-gradient-force)
+  (if (flvector3-zero? pressure-gradient-force)
       (flvector3-zero)
       (let* ([coriolis-coefficient (coriolis-coefficient (planet-angular-velocity p) (coordinate-latitude (planet-axis p) normal))]
              [perpendicular-component (flvector3-cross-product pressure-gradient-force normal)])

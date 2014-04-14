@@ -3,6 +3,7 @@
 (provide base-color
          color-temperature
          color-topography
+         color-humidity
          color-albedo
          color-area)
 
@@ -126,6 +127,18 @@
   (find-color (tile-temperature p n)
               temperature-intervals
               temperature-colors))
+
+(define humidity-min (flcolor 1.0 1.0 1.0))
+(define humidity-max (flcolor 0.0 1.0 0.0))
+(define humidity-water (flcolor 0.0 0.0 0.5))
+
+(: color-humidity (planet index -> flcolor))
+(define (color-humidity p n)
+  (if (tile-water? p n)
+      humidity-water
+      (flcolor-interpolate humidity-min
+                           humidity-max
+                           (tile-relative-humidity p n))))
 
 (define albedo-min (flcolor 0.0 0.0 0.1))
 (define albedo-max (flcolor 1.0 1.0 1.0))
