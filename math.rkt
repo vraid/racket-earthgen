@@ -33,7 +33,3 @@
   (abs
    (subtract tau
              (abs (- a b)))))
-
-(: near-zero? (Real -> Boolean))
-(define (near-zero? a)
-  (<= (abs a) 1.0e-100)) ; comparing to completely arbitrary number

@@ -12,9 +12,9 @@
 (define (flvector3-zero)
   (flvector 0.0 0.0 0.0))
 
-(: flvector3-near-zero? (flvector3 -> Boolean))
-(define (flvector3-near-zero? v)
-  (near-zero? (flvector3-length-squared v)))
+(: flvector3-zero? (flvector3 -> Boolean))
+(define (flvector3-zero? v)
+  (zero? (flvector3-length-squared v)))
 
 (: flvector3-negative (flvector3 -> flvector3))
 (define (flvector3-negative v)
