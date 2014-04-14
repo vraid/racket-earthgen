@@ -2,7 +2,8 @@
 
 (provide climate-next
          climate-parameters/kw
-         default-climate-parameters)
+         default-climate-parameters
+         default-wind)
 
 (require math/flonum
          "types.rkt"
@@ -17,7 +18,7 @@
 (: default-climate-parameters (-> climate-parameters))
 (define (default-climate-parameters)
   (climate-parameters/kw
-   #:acceptable-delta 0.00001
+   #:acceptable-delta 0.01
    #:axial-tilt (/ pi 8.0)
    #:seasons-per-cycle 12))
 
@@ -201,7 +202,7 @@
                                                 (saturation-humidity (tile-temperature p n))
                                                 (min (saturation-humidity (tile-temperature p n))
                                                      (absolute-incoming-humidity n))))))
-                  (display delta)
+                  (displayln delta)
                   (iterate! from to (apply max (map (lambda: ([n : Integer])
                                                       (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
                                                             [previous (flvector-ref (climate-data-tile-humidity from) n)])

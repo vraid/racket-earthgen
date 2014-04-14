@@ -32,6 +32,6 @@
 
 (: tile-surface-friction (planet index -> Flonum))
 (define (tile-surface-friction p n)
-  (if (tile-land? p n)
+  (* 0.002 (if (tile-land? p n)
       0.000045
-      0.000040))
+      0.000040)))

@@ -161,9 +161,11 @@
          [#\q (generate-terrain!)]
          [#\w (let ([p (unbox planet-box)])
                 (when (planet? p)
-                  (begin
-                    (set-box! planet-box (climate-next (default-climate-parameters) p))
-                    (color-planet! color-mode))))]
+                  (thread
+                   (thunk
+                    (begin
+                      (set-box! planet-box (climate-next (default-climate-parameters) p))
+                      (color-planet! color-mode))))))]
          [#\a (color-planet! base-color)]
          [#\s (color-planet! color-topography)]
          [#\d (color-planet! color-temperature)]
