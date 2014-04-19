@@ -1,8 +1,8 @@
 #lang typed/racket
 
-(provide base-color
+(provide color-topography
+         color-vegetation
          color-temperature
-         color-topography
          color-humidity
          color-albedo
          color-area)
@@ -50,26 +50,6 @@
 (define land-high
   (flcolor 0.2 0.2 0.1))
 
-(: base-color-water (Flonum -> flcolor))
-(define (base-color-water depth)
-  (flcolor-interpolate
-   water-surface
-   water-deep
-   (min 1.0 (/ depth 3000.0))))
-
-(: base-color-land (Flonum -> flcolor))
-(define (base-color-land elevation)
-  (flcolor-interpolate
-   land-low
-   land-high
-   (min 1.0 (/ elevation 3000.0))))
-
-(: base-color (planet index -> flcolor))
-(define (base-color p n)
-  (if (< 0 (tile-water-depth p n))
-      (base-color-water (tile-water-depth p n))
-      (base-color-land (tile-elevation p n))))
-
 (: filter-intervals ((Listof Any) -> (Listof Flonum)))
 (define (filter-intervals ls)
   (filter flonum? ls))
@@ -100,6 +80,14 @@
   (find-color (tile-elevation p n)
               topography-intervals
               topography-colors))
+
+(define vegetation-color (flcolor 0.176 0.32 0.05))
+
+(: color-vegetation (planet index -> flcolor))
+(define (color-vegetation p n)
+  (flcolor-interpolate (color-topography p n)
+                       vegetation-color
+                       (vegetation-cover (tile-vegetation p n))))
 
 (define temperature-intervals/colors
   (list (- freezing-temperature) (flcolor 1.0 1.0 1.0)

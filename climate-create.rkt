@@ -46,11 +46,17 @@
       ((init-array (corner-count p)) (corner-data-elevation-set! (planet-corner p))
                                      (curry corner-elevation prev)))))
 
+(: sunlight (flonum flonum -> flonum))
+(define (sunlight solar-equator latitude)
+  (max 0.0 (flcos (fl- solar-equator latitude))))
+
 (: default-temperature (planet index -> Flonum))
 (define (default-temperature p n)
-  (let ([light (cos (tile-latitude p n))])
-    (+ 200.0
-       (* 130.0 light))))
+  (-
+   (+ 200.0
+      (* 130.0 (tile-sunlight p n)))
+   (max 0.0
+        (temperature-lapse (tile-elevation p n)))))
 
 (: default-pressure-gradient-force (Flonum Flonum -> flvector3))
 (define (default-pressure-gradient-force tropical-equator latitude)
@@ -87,8 +93,14 @@
     (begin
       (copy-geography! prev p)
       (let ([init-tile-array (init-array (tile-count p))])
-        (init-tile-array (tile-data-temperature-set! (planet-tile p))
-                         (curry default-temperature p)))
+        (begin
+          (init-tile-array (tile-data-sunlight-set! (planet-tile p))
+                           (lambda: ([n : integer])
+                             (sunlight
+                              (climate-variables-solar-equator (planet-climate-variables p))
+                              (tile-latitude p n))))
+          (init-tile-array (tile-data-temperature-set! (planet-tile p))
+                           (curry default-temperature p))))
       p)))
 
 (: climate-next (climate-parameters planet -> planet))
@@ -248,6 +260,14 @@
     (begin
       (set-wind!)
       (climate-iterate!)
+      (for ([n (tile-count p)])
+        ((tile-data-vegetation-set! (planet-tile p)) n
+                                                     (if (tile-water? p n)
+                                                         0.0
+                                                         (supported-vegetation
+                                                          (tile-sunlight p n)
+                                                          (tile-temperature p n)
+                                                          (tile-humidity p n)))))
       (void))))
 
 (: initial-values (climate-parameters planet -> planet))

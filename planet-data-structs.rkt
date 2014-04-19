@@ -13,9 +13,11 @@
 (struct-array tile-data
               ([elevation _float]
                [water-level _float]
+               [sunlight _float]
                [temperature _float]
                [humidity _float]
                [precipitation _float]
+               [vegetation _float]
                [vertical-air-flow _float]
                [tropopause-altitude _float]))
 

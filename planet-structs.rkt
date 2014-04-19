@@ -116,8 +116,10 @@
                ([elevation Flonum]
                 [water-level Flonum]
                 [temperature Flonum]
+                [sunlight Flonum]
                 [humidity Flonum]
-                [precipitation Flonum]))
+                [precipitation Flonum]
+                [vegetation Flonum]))
 
 (direct-access planet corner corner-data
                ([elevation Flonum]

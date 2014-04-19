@@ -166,8 +166,8 @@
                     (begin
                       (set-box! planet-box (climate-next (default-climate-parameters) p))
                       (color-planet! color-mode))))))]
-         [#\a (color-planet! base-color)]
-         [#\s (color-planet! color-topography)]
+         [#\a (color-planet! color-topography)]
+         [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-humidity)]
          [#\l (color-planet! color-area)]

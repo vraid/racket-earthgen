@@ -10,6 +10,7 @@
           "atmosphere.rkt"
           "temperature.rkt"
           "humidity.rkt"
+          "vegetation.rkt"
           "albedo.rkt"))
 
 (require "planet-structs.rkt"
@@ -21,4 +22,5 @@
          "atmosphere.rkt"
          "temperature.rkt"
          "humidity.rkt"
+         "vegetation.rkt"
          "albedo.rkt")
