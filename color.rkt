@@ -1,19 +1,37 @@
 #lang typed/racket
 
+(provide (all-defined-out))
+
 (require math/flonum)
 
-(provide flcolor
-         flcolor?
-         flcolor-red
-         flcolor-green
-         flcolor-blue
-         flcolor-interpolate)
+(struct: byte-color
+  ([red : Byte]
+   [green : Byte]
+   [blue : Byte])
+  #:transparent)
 
 (struct: flcolor
   ([red : Flonum]
    [green : Flonum]
    [blue : Flonum])
   #:transparent)
+
+(: flcolor->byte (Flonum -> Byte))
+(define (flcolor->byte c)
+  (let ([b (max 0
+                (min 255
+                     (inexact->exact
+                      (round (fl* 255.0 c)))))])
+    (if (byte? b)
+        b
+        0)))
+
+(: flcolor->byte-color (flcolor -> byte-color))
+(define (flcolor->byte-color c)
+  (byte-color
+   (flcolor->byte (flcolor-red c))
+   (flcolor->byte (flcolor-green c))
+   (flcolor->byte (flcolor-blue c))))
 
 (define flcolor-interpolate
   (lambda: ([col-one : flcolor]

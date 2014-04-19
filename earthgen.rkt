@@ -53,40 +53,53 @@
          "heightmap-create.rkt"
          "heightmap-functions.rkt")
 
-(define (color->byte c)
-  (max 0
-       (min 255
-            (inexact->exact
-             (round (fl* 255.0 c))))))
-
 (define (->gl-vertex coord color)
   (make-gl-vertex
    (flvector-ref coord 0)
    (flvector-ref coord 1)
    (flvector-ref coord 2)
-   (color->byte (flcolor-red color))
-   (color->byte (flcolor-green color))
-   (color->byte (flcolor-blue color))
+   (flcolor->byte (flcolor-red color))
+   (flcolor->byte (flcolor-green color))
+   (flcolor->byte (flcolor-blue color))
    0))
 
-(define (make-vertices! color-mode)
+(define (make-vertices!)
+  (let* ([grid (first (unbox grid-box))]
+         [tile-count (grid-tile-count grid)]
+         [vertices (make-cvector _gl-vertex (* 7 tile-count))]
+         [indices (make-cvector _uint (* 18 tile-count))]
+         [color (flcolor 0.0 0.0 0.0)])
+    (begin
+      (for ([n tile-count])
+        (begin
+          (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
+          (for ([i 6])
+            (begin
+              (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i))
+                                                                  color))
+              (let ([k (+ (* i 3) (* n 18))])
+                (cvector-set! indices k (* n 7))
+                (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+                (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))))
+      (set-gl-vertex-buffer! 'tile-vertices vertices)
+      (set-gl-index-buffer! 'tile-indices indices))))
+
+(define (set-gl-vertex-color! p color)
+  (set-gl-vertex-red! p (byte-color-red color))
+  (set-gl-vertex-green! p (byte-color-green color))
+  (set-gl-vertex-blue! p (byte-color-blue color)))
+
+(define (update-vertices! color-mode)
   (let* ([p (unbox planet-box)]
-         [vertices (make-cvector _gl-vertex (* 7 (tile-count p)))]
-         [indices (make-cvector _uint (* 18 (tile-count p)))])
+         [vertices (gl-buffer-data (get-gl-buffer 'tile-vertices))])
     (begin
       (for ([n (tile-count p)])
-        (let ([color (color-mode n)])
+        (let ([color (flcolor->byte-color (color-mode n))])
           (begin
-            (cvector-set! vertices (* n 7) (->gl-vertex (tile-coordinates p n) color))
+            (set-gl-vertex-color! (cvector-ref vertices (* n 7)) color)
             (for ([i 6])
-              (begin
-                (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex (corner-coordinates p (tile-corner p n i)) color))
-                (let ([k (+ (* i 3) (* n 18))])
-                  (cvector-set! indices k (* n 7))
-                  (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
-                  (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))))
-      (set-gl-vertex-data vertices)
-      (set-gl-index-data indices))))
+              (set-gl-vertex-color! (cvector-ref vertices (+ 1 i (* n 7))) color)))))
+      (set-gl-vertex-buffer! 'tile-vertices vertices))))
 
 (define frame
   (new frame%
@@ -121,7 +134,8 @@
                                      (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
                                      (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
                      (rotate-gl quat))
-                   (draw-gl)
+                   (draw-gl 'tile-vertices
+                            'tile-indices)
                    (swap-gl-buffers))))
               (set! last-draw (current-inexact-milliseconds)))))))
      (define/override (on-size width height)
@@ -143,17 +157,23 @@
               (set! color-mode f)
               (with-gl-context
                (thunk
-                 (make-vertices! (curry color-mode (unbox planet-box)))))
+                 (update-vertices! (curry color-mode (unbox planet-box)))))
               (repaint!))))))
      (define (generate-terrain!)
        (thread
         (thunk
-          (let-values ([(size method) (load "terrain-gen.rkt")])
-            (let ([grids (n-grid-list (unbox grid-box) size)])
-              (begin
-                (set-box! grid-box grids)
-                (set-box! planet-box ((heightmap->planet (first grids)) (method grids)))
-                (color-planet! color-mode)))))))
+         (let-values ([(size method) (load "terrain-gen.rkt")])
+           (begin
+             (with-gl-context
+              (thunk
+               (let ([grids (unbox grid-box)])
+                 (unless (= size (grid-subdivision-level (first grids)))
+                   (begin
+                     (set-box! grid-box (n-grid-list grids size))
+                     (make-vertices!))))))
+             (let ([grids (n-grid-list (unbox grid-box) size)])
+               (set-box! planet-box ((heightmap->planet (first grids)) (method grids))))
+             (color-planet! color-mode))))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
@@ -216,5 +236,5 @@
 ;(send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
-(send canvas with-gl-context (thunk (set-gl-vertex-data (make-cvector _gl-vertex 0))))
-(send canvas with-gl-context (thunk (set-gl-index-data (make-cvector _uint 0))))
+(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
+(send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))

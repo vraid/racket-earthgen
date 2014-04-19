@@ -1,9 +1,14 @@
 #lang racket
 
 (provide _gl-vertex
+         set-gl-vertex-red!
+         set-gl-vertex-green!
+         set-gl-vertex-blue!
          make-gl-vertex
-         set-gl-vertex-data
-         set-gl-index-data
+         (struct-out gl-buffer)
+         get-gl-buffer
+         set-gl-vertex-buffer!
+         set-gl-index-buffer!
          set-gl-ortho-projection
          rotate-gl
          set-gl-viewport
@@ -19,6 +24,15 @@
 (define float-size 4)
 (define vertex-size (+ (* 3 float-size) (* 4 byte-size)))
 
+(struct gl-buffer
+  (handle
+   data))
+
+(define buffers (make-hash))
+
+(define (get-gl-buffer id)
+  (hash-ref buffers id #f))
+
 (define-cstruct _gl-vertex
   ([x _float]
    [y _float]
@@ -28,29 +42,35 @@
    [blue _byte]
    [alpha _byte]))
 
-(define vertex-data #f)
-(define index-data #f)
-
-(define vertex-buffer #f)
-(define index-buffer #f)
-
-(define (get-buffer-name)
+(define (generate-buffer-handle)
   (let ((buffer (glGenBuffers 1)))
-    (u32vector-ref buffer 0)))  
+    (u32vector-ref buffer 0)))
 
-(define (set-gl-vertex-data vertices)
-  (set! vertex-data vertices)
-  (when (not vertex-buffer) (set! vertex-buffer (get-buffer-name)))
-  (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
-  (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertex-data)) (cvector-ptr vertex-data) GL_STATIC_DRAW)
-  (glBindBuffer GL_ARRAY_BUFFER 0))
+(define (set-gl-vertex-buffer! id vertices)
+  (let* ([handle (if (not (get-gl-buffer id))
+                     (generate-buffer-handle)
+                     (gl-buffer-handle (get-gl-buffer id)))]
+         [buffer (gl-buffer
+                  handle
+                  vertices)])
+    (begin
+      (hash-set! buffers id buffer)
+      (glBindBuffer GL_ARRAY_BUFFER handle)
+      (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
+      (glBindBuffer GL_ARRAY_BUFFER 0))))
 
-(define (set-gl-index-data indices)
-  (set! index-data indices)
-  (when (not index-buffer) (set! index-buffer (get-buffer-name)))
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
-  (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length index-data)) (cvector-ptr index-data) GL_DYNAMIC_DRAW)
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0))
+(define (set-gl-index-buffer! id indices)
+  (let* ([handle (if (not (get-gl-buffer id))
+                     (generate-buffer-handle)
+                     (gl-buffer-handle (get-gl-buffer id)))]
+         [buffer (gl-buffer
+                  handle
+                  indices)])
+    (begin
+      (hash-set! buffers id buffer)
+      (glBindBuffer GL_ELEMENT_ARRAY_BUFFER handle)
+      (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
+      (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0))))
 
 (define (rotate-gl rotation)
   (apply glRotatef rotation))
@@ -63,7 +83,7 @@
 (define (set-gl-viewport left top width height)
   (glViewport left top width height))
 
-(define (draw-gl)
+(define (draw-gl vertex-buffer index-buffer)
   (glFrontFace GL_CCW)
   (glEnable GL_CULL_FACE)
   (glCullFace GL_BACK)
@@ -71,7 +91,7 @@
   (glClear GL_COLOR_BUFFER_BIT)
   (glShadeModel GL_SMOOTH)
   
-  (glBindBuffer GL_ARRAY_BUFFER vertex-buffer)
+  (glBindBuffer GL_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer vertex-buffer)))
   (glVertexPointer 3 GL_FLOAT vertex-size 0)
   (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
   (glBindBuffer GL_ARRAY_BUFFER 0)
@@ -79,10 +99,10 @@
   (glEnableClientState GL_VERTEX_ARRAY)
   (glEnableClientState GL_COLOR_ARRAY)
   (glClear GL_COLOR_BUFFER_BIT)
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER index-buffer)
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer index-buffer)))
   
   (glDrawElements GL_TRIANGLES
-                  (cvector-length index-data)
+                  (cvector-length (gl-buffer-data (get-gl-buffer index-buffer)))
                   GL_UNSIGNED_INT
                   0)
   
