@@ -2,6 +2,7 @@
 
 (provide (all-defined-out))
 
+(define-type flonum Flonum)
 (define-type natural Natural)
 (define-type (maybe a) (U False a))
 
