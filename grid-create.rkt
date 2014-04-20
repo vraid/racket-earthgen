@@ -102,32 +102,30 @@
          [(corner-edge corner-edge-set!) (make-int-array (* 3 corner-count))]
          [(edge-tile edge-tile-set!) (make-int-array (* 2 edge-count))]
          [(edge-corner edge-corner-set!) (make-int-array (* 2 edge-count))])
-      (begin
-        (for ([n (* 6 tile-count)])
-          (begin
-            (tile-corner-set! n -1)
-            (tile-edge-set! n -1)))
-        (mutable-grid
-         (tile-set! tile-tile-set!)
-         (tile-set! tile-corner-set!)
-         (tile-set! tile-edge-set!)
-         (corner-set! corner-tile-set!)
-         (corner-set! corner-corner-set!)
-         (corner-set! corner-edge-set!)
-         (edge-set! edge-tile-set!)
-         (edge-set! edge-corner-set!)
-         (grid
-          subdivision-level
-          (lambda: ([n : index]) (vector-ref tile-coordinates n))
-          empty-coordinates
-          (tile-get tile-tile)
-          (tile-get tile-corner)
-          (tile-get tile-edge)
-          (corner-get corner-tile)
-          (corner-get corner-corner)
-          (corner-get corner-edge)
-          (edge-get edge-tile)
-          (edge-get edge-corner)))))))
+      (for ([n (* 6 tile-count)])
+        (tile-corner-set! n -1)
+        (tile-edge-set! n -1))
+      (mutable-grid
+       (tile-set! tile-tile-set!)
+       (tile-set! tile-corner-set!)
+       (tile-set! tile-edge-set!)
+       (corner-set! corner-tile-set!)
+       (corner-set! corner-corner-set!)
+       (corner-set! corner-edge-set!)
+       (edge-set! edge-tile-set!)
+       (edge-set! edge-corner-set!)
+       (grid
+        subdivision-level
+        (lambda: ([n : index]) (vector-ref tile-coordinates n))
+        empty-coordinates
+        (tile-get tile-tile)
+        (tile-get tile-corner)
+        (tile-get tile-edge)
+        (corner-get corner-tile)
+        (corner-get corner-corner)
+        (corner-get corner-edge)
+        (edge-get edge-tile)
+        (edge-get edge-corner))))))
 
 (: tile-coordinates (grid -> flvector-vector))
 (define (tile-coordinates grid)
@@ -180,14 +178,12 @@
         (let* ([tiles (vector tile
                               ((grid-tile-tile grid) tile (- i 1))
                               ((grid-tile-tile grid) tile i))])
-          (begin
-            (for ([n corner-edge-count])
-              (let ([t (vector-ref tiles n)])
-                (begin
-                  ((mutable-grid-corner-tile-set! mgrid) corner n t)
-                  ((mutable-grid-tile-corner-set! mgrid) t
-                                                         (grid-tile-tile-position grid t (vector-ref tiles (modulo (- n 1) corner-edge-count)))
-                                                         corner)))))
+          (for ([n corner-edge-count])
+            (let ([t (vector-ref tiles n)])
+              ((mutable-grid-corner-tile-set! mgrid) corner n t)
+              ((mutable-grid-tile-corner-set! mgrid) t
+                                                     (grid-tile-tile-position grid t (vector-ref tiles (modulo (- n 1) corner-edge-count)))
+                                                     corner)))
           (void)))
       (if (= tile (grid-tile-count grid))
           (void)
@@ -209,13 +205,12 @@
                [corners (map (curry (grid-tile-corner grid) tile) (list i (+ 1 i)))]
                [pos (map (curry grid-tile-tile-position grid) tiles (list (second tiles) (first tiles)))]
                [corner-pos (map (curry grid-corner-tile-position grid) corners tiles)])
-          (begin
-            (map (mutable-grid-tile-edge-set! mgrid) tiles pos (list edge edge))
-            (map (curry (mutable-grid-edge-tile-set! mgrid) edge) (range 2) tiles)
-            (map (curry (mutable-grid-edge-corner-set! mgrid) edge) (range 2) corners)
-            (map (mutable-grid-corner-edge-set! mgrid) corners corner-pos (list edge edge))
-            (map (mutable-grid-corner-corner-set! mgrid) corners corner-pos (reverse corners))
-            (void))))
+          (map (mutable-grid-tile-edge-set! mgrid) tiles pos (list edge edge))
+          (map (curry (mutable-grid-edge-tile-set! mgrid) edge) (range 2) tiles)
+          (map (curry (mutable-grid-edge-corner-set! mgrid) edge) (range 2) corners)
+          (map (mutable-grid-corner-edge-set! mgrid) corners corner-pos (list edge edge))
+          (map (mutable-grid-corner-corner-set! mgrid) corners corner-pos (reverse corners))
+          (void)))
       (if (= tile (grid-tile-count grid))
           (void)
           (if (= i (tile-edge-count tile))
@@ -225,20 +220,17 @@
                     (make-edge! i)
                     (make-edges! tile (+ i 1) (+ 1 edge)))
                   (make-edges! tile (+ 1 i) edge)))))
-    (begin
-      (make-corners! 0 0 0)
-      (make-edges! 0 0 0)
-      (grid-with-corner-coordinates grid))))
+    (make-corners! 0 0 0)
+    (make-edges! 0 0 0)
+    (grid-with-corner-coordinates grid)))
 
 (: 0-grid grid)
 (define 0-grid
   (let* ([mgrid (allocate-grid 0 0-grid-coordinates)]
          [grid (mutable-grid-grid mgrid)])
-    (begin
-      (for ([n (grid-tile-count grid)])
-        (for ([i 5])
-          (begin
-            ((mutable-grid-tile-tile-set! mgrid) n i (vector-ref (vector-ref 0-grid-tile-tiles n) i))))))
+    (for ([n (grid-tile-count grid)])
+      (for ([i 5])
+        ((mutable-grid-tile-tile-set! mgrid) n i (vector-ref (vector-ref 0-grid-tile-tiles n) i))))
     (complete-grid mgrid)))
 
 (: subdivided-grid (grid -> grid))
@@ -248,16 +240,14 @@
          [tile-count (grid-tile-count g)])
     (: connect-tiles! (-> Void))
     (define (connect-tiles!)
-      (begin
-        (for ([n tile-count])
-          (for ([i (tile-edge-count n)])
-            ((mutable-grid-tile-tile-set! mgrid) n i (+ tile-count ((grid-tile-corner g) n i)))))
-        (for ([n (grid-corner-count g)])
-          (for ([i corner-edge-count])
-            (begin
-              ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (* 2 i) (+ tile-count ((grid-corner-corner g) n i)))
-              ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (+ 1 (* 2 i)) ((grid-corner-tile g) n i)))))
-        (void)))
+      (for ([n tile-count])
+        (for ([i (tile-edge-count n)])
+          ((mutable-grid-tile-tile-set! mgrid) n i (+ tile-count ((grid-tile-corner g) n i)))))
+      (for ([n (grid-corner-count g)])
+        (for ([i corner-edge-count])
+          ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (* 2 i) (+ tile-count ((grid-corner-corner g) n i)))
+          ((mutable-grid-tile-tile-set! mgrid) (+ n tile-count) (+ 1 (* 2 i)) ((grid-corner-tile g) n i))))
+      (void))
     (connect-tiles!)
     (complete-grid mgrid)))
 

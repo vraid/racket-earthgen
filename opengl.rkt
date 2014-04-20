@@ -53,11 +53,10 @@
          [buffer (gl-buffer
                   handle
                   vertices)])
-    (begin
-      (hash-set! buffers id buffer)
-      (glBindBuffer GL_ARRAY_BUFFER handle)
-      (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
-      (glBindBuffer GL_ARRAY_BUFFER 0))))
+    (hash-set! buffers id buffer)
+    (glBindBuffer GL_ARRAY_BUFFER handle)
+    (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
+    (glBindBuffer GL_ARRAY_BUFFER 0)))
 
 (define (set-gl-index-buffer! id indices)
   (let* ([handle (if (not (get-gl-buffer id))
@@ -66,11 +65,10 @@
          [buffer (gl-buffer
                   handle
                   indices)])
-    (begin
-      (hash-set! buffers id buffer)
-      (glBindBuffer GL_ELEMENT_ARRAY_BUFFER handle)
-      (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
-      (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0))))
+    (hash-set! buffers id buffer)
+    (glBindBuffer GL_ELEMENT_ARRAY_BUFFER handle)
+    (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
+    (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)))
 
 (define (rotate-gl rotation)
   (apply glRotatef rotation))

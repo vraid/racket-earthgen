@@ -41,7 +41,7 @@
                        (define (make-array n)
                          (let* ([arr-type (_array cstruct-id n)]
                                 [arr (let ([a (malloc arr-type)])
-                                       (begin (memset a 0 n cstruct-id) a))]
+                                       (memset a 0 n cstruct-id) a)]
                                 [ref (lambda (i)
                                        (ptr-ref arr cstruct-id i))])
                            (id

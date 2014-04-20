@@ -38,13 +38,12 @@
 (: copy-geography! (planet planet -> Void))
 (define (copy-geography! prev p)
   (let ([init-tile-array (init-array (tile-count p))])
-    (begin
-      (init-tile-array (tile-data-elevation-set! (planet-tile p))
-                       (curry tile-elevation prev))
-      (init-tile-array (tile-data-water-level-set! (planet-tile p))
-                       (curry tile-water-level prev))
-      ((init-array (corner-count p)) (corner-data-elevation-set! (planet-corner p))
-                                     (curry corner-elevation prev)))))
+    (init-tile-array (tile-data-elevation-set! (planet-tile p))
+                     (curry tile-elevation prev))
+    (init-tile-array (tile-data-water-level-set! (planet-tile p))
+                     (curry tile-water-level prev))
+    ((init-array (corner-count p)) (corner-data-elevation-set! (planet-corner p))
+                                   (curry corner-elevation prev))))
 
 (: sunlight (flonum flonum -> flonum))
 (define (sunlight solar-equator latitude)
@@ -90,25 +89,22 @@
             #:tile (make-tile-data (tile-count prev))
             #:corner (make-corner-data (corner-count prev))
             #:edge (make-edge-data (edge-count prev)))])
-    (begin
-      (copy-geography! prev p)
-      (let ([init-tile-array (init-array (tile-count p))])
-        (begin
-          (init-tile-array (tile-data-sunlight-set! (planet-tile p))
-                           (lambda: ([n : integer])
-                             (sunlight
-                              (climate-variables-solar-equator (planet-climate-variables p))
-                              (tile-latitude p n))))
-          (init-tile-array (tile-data-temperature-set! (planet-tile p))
-                           (curry default-temperature p))))
-      p)))
+    (copy-geography! prev p)
+    (let ([init-tile-array (init-array (tile-count p))])
+      (init-tile-array (tile-data-sunlight-set! (planet-tile p))
+                       (lambda: ([n : integer])
+                         (sunlight
+                          (climate-variables-solar-equator (planet-climate-variables p))
+                          (tile-latitude p n))))
+      (init-tile-array (tile-data-temperature-set! (planet-tile p))
+                       (curry default-temperature p)))
+    p))
 
 (: climate-next (climate-parameters planet -> planet))
 (define (climate-next par prev)
   (let ([p (initial-values par prev)])
-    (begin
-      (generate-climate! par prev p)
-      p)))
+    (generate-climate! par prev p)
+    p))
 
 (struct: climate-data
   ([tile-humidity : FlVector]
@@ -159,27 +155,26 @@
              [add (lambda: ([n : index]
                             [a : Flonum])
                     (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))])
-        (begin
-          (for ([n (tile-count p)])
-            (let* ([wind-vector (default-wind tropical-equator p n)]
-                   [tile-vector (tile-coordinates p n)]
-                   [negative-wind-vector (flvector3-negative wind-vector)]
-                   [tile-wind (build-flvector (tile-edge-count n)
-                                              (lambda (i)
-                                                (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
-                                                                                             (tile-coordinates p (tile-tile p n i))))])
-                                                  (* (if (< (flvector3-distance-squared neighbour-vector wind-vector)
-                                                            (flvector3-distance-squared neighbour-vector negative-wind-vector))
-                                                         1.0
-                                                         -1.0)
-                                                     (flvector3-length (flvector3-projection neighbour-vector wind-vector))))))])
-              (for ([i (tile-edge-count n)])
-                (let ([e (tile-edge p n i)])
-                  (add e (* 0.5
-                            (tile-edge-sign p n i)
-                            (flvector-ref tile-wind i)))))))
-          (init-edge-array (edge-data-surface-air-flow-set! (planet-edge p))
-                           (lambda: ([n : index]) (flvector-ref edge-wind n))))))
+        (for ([n (tile-count p)])
+          (let* ([wind-vector (default-wind tropical-equator p n)]
+                 [tile-vector (tile-coordinates p n)]
+                 [negative-wind-vector (flvector3-negative wind-vector)]
+                 [tile-wind (build-flvector (tile-edge-count n)
+                                            (lambda (i)
+                                              (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
+                                                                                                             (tile-coordinates p (tile-tile p n i))))])
+                                                (* (if (< (flvector3-distance-squared neighbour-vector wind-vector)
+                                                          (flvector3-distance-squared neighbour-vector negative-wind-vector))
+                                                       1.0
+                                                       -1.0)
+                                                   (flvector3-length (flvector3-projection neighbour-vector wind-vector))))))])
+            (for ([i (tile-edge-count n)])
+              (let ([e (tile-edge p n i)])
+                (add e (* 0.5
+                          (tile-edge-sign p n i)
+                          (flvector-ref tile-wind i)))))))
+        (init-edge-array (edge-data-surface-air-flow-set! (planet-edge p))
+                         (lambda: ([n : index]) (flvector-ref edge-wind n)))))
     (define (climate-iterate!)
       (let* ([edge-winds (build-flvector (edge-count p)
                                          (lambda: ([n : integer])
@@ -222,53 +217,50 @@
                                                         (for/fold: ([humidity : Flonum 0.0])
                                                           ([i (tile-edge-count n)])
                                                           (fl+ humidity
-                                                             (fl* (tile-humidity (tile-tile p n i))
-                                                                  (max 0.0 (fl* (edge-wind (tile-edge p n i))
-                                                                                (tile-edge-sign p n i))))))
+                                                               (fl* (tile-humidity (tile-tile p n i))
+                                                                    (max 0.0 (fl* (edge-wind (tile-edge p n i))
+                                                                                  (tile-edge-sign p n i))))))
                                                         (total-incoming-wind n))))])
-                (begin
-                  (for ([n (tile-count p)])
-                    (for ([i (tile-edge-count n)])
-                      (set-tile-humidity! n (if (tile-water? p n)
-                                                (saturation-humidity (tile-temperature p n))
-                                                (min (saturation-humidity (tile-temperature p n))
-                                                     (absolute-incoming-humidity n))))))
-                  (iterate! from to (apply max (map (lambda: ([n : Integer])
-                                                      (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
-                                                            [previous (flvector-ref (climate-data-tile-humidity from) n)])
-                                                        (if (zero? current)
-                                                            0.0
-                                                            (if (zero? previous)
-                                                                1.0
-                                                                (flabs
-                                                                 (fl/ (fl- current
-                                                                           previous)
-                                                                      previous))))))
-                                                    (range (tile-count p)))))))))
+                (for ([n (tile-count p)])
+                  (for ([i (tile-edge-count n)])
+                    (set-tile-humidity! n (if (tile-water? p n)
+                                              (saturation-humidity (tile-temperature p n))
+                                              (min (saturation-humidity (tile-temperature p n))
+                                                   (absolute-incoming-humidity n))))))
+                (iterate! from to (apply max (map (lambda: ([n : Integer])
+                                                    (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
+                                                          [previous (flvector-ref (climate-data-tile-humidity from) n)])
+                                                      (if (zero? current)
+                                                          0.0
+                                                          (if (zero? previous)
+                                                              1.0
+                                                              (flabs
+                                                               (fl/ (fl- current
+                                                                         previous)
+                                                                    previous))))))
+                                                  (range (tile-count p))))))))
         (let ([from (make-climate-data p)])
-          (begin
+          (for ([n (tile-count p)])
+            (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? p n)
+                                                                   (saturation-humidity (tile-temperature p n))
+                                                                   0.0)))
+          (let ([climate-values (iterate! (make-climate-data p)
+                                          from
+                                          1.0)])
             (for ([n (tile-count p)])
-              (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? p n)
-                                                                     (saturation-humidity (tile-temperature p n))
-                                                                     0.0)))
-            (let ([climate-values (iterate! (make-climate-data p)
-                                            from
-                                            1.0)])
-              (for ([n (tile-count p)])
-                ((tile-data-humidity-set! (planet-tile p)) n
-                                                           (flvector-ref (climate-data-tile-humidity climate-values) n))))))))
-    (begin
-      (set-wind!)
-      (climate-iterate!)
-      (for ([n (tile-count p)])
-        ((tile-data-vegetation-set! (planet-tile p)) n
-                                                     (if (tile-water? p n)
-                                                         0.0
-                                                         (supported-vegetation
-                                                          (tile-sunlight p n)
-                                                          (tile-temperature p n)
-                                                          (tile-humidity p n)))))
-      (void))))
+              ((tile-data-humidity-set! (planet-tile p)) n
+                                                         (flvector-ref (climate-data-tile-humidity climate-values) n)))))))
+    (set-wind!)
+    (climate-iterate!)
+    (for ([n (tile-count p)])
+      ((tile-data-vegetation-set! (planet-tile p)) n
+                                                   (if (tile-water? p n)
+                                                       0.0
+                                                       (supported-vegetation
+                                                        (tile-sunlight p n)
+                                                        (tile-temperature p n)
+                                                        (tile-humidity p n)))))
+    (void)))
 
 (: initial-values (climate-parameters planet -> planet))
 (define (initial-values par prev)
@@ -284,7 +276,6 @@
              [init-tile-array (init-array (tile-count p))]
              [init-corner-array (init-array (corner-count p))]
              [init-edge-array (init-array (edge-count p))])
-        (begin
-          (copy-geography! prev p)
-          (init-tile-array (tile-data-temperature-set! (planet-tile p)) (curry tile-temperature prev))
-          p))))
+        (copy-geography! prev p)
+        (init-tile-array (tile-data-temperature-set! (planet-tile p)) (curry tile-temperature prev))
+        p)))
