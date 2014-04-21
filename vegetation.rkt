@@ -12,7 +12,7 @@
   (if (or (zero? sunlight)
           (below-freezing-temperature? temperature))
       0.0
-      (fl* 2.0 (fl* (max 0.0 (fl- 1.0 (aridity temperature humidity)))
+      (fl* 3.0 (fl* (max 0.0 (fl- 1.0 (aridity temperature humidity)))
                     sunlight))))
        
 (: vegetation-cover (flonum -> flonum))

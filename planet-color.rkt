@@ -82,12 +82,17 @@
               topography-colors))
 
 (define vegetation-color (flcolor 0.176 0.32 0.05))
+(define snow-color (flcolor 0.9 0.9 0.9))
 
 (: color-vegetation (planet index -> flcolor))
 (define (color-vegetation p n)
-  (flcolor-interpolate (color-topography p n)
-                       vegetation-color
-                       (vegetation-cover (tile-vegetation p n))))
+  (if (or (and (tile-land? p n)
+               (below-freezing-temperature? (tile-temperature p n)))
+          (below-freezing-temperature? (+ (tile-temperature p n) 10.0)))
+      snow-color
+      (flcolor-interpolate (color-topography p n)
+                           vegetation-color
+                           (vegetation-cover (tile-vegetation p n)))))
 
 (define temperature-intervals/colors
   (list (- freezing-temperature) (flcolor 1.0 1.0 1.0)

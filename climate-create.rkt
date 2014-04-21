@@ -53,7 +53,9 @@
 (define (default-temperature p n)
   (-
    (+ 200.0
-      (* 130.0 (tile-sunlight p n)))
+      (* 130.0 (if (tile-land? p n)
+                   (tile-sunlight p n)
+                   (sunlight 0.0 (tile-latitude p n)))))
    (max 0.0
         (temperature-lapse (tile-elevation p n)))))
 
@@ -119,7 +121,7 @@
 
 (: generate-climate! (climate-parameters planet planet -> Void))
 (define (generate-climate! par prev p)
-  (let* ([tropical-equator 0.0]
+  (let* ([tropical-equator (* 0.5 (climate-variables-solar-equator (planet-climate-variables p)))]
          [tile-edge-sign (let ([v (build-vector (* 6 (tile-count p))
                                                 (lambda: ([n : integer])
                                                   (let ([i (modulo n 6)]
@@ -277,5 +279,12 @@
              [init-corner-array (init-array (corner-count p))]
              [init-edge-array (init-array (edge-count p))])
         (copy-geography! prev p)
-        (init-tile-array (tile-data-temperature-set! (planet-tile p)) (curry tile-temperature prev))
+        (let ([init-tile-array (init-array (tile-count p))])
+          (init-tile-array (tile-data-sunlight-set! (planet-tile p))
+                           (lambda: ([n : integer])
+                             (sunlight
+                              (climate-variables-solar-equator (planet-climate-variables p))
+                              (tile-latitude p n))))
+          (init-tile-array (tile-data-temperature-set! (planet-tile p))
+                           (curry default-temperature p)))
         p)))
