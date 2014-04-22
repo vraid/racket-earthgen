@@ -15,13 +15,6 @@
          "flvector3.rkt"
          "wind.rkt")
 
-(: default-climate-parameters (-> climate-parameters))
-(define (default-climate-parameters)
-  (climate-parameters/kw
-   #:acceptable-delta 0.01
-   #:axial-tilt (/ pi 8.0)
-   #:seasons-per-cycle 12))
-
 (: next-climate-variables (climate-parameters climate-variables -> climate-variables))
 (define (next-climate-variables par prev)
   (let* ([season (+ 1 (climate-variables-season prev))]
@@ -87,6 +80,7 @@
   (let ([p (planet/kw
             #:grid (planet-grid prev)
             #:has-climate? true
+            #:climate-parameters par
             #:climate-variables initial-climate-variables
             #:tile (make-tile-data (tile-count prev))
             #:corner (make-corner-data (corner-count prev))
@@ -271,6 +265,7 @@
       (let* ([p (planet/kw
                  #:grid (planet-grid prev)
                  #:has-climate? true
+                 #:climate-parameters par
                  #:climate-variables (next-climate-variables par (planet-climate-variables prev))
                  #:tile (make-tile-data (tile-count prev))
                  #:corner (make-corner-data (corner-count prev))

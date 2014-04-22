@@ -36,6 +36,8 @@
 (define last-draw (current-inexact-milliseconds))
 
 (define planet-box (box #f))
+(define planet-vector #f)
+(define planet-vector-position #f)
 (define grid-box (box (n-grid-list null 0)))
 (define color-mode color-topography)
 
@@ -173,6 +175,40 @@
                    (thunk
                     (set-box! planet-box (climate-next (default-climate-parameters) p))
                     (color-planet! color-mode)))))]
+         [#\e (begin
+                (when (planet? (unbox planet-box))
+                  (thread
+                   (thunk
+                    (set! planet-vector (list->vector
+                                         (let* ([par (default-climate-parameters)]
+                                                [seasons (climate-parameters-seasons-per-cycle par)])
+                                           (define (planet-list n ls)
+                                             (if (= seasons n)
+                                                 ls
+                                                 (planet-list (+ 1 n) 
+                                                              (if (zero? n)
+                                                                  (list (climate-next par (unbox planet-box)))
+                                                                  (cons (climate-next par (first ls)) ls)))))
+                                           (reverse (planet-list 0 #f)))))
+                    (set! planet-vector-position 0)
+                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                    (color-planet! color-mode)))))]
+         ['left (begin
+                  (when planet-vector
+                    (set! planet-vector-position
+                          (modulo (- planet-vector-position 1)
+                                  (climate-parameters-seasons-per-cycle
+                                   (planet-climate-parameters (unbox planet-box)))))
+                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                    (color-planet! color-mode)))]
+         ['right (begin
+                  (when planet-vector
+                    (set! planet-vector-position
+                          (modulo (+ planet-vector-position 1)
+                                  (climate-parameters-seasons-per-cycle
+                                   (planet-climate-parameters (unbox planet-box)))))
+                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                    (color-planet! color-mode)))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]

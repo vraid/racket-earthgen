@@ -29,6 +29,7 @@
     (planet/kw
      #:grid grid
      #:has-climate? false
+     #:climate-parameters (default-climate-parameters)
      #:climate-variables initial-climate-variables
      
      #:tile (tile-data 

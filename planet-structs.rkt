@@ -16,6 +16,7 @@
 (struct/kw: planet
   ([grid : grid]
    [has-climate? : Boolean]
+   [climate-parameters : climate-parameters]
    [climate-variables : climate-variables]
    [tile : tile-data]
    [corner : corner-data]

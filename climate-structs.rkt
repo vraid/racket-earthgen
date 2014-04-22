@@ -16,8 +16,15 @@
              [acceptable-delta : Flonum])
             #:transparent)
 
+(: default-climate-parameters (-> climate-parameters))
+(define (default-climate-parameters)
+  (climate-parameters/kw
+   #:acceptable-delta 0.01
+   #:axial-tilt (/ pi 8.0)
+   #:seasons-per-cycle 12))
+
 (define initial-climate-variables
   (climate-variables/kw
-   #:season -1
+   #:season 0
    #:time-of-year 0.0
    #:solar-equator 0.0))
