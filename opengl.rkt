@@ -10,9 +10,11 @@
          set-gl-vertex-buffer!
          set-gl-index-buffer!
          set-gl-ortho-projection
-         rotate-gl
+         gl-rotate
+         gl-translate
          set-gl-viewport
-         draw-gl)
+         gl-clear
+         gl-draw)
 
 (require ffi/vector
          ffi/cvector
@@ -70,9 +72,6 @@
     (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
     (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)))
 
-(define (rotate-gl rotation)
-  (apply glRotatef rotation))
-
 (define (set-gl-ortho-projection left right bottom top near far)
   (glMatrixMode GL_PROJECTION)
   (glLoadIdentity)
@@ -81,11 +80,19 @@
 (define (set-gl-viewport left top width height)
   (glViewport left top width height))
 
-(define (draw-gl vertex-buffer index-buffer)
+(define (gl-rotate rotation)
+  (apply glRotatef rotation))
+
+(define (gl-translate translation)
+  (apply glTranslatef translation))
+
+(define (gl-clear)
+  (glClearColor 0.0 0.0 0.0 0.0))
+
+(define (gl-draw vertex-buffer index-buffer)
   (glFrontFace GL_CCW)
   (glEnable GL_CULL_FACE)
   (glCullFace GL_BACK)
-  (glClearColor 0.0 0.0 0.0 0.0)
   (glClear GL_COLOR_BUFFER_BIT)
   (glShadeModel GL_SMOOTH)
   

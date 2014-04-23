@@ -9,6 +9,7 @@
          "color.rkt"
          "planet-color.rkt"
          "opengl.rkt"
+         "math.rkt"
          math/flonum
          ffi/cvector
          ffi/unsafe)
@@ -23,6 +24,7 @@
                     (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
                     (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
                     (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))
+(define translation (list -0.2 0.0 0.0))
 (define scale 0.9)
 (define scale-max 100.0)
 (define scale-min 0.5)
@@ -40,6 +42,7 @@
 (define planet-vector-position #f)
 (define grid-box (box (n-grid-list null 0)))
 (define color-mode color-topography)
+(define selected-tile #f)
 
 (define-values
   (display-width display-height)
@@ -65,7 +68,7 @@
    (flcolor->byte (flcolor-blue color))
    0))
 
-(define (make-vertices!)
+(define (make-tile-buffers!)
   (let* ([grid (first (unbox grid-box))]
          [tile-count (grid-tile-count grid)]
          [vertices (make-cvector _gl-vertex (* 7 tile-count))]
@@ -128,8 +131,10 @@
              (for ([quat (list (list 90.0 -1.0 0.0 0.0)
                                (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
                                (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
-               (rotate-gl quat))
-             (draw-gl 'tile-vertices
+               (gl-translate (map (curryr / scale) translation))
+               (gl-rotate quat))
+             (gl-clear)
+             (gl-draw 'tile-vertices
                       'tile-indices)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
@@ -160,7 +165,7 @@
              (let ([grids (unbox grid-box)])
                (unless (= size (grid-subdivision-level (first grids)))
                  (set-box! grid-box (n-grid-list grids size))
-                 (make-vertices!)))))
+                 (make-tile-buffers!)))))
            (let ([grids (n-grid-list (unbox grid-box) size)])
              (set-box! planet-box ((heightmap->planet (first grids)) (method grids))))
            (color-planet! color-mode)))))
@@ -256,8 +261,11 @@
 
 (define gl-context canvas)
 
-;(send frame maximize #t)
+(send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
 (send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))
+(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices (make-cvector _gl-vertex 1))))
+(send canvas with-gl-context (thunk (set-gl-index-buffer! 'selected-tile-indices (make-cvector _uint 1))))
+(send canvas on-paint)
