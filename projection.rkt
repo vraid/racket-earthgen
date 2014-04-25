@@ -1,9 +1,9 @@
 #lang typed/racket
 
-(provide relative->rectangular
-         equirectangular-projection)
+(provide (all-defined-out))
 
-(require racket/flonum)
+(require "types.rkt"
+         racket/flonum)
 
 (: relative->rectangular (Integer Integer -> (FlVector -> (Vectorof Integer))))
 (define (relative->rectangular width height)
@@ -18,3 +18,8 @@
 (: equirectangular-projection (Flonum Flonum -> FlVector))
 (define (equirectangular-projection longitude latitude)
   (flvector (/ longitude pi) (/ (- latitude) pi)))
+
+(: orthographic->spherical (flonum flonum -> FlVector))
+(define (orthographic->spherical x y)
+  (let ([z (flsqrt (- 1.0 (flexpt x 2.0) (flexpt y 2.0)))])
+    (flvector x y z)))

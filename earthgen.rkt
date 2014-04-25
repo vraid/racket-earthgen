@@ -1,6 +1,7 @@
 #lang racket
 
 (require racket/gui/base
+         "flvector3.rkt"
          "quaternion.rkt"
          "planet.rkt"
          "planet-create.rkt"
@@ -9,6 +10,7 @@
          "color.rkt"
          "planet-color.rkt"
          "opengl.rkt"
+         "projection.rkt"
          "math.rkt"
          math/flonum
          ffi/cvector
@@ -24,12 +26,12 @@
                     (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
                     (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
                     (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))
-(define translation (list -0.2 0.0 0.0))
 (define scale 0.9)
 (define scale-max 100.0)
 (define scale-min 0.5)
 
-(define mouse-down? false)
+(define mouse-moving? #f)
+(define mouse-down? #f)
 (define mouse-down-x 0)
 (define mouse-down-y 0)
 (define mouse-down-latitude latitude)
@@ -101,18 +103,32 @@
           (set-gl-vertex-color! (cvector-ref vertices (+ 1 i (* n 7))) color))))
     (set-gl-vertex-buffer! 'tile-vertices vertices)))
 
-(define frame
-  (new frame%
-       [label "earthgen"]
-       [width window-width]
-       [height window-height]))
-
 (define (color-vector planet f)
   (let ([p (unbox planet-box)])
     (build-vector
      (vector-length (grid-tile-count (planet-grid p)))
      (lambda (n)
        (f p n)))))
+
+(define frame
+  (new frame%
+       [label "earthgen"]
+       [width window-width]
+       [height window-height]))
+
+(define frame-panel
+  (new horizontal-panel%
+       [parent frame]))
+
+(define info-panel
+  (new vertical-panel%
+       [parent frame-panel]
+       [min-width 400]
+       [stretchable-width #f]))
+
+(define (delete-children container)
+  (map (lambda (c) (send container delete-child c))
+       (send container get-children)))
 
 (define canvas
   (new
@@ -131,11 +147,12 @@
              (for ([quat (list (list 90.0 -1.0 0.0 0.0)
                                (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
                                (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
-               (gl-translate (map (curryr / scale) translation))
                (gl-rotate quat))
              (gl-clear)
              (gl-draw 'tile-vertices
                       'tile-indices)
+             (gl-draw 'selected-tile-vertices
+                      'selected-tile-indices)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
      (define/override (on-size width height)
@@ -230,11 +247,59 @@
                                    (/ scale 1.05)))
                         (repaint!))]
          [_ (void)]))
+     (define (tile-at x y)
+       (if (unbox planet-box)
+           (let ([mx (fl* 2.0 (fl* (fl* (fl/ 1.0 scale) (fl- (exact->inexact (/ x display-width)) 0.5)) (exact->inexact (/ display-width display-height))))]
+                 [my (fl* -2.0 (fl/ (fl- (exact->inexact (/ y display-height)) 0.5) scale))])
+             (if (< 1.0 (fl+ (flexpt mx 2.0) (flexpt my 2.0)))
+                 #f
+                 (let* ([p (unbox planet-box)]
+                        [v (quaternion-vector-product (quaternion-inverse (rotation)) (orthographic->spherical mx my))]
+                        [distance (build-flvector (tile-count p) (lambda (n) (flvector3-distance-squared v (tile-coordinates p n))))])
+                   (foldl (lambda (n closest)
+                            (if (< (flvector-ref distance n)
+                                   (flvector-ref distance closest))
+                                n
+                                closest))
+                          0
+                          (range (tile-count p))))))
+           #f))
+     (define (update-info-panel tile)
+       (delete-children info-panel)
+       (when tile
+         (let ([t (new text-field%
+                      [label "tile id"]
+                      [parent info-panel])])
+           (send t set-value (number->string tile)))))
      (define/override (on-event event)
        (if (send event button-up? 'left)
-           (set! mouse-down? false)
+           (begin
+             (unless mouse-moving?
+               (when (unbox planet-box)
+                 (let ([tile (tile-at (send event get-x)
+                                      (send event get-y))])
+                   (update-info-panel tile)
+                   (when tile
+                     (let ([p (unbox planet-box)]
+                           [vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
+                       (begin
+                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates p tile) (flcolor 1.0 0.0 0.0)))
+                         (for ([n 6])
+                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates p (tile-corner p tile n)) (flcolor 1.0 0.0 0.0))))
+                         (with-gl-context
+                          (thunk
+                           (set-gl-vertex-buffer! 'selected-tile-vertices vertices))))))))
+               (repaint!))
+             (set! mouse-down? false)
+             (set! mouse-moving? #f))
            (if mouse-down?
                (begin
+                 (let ([current-x (send event get-x)]
+                       [current-y (send event get-y)])
+                   (begin
+                     (when (or (not (= mouse-down-x current-x))
+                               (not (= mouse-down-y current-y)))
+                       (set! mouse-moving? true))))
                  (set! longitude
                        (fl+ mouse-down-longitude
                             (fl* (exact->inexact
@@ -250,22 +315,29 @@
                  (repaint!))
                (if (send event button-down? 'left)
                    (begin
-                     (set! mouse-down? true)
                      (set! mouse-down-x (send event get-x))
                      (set! mouse-down-y (send event get-y))
+                     (set! mouse-down? true)
                      (set! mouse-down-latitude latitude)
                      (set! mouse-down-longitude longitude))
                    (void)))))
      (super-instantiate () (style '(gl))))
-   [parent frame]))
+   [parent frame-panel]
+   [min-width 400]
+   [min-height 400]))
 
 (define gl-context canvas)
-
+(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
+(send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))
+(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices (make-cvector _gl-vertex 7))))
+(send canvas with-gl-context (thunk (set-gl-index-buffer! 'selected-tile-indices
+                                                          (let ([indices (make-cvector _uint 18)])
+                                                            (for ([i 6])
+                                                              (let ([k (+ (* i 3))])
+                                                                (cvector-set! indices k 0)
+                                                                (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6)))
+                                                                (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6)))))
+                                                            indices))))
 (send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
-(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
-(send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))
-(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices (make-cvector _gl-vertex 1))))
-(send canvas with-gl-context (thunk (set-gl-index-buffer! 'selected-tile-indices (make-cvector _uint 1))))
-(send canvas on-paint)

@@ -87,13 +87,13 @@
   (apply glTranslatef translation))
 
 (define (gl-clear)
-  (glClearColor 0.0 0.0 0.0 0.0))
+  (glClearColor 0.0 0.0 0.0 0.0)
+  (glClear GL_COLOR_BUFFER_BIT))
 
 (define (gl-draw vertex-buffer index-buffer)
   (glFrontFace GL_CCW)
   (glEnable GL_CULL_FACE)
   (glCullFace GL_BACK)
-  (glClear GL_COLOR_BUFFER_BIT)
   (glShadeModel GL_SMOOTH)
   
   (glBindBuffer GL_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer vertex-buffer)))
@@ -103,7 +103,6 @@
   
   (glEnableClientState GL_VERTEX_ARRAY)
   (glEnableClientState GL_COLOR_ARRAY)
-  (glClear GL_COLOR_BUFFER_BIT)
   (glBindBuffer GL_ELEMENT_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer index-buffer)))
   
   (glDrawElements GL_TRIANGLES
