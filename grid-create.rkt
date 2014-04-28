@@ -199,18 +199,31 @@
       (: empty-edge? (index index -> Boolean))
       (define (empty-edge? tile i)
         (= -1 ((grid-tile-edge grid) tile i)))
+      (define tile-edge-set! (mutable-grid-tile-edge-set! mgrid))
+      (define edge-tile-set! (mutable-grid-edge-tile-set! mgrid))
+      (define edge-corner-set! (mutable-grid-edge-corner-set! mgrid))
+      (define corner-edge-set! (mutable-grid-corner-edge-set! mgrid))
+      (define corner-corner-set! (mutable-grid-corner-corner-set! mgrid))
       (: make-edge! (index -> Void))
       (define (make-edge! i)
-        (let* ([tiles (list tile ((grid-tile-tile grid) tile i))]
-               [corners (map (curry (grid-tile-corner grid) tile) (list i (+ 1 i)))]
-               [pos (map (curry grid-tile-tile-position grid) tiles (list (second tiles) (first tiles)))]
-               [corner-pos (map (curry grid-corner-tile-position grid) corners tiles)])
-          (map (mutable-grid-tile-edge-set! mgrid) tiles pos (list edge edge))
-          (map (curry (mutable-grid-edge-tile-set! mgrid) edge) (range 2) tiles)
-          (map (curry (mutable-grid-edge-corner-set! mgrid) edge) (range 2) corners)
-          (map (mutable-grid-corner-edge-set! mgrid) corners corner-pos (list edge edge))
-          (map (mutable-grid-corner-corner-set! mgrid) corners corner-pos (reverse corners))
-          (void)))
+        (let* (
+               [tiles (vector tile ((grid-tile-tile grid) tile i))]
+               [corners (build-vector 2 (lambda: ([n : integer])
+                                          ((grid-tile-corner grid) tile (+ i n))))])
+          (for ([n 2])
+            (let* ([tile (vector-ref tiles n)]
+                   [corner (vector-ref corners n)]
+                   [pos (grid-tile-tile-position grid
+                                                 (vector-ref tiles n)
+                                                 (vector-ref tiles (- 1 n)))]
+                   [corner-pos (grid-corner-tile-position grid corner tile)])
+              (tile-edge-set! tile pos edge)
+              (edge-tile-set! edge n tile)
+              (edge-corner-set! edge n corner)
+              (corner-edge-set! corner corner-pos edge)
+              (corner-corner-set! corner corner-pos (vector-ref corners (- 1 n)))
+              (void)))))
+      
       (if (= tile (grid-tile-count grid))
           (void)
           (if (= i (tile-edge-count tile))
