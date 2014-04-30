@@ -43,7 +43,7 @@
 (define planet-vector #f)
 (define planet-vector-position #f)
 (define grid-box (box (n-grid-list null 0)))
-(define color-mode color-topography)
+(define color-mode color-vegetation)
 (define selected-tile #f)
 
 (define-values
@@ -329,7 +329,13 @@
 (define gl-context canvas)
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
 (send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))
-(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices (make-cvector _gl-vertex 7))))
+(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
+                                                           (let ([vectors (make-cvector _gl-vertex 7)]
+                                                                 [zero-vertex (->gl-vertex (flvector 0.0 0.0 0.0)
+                                                                                           (flcolor 0.0 0.0 0.0))])
+                                                             (for ([i 7])
+                                                               (cvector-set! vectors i zero-vertex))
+                                                             vectors))))
 (send canvas with-gl-context (thunk (set-gl-index-buffer! 'selected-tile-indices
                                                           (let ([indices (make-cvector _uint 18)])
                                                             (for ([i 6])

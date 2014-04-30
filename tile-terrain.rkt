@@ -18,10 +18,6 @@
 (define (tile-land? p n)
   (not (tile-water? p n)))
 
-(: tile-snow-cover (planet index -> Flonum))
-(define (tile-snow-cover p n)
-  0.0)
-
 (: tile-ice-cover (planet index -> Flonum))
 (define (tile-ice-cover p n)
   0.0)

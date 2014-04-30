@@ -35,8 +35,8 @@
      #:tile (tile-data 
                   (lambda: ([n : index])
                     (flvector-ref (heightmap-tiles h) n))
-                  empty empty empty empty empty empty empty empty
-                  void-set void-set void-set void-set void-set void-set void-set void-set void-set)
+                  empty empty empty empty empty empty empty empty empty
+                  void-set void-set void-set void-set void-set void-set void-set void-set void-set void-set)
      
      #:corner (corner-data
                     (lambda: ([n : index])

@@ -52,6 +52,15 @@
    (max 0.0
         (temperature-lapse (tile-elevation p n)))))
 
+(: default-snow-cover (planet integer -> Flonum))
+(define (default-snow-cover p n)
+  (let ([temperature (tile-temperature p n)])
+    (if (tile-water? p n)
+        0.0
+        (if (below-freezing-temperature? temperature)
+            1.0
+            0.0))))
+
 (: default-pressure-gradient-force (Flonum Flonum -> flvector3))
 (define (default-pressure-gradient-force tropical-equator latitude)
   (let* ([c (fl/ (fl* 3.0 pi)
@@ -93,7 +102,9 @@
                           (climate-variables-solar-equator (planet-climate-variables p))
                           (tile-latitude p n))))
       (init-tile-array (tile-data-temperature-set! (planet-tile p))
-                       (curry default-temperature p)))
+                       (curry default-temperature p))
+      (init-tile-array (tile-data-snow-cover-set! (planet-tile p))
+                       (curry default-snow-cover p)))
     p))
 
 (: climate-next (climate-parameters planet -> planet))
@@ -280,5 +291,7 @@
                               (climate-variables-solar-equator (planet-climate-variables p))
                               (tile-latitude p n))))
           (init-tile-array (tile-data-temperature-set! (planet-tile p))
-                           (curry default-temperature p)))
+                           (curry default-temperature p))
+          (init-tile-array (tile-data-snow-cover-set! (planet-tile p))
+                           (curry default-snow-cover p)))
         p)))

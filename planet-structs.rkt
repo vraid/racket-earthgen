@@ -120,6 +120,7 @@
                 [sunlight Flonum]
                 [humidity Flonum]
                 [precipitation Flonum]
+                [snow-cover Flonum]
                 [vegetation Flonum]))
 
 (direct-access planet corner corner-data
