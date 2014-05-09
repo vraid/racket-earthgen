@@ -87,7 +87,7 @@
 (: climate-first (climate-parameters planet -> planet))
 (define (climate-first par prev)
   (let ([p (planet/kw
-            #:grid (planet-grid prev)
+            #:grid prev
             #:has-climate? true
             #:climate-parameters par
             #:climate-variables initial-climate-variables
@@ -194,7 +194,7 @@
                                                  (fl (apply + (map (lambda: ([e : integer])
                                                                      (* (edge-wind e)
                                                                         (edge-tile-sign p e n)))
-                                                                   (grid-tile-edge-list (planet-grid p) n))))))]
+                                                                   (grid-tile-edge-list p n))))))]
              [tile-convection (lambda: ([n : integer])
                                 (flvector-ref tile-convections n))]
              [incoming-winds (build-flvector (tile-count p)
@@ -273,7 +273,7 @@
   (if (not (planet-has-climate? prev))
       (climate-first par prev)
       (let* ([p (planet/kw
-                 #:grid (planet-grid prev)
+                 #:grid prev
                  #:has-climate? true
                  #:climate-parameters par
                  #:climate-variables (next-climate-variables par (planet-climate-variables prev))

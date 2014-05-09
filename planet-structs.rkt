@@ -8,46 +8,44 @@
 (require "typed-struct-kw.rkt"
          "types.rkt"
          "grid.rkt"
-         "flvector3.rkt"
          "planet-typed-data-structs.rkt"
          "climate-structs.rkt"
          math/flonum)
 
-(struct/kw: planet
-  ([grid : grid]
-   [has-climate? : Boolean]
-   [climate-parameters : climate-parameters]
-   [climate-variables : climate-variables]
-   [tile : tile-data]
-   [corner : corner-data]
-   [edge : edge-data]))
+(struct/kw: planet grid
+            ([has-climate? : Boolean]
+             [climate-parameters : climate-parameters]
+             [climate-variables : climate-variables]
+             [tile : tile-data]
+             [corner : corner-data]
+             [edge : edge-data]))
 
-(: tile-count (planet -> natural))
-(define (tile-count p)
-  (grid-tile-count (planet-grid p)))
-
-(: corner-count (planet -> natural))
-(define (corner-count p)
-  (grid-corner-count (planet-grid p)))
-
-(: edge-count (planet -> natural))
-(define (edge-count p)
-  (grid-edge-count (planet-grid p)))
+(define tile-count grid-tile-count)
+(define corner-count grid-corner-count)
+(define edge-count grid-edge-count)
 
 (: edge-tile-sign (planet integer integer -> Flonum))
 (define (edge-tile-sign p e t)
-  (fl (grid-edge-tile-sign (planet-grid p) e t)))
+  (fl (grid-edge-tile-sign p e t)))
 
 (: edge-corner-sign (planet integer integer -> Flonum))
 (define (edge-corner-sign p e c)
-  (fl (grid-edge-corner-sign (planet-grid p) e c)))
+  (fl (grid-edge-corner-sign p e c)))
+
+(: tile-coordinates (grid integer -> FlVector))
+(define (tile-coordinates p n)
+  ((grid-tile-coordinates p) n))
+
+(: corner-coordinates (grid integer -> FlVector))
+(define (corner-coordinates p n)
+  ((grid-corner-coordinates p) n))
 
 (require (for-syntax racket/syntax
                      racket/list))
 
 (define-syntax (planet-grid-access stx)
   (syntax-case stx ()
-    [(_ id struct ([field] ...))
+    [(_ struct ([field] ...))
      (with-syntax ([(function ...) (map (lambda (field)
                                           (format-id stx "~a-~a" #'struct field))
                                         (syntax->list #'(field ...)))]
@@ -56,45 +54,26 @@
                                                (syntax->list #'(field ...)))])
        #'(begin
            (provide function ...)
-           (: function (id integer integer -> integer)) ...
+           (: function (grid integer integer -> integer)) ...
            (define (function p n i)
-             ((struct-function (planet-grid p)) n i)) ...))]))
+             ((struct-function p) n i)) ...))]))
 
-(planet-grid-access planet tile
+(planet-grid-access tile
                     ([tile]
                      [corner]
                      [edge]))
 
-(planet-grid-access planet corner
+(planet-grid-access corner
                     ([tile]
                      [corner]
                      [edge]))
 
-(planet-grid-access planet edge
+(planet-grid-access edge
                     ([tile]
                      [corner]))
 
-(define-syntax (grid-field-access stx)
-  (syntax-case stx ()
-    [(_ id struct ([field type] ...))
-     (with-syntax ([(function ...) (map (lambda (field)
-                                          (format-id stx "~a-~a" #'struct field))
-                                        (syntax->list #'(field ...)))]
-                   [(struct-function ...) (map (lambda (field)
-                                                 (format-id stx "grid-~a-~a" #'struct field))
-                                               (syntax->list #'(field ...)))])
-       
-       #'(begin
-           (provide function ...)
-           (: function (id integer -> type)) ...
-           (define (function p n)
-             ((struct-function (planet-grid p)) n)) ...))]))
-
-(grid-field-access planet tile
-                   ([coordinates flvector3]))
-
-(grid-field-access planet corner
-                   ([coordinates flvector3]))
+(require (for-syntax racket/syntax
+                     racket/list))
 
 (define-syntax (direct-access stx)
   (syntax-case stx ()

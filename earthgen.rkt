@@ -106,7 +106,7 @@
 (define (color-vector planet f)
   (let ([p (unbox planet-box)])
     (build-vector
-     (vector-length (grid-tile-count (planet-grid p)))
+     (tile-count p)
      (lambda (n)
        (f p n)))))
 
