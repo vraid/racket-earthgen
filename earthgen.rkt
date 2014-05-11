@@ -11,6 +11,7 @@
          "planet-color.rkt"
          "opengl.rkt"
          "projection.rkt"
+         "sample-terrain.rkt"
          "math.rkt"
          math/flonum
          ffi/cvector
@@ -39,6 +40,7 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
+(define buffer-tile-count 0)
 (define planet-box (box #f))
 (define planet-vector #f)
 (define planet-vector-position #f)
@@ -60,6 +62,11 @@
          "heightmap-create.rkt"
          "heightmap-functions.rkt")
 
+(define (generate-terrain size method)
+  (set-box! grid-box (n-grid-list (unbox grid-box) size))
+  (let ([grids (n-grid-list (unbox grid-box) size)])
+    (set-box! planet-box ((heightmap->planet (first grids)) (method grids)))))
+
 (define (->gl-vertex coord color)
   (make-gl-vertex
    (flvector-ref coord 0)
@@ -76,6 +83,7 @@
          [vertices (make-cvector _gl-vertex (* 7 tile-count))]
          [indices (make-cvector _uint (* 18 tile-count))]
          [color (flcolor 0.0 0.0 0.0)])
+    (set! buffer-tile-count tile-count)
     (for ([n tile-count])
       (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
       (for ([i 6])
@@ -102,13 +110,6 @@
         (for ([i 6])
           (set-gl-vertex-color! (cvector-ref vertices (+ 1 i (* n 7))) color))))
     (set-gl-vertex-buffer! 'tile-vertices vertices)))
-
-(define (color-vector planet f)
-  (let ([p (unbox planet-box)])
-    (build-vector
-     (tile-count p)
-     (lambda (n)
-       (f p n)))))
 
 (define frame
   (new frame%
@@ -177,15 +178,12 @@
        (thread
         (thunk
          (let-values ([(size method) (load "terrain-gen.rkt")])
+           (generate-terrain size method)
            (with-gl-context
             (thunk
-             (let ([grids (unbox grid-box)])
-               (unless (= size (grid-subdivision-level (first grids)))
-                 (set-box! grid-box (n-grid-list grids size))
-                 (make-tile-buffers!)))))
-           (let ([grids (n-grid-list (unbox grid-box) size)])
-             (set-box! planet-box ((heightmap->planet (first grids)) (method grids))))
-           (color-planet! color-mode)))))
+             (unless (= buffer-tile-count (tile-count (unbox planet-box)))
+               (make-tile-buffers!)))))
+         (color-planet! color-mode))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
@@ -224,13 +222,13 @@
                     (set-box! planet-box (vector-ref planet-vector planet-vector-position))
                     (color-planet! color-mode)))]
          ['right (begin
-                  (when planet-vector
-                    (set! planet-vector-position
-                          (modulo (+ planet-vector-position 1)
-                                  (climate-parameters-seasons-per-cycle
-                                   (planet-climate-parameters (unbox planet-box)))))
-                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
-                    (color-planet! color-mode)))]
+                   (when planet-vector
+                     (set! planet-vector-position
+                           (modulo (+ planet-vector-position 1)
+                                   (climate-parameters-seasons-per-cycle
+                                    (planet-climate-parameters (unbox planet-box)))))
+                     (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                     (color-planet! color-mode)))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
@@ -268,8 +266,8 @@
        (delete-children info-panel)
        (when tile
          (let ([t (new text-field%
-                      [label "tile id"]
-                      [parent info-panel])])
+                       [label "tile id"]
+                       [parent info-panel])])
            (send t set-value (number->string tile)))))
      (define/override (on-event event)
        (if (send event button-up? 'left)
@@ -326,9 +324,13 @@
    [min-width 400]
    [min-height 400]))
 
+(generate-terrain 5 sample-terrain)
+
 (define gl-context canvas)
-(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'tile-vertices (make-cvector _gl-vertex 0))))
-(send canvas with-gl-context (thunk (set-gl-index-buffer! 'tile-indices (make-cvector _uint 0))))
+(send canvas with-gl-context (thunk 
+                              (make-tile-buffers!)
+                              (update-vertices! (curry color-mode (unbox planet-box)))))
+
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
                                                            (let ([vectors (make-cvector _gl-vertex 7)]
                                                                  [zero-vertex (->gl-vertex (flvector 0.0 0.0 0.0)
@@ -347,3 +349,4 @@
 (send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
+(send canvas on-paint)
