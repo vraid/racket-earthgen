@@ -14,11 +14,14 @@
 (define (n-grid-list grids n)
   (cond [(zero? n)
          (list (n-grid 0))]
+        [(null? grids)
+         (n-grid-list
+          (n-grid-list null (- n 1))
+          n)]
         [(eq? n (grid-subdivision-level (first grids)))
          grids]
         [(< n (grid-subdivision-level (first grids)))
          (n-grid-list (rest grids) n)]
-        [else (n-grid-list (cons
-                            (subdivided-grid (first grids))
-                            grids)
+        [else (n-grid-list (cons (subdivided-grid (first grids))
+                                 grids)
                            n)]))
