@@ -1,20 +1,6 @@
 #lang racket
 
-(provide _gl-vertex
-         set-gl-vertex-red!
-         set-gl-vertex-green!
-         set-gl-vertex-blue!
-         make-gl-vertex
-         (struct-out gl-buffer)
-         get-gl-buffer
-         set-gl-vertex-buffer!
-         set-gl-index-buffer!
-         set-gl-ortho-projection
-         gl-rotate
-         gl-translate
-         set-gl-viewport
-         gl-clear
-         gl-draw)
+(provide (all-defined-out))
 
 (require ffi/vector
          ffi/cvector
@@ -86,14 +72,20 @@
 (define (gl-translate translation)
   (apply glTranslatef translation))
 
-(define (gl-clear)
-  (glClearColor 0.0 0.0 0.0 0.0)
+(define (gl-cull-face side)
+  (glEnable GL_CULL_FACE)
+  (match side
+    ('front (glCullFace GL_FRONT))
+    ('back (glCullFace GL_BACK))
+    ('both (glCullFace GL_FRONT_AND_BACK))
+    (_ (void))))
+
+(define (gl-clear color)
+  (apply glClearColor color)
   (glClear GL_COLOR_BUFFER_BIT))
 
 (define (gl-draw vertex-buffer index-buffer)
   (glFrontFace GL_CCW)
-  (glEnable GL_CULL_FACE)
-  (glCullFace GL_BACK)
   (glShadeModel GL_SMOOTH)
   
   (glBindBuffer GL_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer vertex-buffer)))

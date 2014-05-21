@@ -75,14 +75,14 @@
    (flcolor->byte (flcolor-red color))
    (flcolor->byte (flcolor-green color))
    (flcolor->byte (flcolor-blue color))
-   0))
+   (flcolor->byte (flcolor-alpha color))))
 
 (define (make-tile-buffers!)
   (let* ([grid (first (unbox grid-box))]
          [tile-count (grid-tile-count grid)]
          [vertices (make-cvector _gl-vertex (* 7 tile-count))]
          [indices (make-cvector _uint (* 18 tile-count))]
-         [color (flcolor 0.0 0.0 0.0)])
+         [color (flcolor3 0.0 0.0 0.0)])
     (set! buffer-tile-count tile-count)
     (for ([n tile-count])
       (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
@@ -99,7 +99,8 @@
 (define (set-gl-vertex-color! p color)
   (set-gl-vertex-red! p (byte-color-red color))
   (set-gl-vertex-green! p (byte-color-green color))
-  (set-gl-vertex-blue! p (byte-color-blue color)))
+  (set-gl-vertex-blue! p (byte-color-blue color))
+  (set-gl-vertex-alpha! p (byte-color-alpha color)))
 
 (define (update-vertices! color-mode)
   (let* ([p (unbox planet-box)]
@@ -149,7 +150,8 @@
                                (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
                                (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
                (gl-rotate quat))
-             (gl-clear)
+             (gl-clear (list 0.0 0.0 0.0 0.0))
+             (gl-cull-face 'back)
              (gl-draw 'tile-vertices
                       'tile-indices)
              (gl-draw 'selected-tile-vertices
@@ -281,9 +283,9 @@
                      (let ([p (unbox planet-box)]
                            [vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
                        (begin
-                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates p tile) (flcolor 1.0 0.0 0.0)))
+                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates p tile) (flcolor3 1.0 0.0 0.0)))
                          (for ([n 6])
-                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates p (tile-corner p tile n)) (flcolor 1.0 0.0 0.0))))
+                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates p (tile-corner p tile n)) (flcolor3 1.0 0.0 0.0))))
                          (with-gl-context
                           (thunk
                            (set-gl-vertex-buffer! 'selected-tile-vertices vertices))))))))
@@ -324,7 +326,7 @@
    [min-width 400]
    [min-height 400]))
 
-(generate-terrain 5 sample-terrain)
+(generate-terrain 6 sample-terrain)
 
 (define gl-context canvas)
 (send canvas with-gl-context (thunk 
@@ -334,7 +336,7 @@
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
                                                            (let ([vectors (make-cvector _gl-vertex 7)]
                                                                  [zero-vertex (->gl-vertex (flvector 0.0 0.0 0.0)
-                                                                                           (flcolor 0.0 0.0 0.0))])
+                                                                                           (flcolor3 0.0 0.0 0.0))])
                                                              (for ([i 7])
                                                                (cvector-set! vectors i zero-vertex))
                                                              vectors))))

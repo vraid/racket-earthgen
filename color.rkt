@@ -7,14 +7,27 @@
 (struct: byte-color
   ([red : Byte]
    [green : Byte]
-   [blue : Byte])
+   [blue : Byte]
+   [alpha : Byte])
   #:transparent)
 
 (struct: flcolor
   ([red : Flonum]
    [green : Flonum]
-   [blue : Flonum])
+   [blue : Flonum]
+   [alpha : Flonum])
   #:transparent)
+
+(: flcolor3 (Flonum Flonum Flonum -> flcolor))
+(define (flcolor3 red green blue)
+  (flcolor red green blue 1.0))
+
+(: flcolor->list (flcolor -> (Listof Flonum)))
+(define (flcolor->list color)
+  (list (flcolor-red color)
+        (flcolor-green color)
+        (flcolor-blue color)
+        (flcolor-alpha color)))
 
 (: flcolor->byte (Flonum -> Byte))
 (define (flcolor->byte c)
@@ -31,16 +44,18 @@
   (byte-color
    (flcolor->byte (flcolor-red c))
    (flcolor->byte (flcolor-green c))
-   (flcolor->byte (flcolor-blue c))))
+   (flcolor->byte (flcolor-blue c))
+   (flcolor->byte (flcolor-alpha c))))
 
 (define flcolor-interpolate
   (lambda: ([col-one : flcolor]
             [col-two : flcolor]
             [d : Flonum])
-    (let ([1-d (fl- 1.0 d)])
-      (flcolor (fl+ (fl* 1-d (flcolor-red col-one))
-                    (fl* d (flcolor-red col-two)))
-               (fl+ (fl* 1-d (flcolor-green col-one))
-                    (fl* d (flcolor-green col-two)))
-               (fl+ (fl* 1-d (flcolor-blue col-one))
-                    (fl* d (flcolor-blue col-two)))))))
+    (let* ([1-d (fl- 1.0 d)]
+           [f (lambda: ([f : (flcolor -> Flonum)])
+                (fl+ (fl* 1-d (f col-one))
+                     (fl* d (f col-two))))])
+      (flcolor (f flcolor-red)
+               (f flcolor-green)
+               (f flcolor-blue)
+               (f flcolor-alpha)))))
