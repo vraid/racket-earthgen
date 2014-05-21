@@ -65,8 +65,8 @@
               (cvector-set! indices k (* n 7))
               (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
               (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))
-      (set-gl-vertex-data vertices)
-      (set-gl-index-data indices))))
+      (set-gl-vertex-buffer! 'tile-vertices vertices)
+      (set-gl-index-buffer! 'tile-indices indices))))
 
 (define (make-grid!)
   (let* ([base-radius (sqrt 3.2)]
@@ -124,8 +124,12 @@
                 (for ([quat (list (list 90.0 -1.0 0.0 0.0)
                                   (list (fl* (fl/ 180.0 pi) latitude) 1.0 0.0 0.0)
                                   (list (fl* (fl/ 180.0 pi) longitude) 0.0 0.0 1.0))])
-                  (rotate-gl quat))
-                (draw-gl) (swap-gl-buffers))))
+                  (gl-rotate quat))
+                (gl-clear (list 0.0 0.0 0.0 0.0))
+                (gl-cull-face 'back)
+                (gl-draw 'tile-vertices
+                         'tile-indices) 
+               (swap-gl-buffers))))
            (set! last-draw (current-inexact-milliseconds)))))
      (define/override (on-size width height)
        (begin

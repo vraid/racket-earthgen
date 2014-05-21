@@ -125,7 +125,6 @@
   (define (tile+dist t)
     (list t (flvector3-distance-squared (tile-coordinates t)
                                         v)))
-  (: closest (tile -> tile))
   (first (foldl (lambda: ([a : (List tile Flonum)]
                           [b : (List tile Flonum)])
                   (if (< (second a) (second b))
