@@ -1,13 +1,9 @@
 #lang typed/racket
 
-(provide color-topography
-         color-vegetation
-         color-temperature
-         color-humidity
-         color-albedo
-         color-area)
+(provide (all-defined-out))
 
 (require "types.rkt"
+         "math.rkt"
          "color.rkt"
          "planet.rkt"
          "temperature.rkt"
@@ -16,6 +12,9 @@
 
 (define color-undefined
   (flcolor3 0.7 0.7 0.7))
+
+(define color-neutral
+  (flcolor3 0.95 0.95 0.85))
 
 (define-type flcolor-list (Listof flcolor))
 
@@ -41,15 +40,6 @@
                 colors
                 #f
                 color-undefined)))
-
-(define water-surface
-  (flcolor3 0.0 0.4 0.8))
-(define water-deep
-  (flcolor3 0.0 0.0 0.3))
-(define land-low
-  (flcolor3 0.5 0.8 0.0))
-(define land-high
-  (flcolor3 0.2 0.2 0.1))
 
 (: filter-intervals ((Listof Any) -> (Listof Flonum)))
 (define (filter-intervals ls)
@@ -82,14 +72,51 @@
               topography-intervals
               topography-colors))
 
-(define vegetation-color (flcolor3 0.176 0.32 0.05))
+(define vegetation-color (flcolor3 0.09411764705882353 0.1568627450980392 0.03137254901960784))
 (define snow-color (flcolor3 0.9 0.9 0.9))
+
+(define water-surface
+  (flcolor3 0.06862745098039216 0.17450980392156862 0.37058823529411766))
+(define water-deep
+  (flcolor3 0.0 0.01568627450980392 0.06274509803921569))
+(define water-mid
+  (flcolor3 0.03137254901960784 0.0784313725490196 0.19215686274509802))
+(define barren-land-low
+  (flcolor3 0.6588235294117647 0.5686274509803921 0.4196078431372549))
+(define barren-land-high
+  (flcolor3 0.11764705882352941 0.10980392156862745 0.050980392156862744))
+
+(define barren-land-low-level 0.0)
+(define barren-land-high-level 3000.0)
+
+(define vegetation-topography-intervals/colors
+  (list -10000.0 water-deep
+        -2000.0 water-deep
+        -800.0 water-mid
+        0.0 water-surface
+        0.0 barren-land-low
+        2000.0 barren-land-high
+        3000.0 barren-land-high))
+
+(define vegetation-topography-intervals
+  (filter-intervals
+   vegetation-topography-intervals/colors))
+
+(define vegetation-topography-colors
+  (filter-colors
+   vegetation-topography-intervals/colors))
+
+(: color-vegetation-topography (planet index -> flcolor))
+(define (color-vegetation-topography p n)
+  (find-color (tile-elevation p n)
+              vegetation-topography-intervals
+              vegetation-topography-colors))
 
 (: color-vegetation (planet index -> flcolor))
 (define (color-vegetation p n)
   (if (fl< 0.0 (tile-snow-cover p n))
       snow-color
-      (flcolor-interpolate (color-topography p n)
+      (flcolor-interpolate (color-vegetation-topography p n)
                            vegetation-color
                            (vegetation-cover (tile-vegetation p n)))))
 
@@ -132,6 +159,27 @@
                            humidity-max
                            (tile-relative-humidity p n))))
 
+(define aridity-min color-neutral)
+(define aridity-medium (flcolor3 1.0 1.0 0.0))
+(define aridity-max (flcolor3 1.0 0.0 0.0))
+(define aridity-water humidity-water)
+
+(: color-aridity (planet index -> flcolor))
+(define (color-aridity p n)
+  (if (tile-water? p n)
+      aridity-water
+      (let ([aridity (aridity (tile-temperature p n)
+                              (tile-humidity p n))])
+        (if (> 1.0 aridity)
+            (flcolor-interpolate aridity-min
+                                 aridity-medium
+                                 (/ aridity 1.0))
+            (flcolor-interpolate aridity-medium
+                                 aridity-max
+                                 (/ (- (min 2.0 aridity)
+                                       1.0)
+                                    1.0))))))
+
 (define albedo-min (flcolor3 0.0 0.0 0.1))
 (define albedo-max (flcolor3 1.0 1.0 1.0))
 
@@ -144,10 +192,9 @@
 (define area-min (flcolor3 0.0 0.0 0.0))
 (define area-max (flcolor3 1.0 1.0 1.0))
 
-(: color-area (planet index -> flcolor))
-(define (color-area p n)
+(: color-area (Flonum -> (planet index -> flcolor)))
+(define ((color-area largest-area) p n)
   (flcolor-interpolate area-min
                        area-max
-                       (min 1.0
-                            (/ (tile-area p n)
-                               (tile-area p (- (tile-count p) 1))))))
+                       (/ (tile-area p n)
+                          largest-area)))

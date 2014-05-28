@@ -132,6 +132,20 @@
   (map (lambda (c) (send container delete-child c))
        (send container get-children)))
 
+(define (repaint!)
+  (set! last-draw 0.0)
+  (send canvas on-paint))
+
+(define (color-planet! f)
+  (when (planet? (unbox planet-box))
+    (thread
+     (thunk
+      (set! color-mode f)
+      (send canvas with-gl-context
+            (thunk
+             (update-vertices! (curry color-mode (unbox planet-box)))))
+      (repaint!)))))
+
 (define canvas
   (new
    (class* canvas% ()
@@ -154,7 +168,7 @@
              (gl-cull-face 'back)
              (gl-draw 'tile-vertices
                       'tile-indices)
-             (gl-draw 'selected-tile-vertices
+             #;(gl-draw 'selected-tile-vertices
                       'selected-tile-indices)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
@@ -164,18 +178,6 @@
        (with-gl-context
         (thunk
          (set-gl-viewport 0 0 width height))))
-     (define (repaint!)
-       (set! last-draw 0.0)
-       (on-paint))
-     (define (color-planet! f)
-       (when (planet? (unbox planet-box))
-         (thread
-          (thunk
-           (set! color-mode f)
-           (with-gl-context
-            (thunk
-             (update-vertices! (curry color-mode (unbox planet-box)))))
-           (repaint!)))))
      (define (generate-terrain!)
        (thread
         (thunk
@@ -235,7 +237,12 @@
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-humidity)]
-         [#\l (color-planet! color-area)]
+         [#\g (color-planet! color-aridity)]
+         [#\l (color-planet! (color-area (let ([p (unbox planet-box)])
+                                           (stream-fold (lambda (a n)
+                                                          (max a (tile-area p n)))
+                                                        0.0
+                                                        (in-range (tile-count p))))))]
          ['wheel-up (begin
                       (set! scale
                             (min scale-max
