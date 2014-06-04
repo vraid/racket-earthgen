@@ -51,14 +51,16 @@
 
 (: grid-access-position ((grid -> get-grid-integer) (integer -> natural) grid integer integer -> Integer))
 (define (grid-access-position f count g n i)
-  (: iterate (integer -> Integer))
-  (define (iterate k)
-    (if (= k (count n))
-        -1
-        (if (= i ((f g) n k))
-            k
-            (iterate (+ 1 k)))))
-  (iterate 0))
+  (let ([n-count (count n)]
+        [f-g (f g)])
+    (: iterate (integer -> Integer))
+    (define (iterate k)
+      (if (= k n-count)
+          -1
+          (if (= i (f-g n k))
+              k
+              (iterate (+ 1 k)))))
+    (iterate 0)))
 
 (: grid-access-list ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-list))
 (define (grid-access-list f count g n)
