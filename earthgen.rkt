@@ -3,7 +3,7 @@
 (require racket/gui/base
          "flvector3.rkt"
          "quaternion.rkt"
-         "planet.rkt"
+         (except-in "planet.rkt" planet)
          "planet-create.rkt"
          "climate-create.rkt"
          "grid.rkt"
@@ -41,10 +41,10 @@
 (define last-draw (current-inexact-milliseconds))
 
 (define buffer-tile-count 0)
-(define planet-box (box #f))
+(define planet #f)
 (define planet-vector #f)
 (define planet-vector-position #f)
-(define grid-box (box (n-grid-list null 0)))
+(define grids (n-grid-list null 0))
 (define color-mode color-vegetation)
 (define selected-tile #f)
 
@@ -63,9 +63,9 @@
          "heightmap-functions.rkt")
 
 (define (generate-terrain size method)
-  (set-box! grid-box (n-grid-list (unbox grid-box) size))
-  (let ([grids (n-grid-list (unbox grid-box) size)])
-    (set-box! planet-box ((heightmap->planet (first grids)) (method grids)))))
+  (set! grids (n-grid-list grids size))
+  (let ([grids (n-grid-list grids size)])
+    (set! planet ((heightmap->planet (first grids)) (method grids)))))
 
 (define (->gl-vertex coord color)
   (make-gl-vertex
@@ -78,7 +78,7 @@
    (flcolor->byte (flcolor-alpha color))))
 
 (define (make-tile-buffers!)
-  (let* ([grid (first (unbox grid-box))]
+  (let* ([grid (first grids)]
          [tile-count (grid-tile-count grid)]
          [vertices (make-cvector _gl-vertex (* 7 tile-count))]
          [indices (make-cvector _uint (* 18 tile-count))]
@@ -96,20 +96,19 @@
     (set-gl-vertex-buffer! 'tile-vertices vertices)
     (set-gl-index-buffer! 'tile-indices indices)))
 
-(define (set-gl-vertex-color! p color)
-  (set-gl-vertex-red! p (byte-color-red color))
-  (set-gl-vertex-green! p (byte-color-green color))
-  (set-gl-vertex-blue! p (byte-color-blue color))
-  (set-gl-vertex-alpha! p (byte-color-alpha color)))
+(define (set-vertex-color! vertices n color)
+  (let ([v (cvector-ref vertices n)])
+    (set-gl-vertex-red! v (byte-color-red color))
+    (set-gl-vertex-green! v (byte-color-green color))
+    (set-gl-vertex-blue! v (byte-color-blue color))))
 
 (define (update-vertices! color-mode)
-  (let* ([p (unbox planet-box)]
-         [vertices (gl-buffer-data (get-gl-buffer 'tile-vertices))])
-    (for ([n (tile-count p)])
+  (let* ([vertices (gl-buffer-data (get-gl-buffer 'tile-vertices))])
+    (for ([n (tile-count planet)])
       (let ([color (flcolor->byte-color (color-mode n))])
-        (set-gl-vertex-color! (cvector-ref vertices (* n 7)) color)
+        (set-vertex-color! vertices (* n 7) color)
         (for ([i 6])
-          (set-gl-vertex-color! (cvector-ref vertices (+ 1 i (* n 7))) color))))
+          (set-vertex-color! vertices (+ 1 i (* n 7)) color))))
     (set-gl-vertex-buffer! 'tile-vertices vertices)))
 
 (define frame
@@ -137,13 +136,13 @@
   (send canvas on-paint))
 
 (define (color-planet! f)
-  (when (planet? (unbox planet-box))
+  (when planet
     (thread
      (thunk
       (set! color-mode f)
       (send canvas with-gl-context
             (thunk
-             (update-vertices! (curry color-mode (unbox planet-box)))))
+             (update-vertices! (curry color-mode planet))))
       (repaint!)))))
 
 (define canvas
@@ -169,7 +168,7 @@
              (gl-draw 'tile-vertices
                       'tile-indices)
              #;(gl-draw 'selected-tile-vertices
-                      'selected-tile-indices)
+                        'selected-tile-indices)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
      (define/override (on-size width height)
@@ -185,7 +184,7 @@
            (generate-terrain size method)
            (with-gl-context
             (thunk
-             (unless (= buffer-tile-count (tile-count (unbox planet-box)))
+             (unless (= buffer-tile-count (tile-count planet))
                (make-tile-buffers!)))))
          (color-planet! color-mode))))
      (define/override (on-char event)
@@ -193,14 +192,13 @@
        (match key-code
          ['escape (exit)]
          [#\q (generate-terrain!)]
-         [#\w (let ([p (unbox planet-box)])
-                (when (planet? p)
-                  (thread
-                   (thunk
-                    (set-box! planet-box (climate-next (default-climate-parameters) p))
-                    (color-planet! color-mode)))))]
+         [#\w (when planet
+                (thread
+                 (thunk
+                  (set! planet (climate-next (default-climate-parameters) planet))
+                  (color-planet! color-mode))))]
          [#\e (begin
-                (when (planet? (unbox planet-box))
+                (when planet
                   (thread
                    (thunk
                     (set! planet-vector (list->vector
@@ -211,38 +209,38 @@
                                                  ls
                                                  (planet-list (+ 1 n) 
                                                               (if (zero? n)
-                                                                  (list (climate-next par (unbox planet-box)))
+                                                                  (list (climate-next par planet))
                                                                   (cons (climate-next par (first ls)) ls)))))
                                            (reverse (planet-list 0 #f)))))
                     (set! planet-vector-position 0)
-                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                    (set! planet (vector-ref planet-vector planet-vector-position))
                     (color-planet! color-mode)))))]
          ['left (begin
                   (when planet-vector
                     (set! planet-vector-position
                           (modulo (- planet-vector-position 1)
                                   (climate-parameters-seasons-per-cycle
-                                   (planet-climate-parameters (unbox planet-box)))))
-                    (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                                   (planet-climate-parameters planet))))
+                    (set! planet (vector-ref planet-vector planet-vector-position))
                     (color-planet! color-mode)))]
          ['right (begin
                    (when planet-vector
                      (set! planet-vector-position
                            (modulo (+ planet-vector-position 1)
                                    (climate-parameters-seasons-per-cycle
-                                    (planet-climate-parameters (unbox planet-box)))))
-                     (set-box! planet-box (vector-ref planet-vector planet-vector-position))
+                                    (planet-climate-parameters planet))))
+                     (set! planet (vector-ref planet-vector planet-vector-position))
                      (color-planet! color-mode)))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-humidity)]
          [#\g (color-planet! color-aridity)]
-         [#\l (color-planet! (color-area (let ([p (unbox planet-box)])
-                                           (stream-fold (lambda (a n)
-                                                          (max a (tile-area p n)))
-                                                        0.0
-                                                        (in-range (tile-count p))))))]
+         [#\l (color-planet! (color-area
+                              (stream-fold (lambda (a n)
+                                             (max a (tile-area planet n)))
+                                           0.0
+                                           (in-range (tile-count planet)))))]
          ['wheel-up (begin
                       (set! scale
                             (min scale-max
@@ -255,21 +253,20 @@
                         (repaint!))]
          [_ (void)]))
      (define (tile-at x y)
-       (if (unbox planet-box)
+       (if planet
            (let ([mx (fl* 2.0 (fl* (fl* (fl/ 1.0 scale) (fl- (exact->inexact (/ x display-width)) 0.5)) (exact->inexact (/ display-width display-height))))]
                  [my (fl* -2.0 (fl/ (fl- (exact->inexact (/ y display-height)) 0.5) scale))])
              (if (< 1.0 (fl+ (flexpt mx 2.0) (flexpt my 2.0)))
                  #f
-                 (let* ([p (unbox planet-box)]
-                        [v (quaternion-vector-product (quaternion-inverse (rotation)) (orthographic->spherical mx my))]
-                        [distance (build-flvector (tile-count p) (lambda (n) (flvector3-distance-squared v (tile-coordinates p n))))])
+                 (let* ([v (quaternion-vector-product (quaternion-inverse (rotation)) (orthographic->spherical mx my))]
+                        [distance (build-flvector (tile-count planet) (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
                    (foldl (lambda (n closest)
                             (if (< (flvector-ref distance n)
                                    (flvector-ref distance closest))
                                 n
                                 closest))
                           0
-                          (range (tile-count p))))))
+                          (range (tile-count planet))))))
            #f))
      (define (update-info-panel tile)
        (delete-children info-panel)
@@ -282,17 +279,16 @@
        (if (send event button-up? 'left)
            (begin
              (unless mouse-moving?
-               (when (unbox planet-box)
+               (when planet
                  (let ([tile (tile-at (send event get-x)
                                       (send event get-y))])
                    (update-info-panel tile)
                    (when tile
-                     (let ([p (unbox planet-box)]
-                           [vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
+                     (let ([vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
                        (begin
-                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates p tile) (flcolor3 1.0 0.0 0.0)))
+                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates planet tile) (flcolor3 1.0 0.0 0.0)))
                          (for ([n 6])
-                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates p (tile-corner p tile n)) (flcolor3 1.0 0.0 0.0))))
+                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates planet (tile-corner planet tile n)) (flcolor3 1.0 0.0 0.0))))
                          (with-gl-context
                           (thunk
                            (set-gl-vertex-buffer! 'selected-tile-vertices vertices))))))))
@@ -338,7 +334,7 @@
 (define gl-context canvas)
 (send canvas with-gl-context (thunk 
                               (make-tile-buffers!)
-                              (update-vertices! (curry color-mode (unbox planet-box)))))
+                              (update-vertices! (curry color-mode planet))))
 
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
                                                            (let ([vectors (make-cvector _gl-vertex 7)]
