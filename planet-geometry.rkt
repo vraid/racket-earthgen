@@ -29,12 +29,14 @@
 
 (: edge-length (planet integer -> Flonum))
 (define (edge-length p n)
-  (flvector3-angle (corner-coordinates p (edge-corner p n 0))
-                   (corner-coordinates p (edge-corner p n 1))))
+  (* (planet-radius p)
+     (flvector3-angle (corner-coordinates p (edge-corner p n 0))
+                      (corner-coordinates p (edge-corner p n 1)))))
 
 (: tile-edge-length (planet integer integer -> Flonum))
 (define (tile-edge-length p n i)
-  (edge-length p (tile-edge p n i)))
+  (* (planet-radius p)
+     (edge-length p (tile-edge p n i))))
 
 (: edge-segment (planet integer -> flvector3))
 (define (edge-segment p n)
@@ -53,12 +55,14 @@
 
 (: edge-tile-distance (planet integer -> Flonum))
 (define (edge-tile-distance p n)
-  (flvector3-angle (tile-coordinates p (edge-tile p n 0))
-                   (tile-coordinates p (edge-tile p n 1))))
+  (* (planet-radius p)
+     (flvector3-angle (tile-coordinates p (edge-tile p n 0))
+                      (tile-coordinates p (edge-tile p n 1)))))
 
 (: tile-tile-distance (planet integer integer -> Flonum))
 (define (tile-tile-distance p n i)
-  (edge-tile-distance p (tile-edge p n i)))
+  (* (planet-radius p)
+     (edge-tile-distance p (tile-edge p n i))))
 
 (: tile-corner-angle (planet integer integer -> Flonum))
 (define (tile-corner-angle p n i)
@@ -93,14 +97,20 @@
 
 (define spherical-triangle-area spherical-triangle-excess)
 
+(: planet-radius-squared (planet -> Flonum))
+(define (planet-radius-squared p)
+  (let ([r (planet-radius p)])
+    (* r r)))
+
 (: tile-area (planet integer -> Flonum))
 (define (tile-area p n)
   (: tile-segment-area (integer -> Flonum))
   (define (tile-segment-area i)
     (spherical-triangle-area (tile-coordinates p n)
-                               (corner-coordinates p (tile-corner p n i))
-                               (corner-coordinates p (tile-corner p n (+ 1 i)))))
-  (fl (apply + (map tile-segment-area (range (tile-edge-count n))))))
+                             (corner-coordinates p (tile-corner p n i))
+                             (corner-coordinates p (tile-corner p n (+ 1 i)))))
+  (* (planet-radius-squared p)
+     (fl (apply + (map tile-segment-area (range (tile-edge-count n)))))))
 
 (: tile-polar? (planet integer -> Boolean))
 (define (tile-polar? p n)
