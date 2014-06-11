@@ -1,19 +1,31 @@
 #lang racket
 
-(provide if-let
-         and-let)
+(provide (all-defined-out))
 
 (define-syntax (if-let stx)
   (syntax-case stx ()
     [(_ ((binding value) ...) then else)
-     #'(let ((binding value) ...)
+     #'(let ([binding value] ...)
          (if (and binding ...)
              then
              else))]))
 
 (define-syntax (and-let stx)
   (syntax-case stx ()
-    [(_ ((binding value) ...) expression)
-     #'(if-let ((binding value) ...)
-               expression
-               #f)]))
+    [(_ ((binding value) ...) then)
+     #'(if-let ((binding value) ...) then #f)]))
+
+(define-syntax (if-let* stx)
+  (syntax-case stx ()
+    [(_ () then else)
+     #'then]
+    [(_ ((binding value) bindings ...) then else)
+     #'(let ([binding value])
+         (if binding
+             (if-let* (bindings ...) then else)
+             else))]))
+
+(define-syntax (and-let* stx)
+  (syntax-case stx ()
+    [(_ (bindings ...) expression)
+     #'(if-let* (bindings ...) expression #f)]))
