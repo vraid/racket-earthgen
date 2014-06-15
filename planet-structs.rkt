@@ -18,7 +18,26 @@
              [climate-variables : climate-variables]
              [tile : tile-data]
              [corner : corner-data]
-             [edge : edge-data]))
+             [edge : edge-data]
+             [land-ratio : land-ratio-access]
+             [population : population-access])
+            #:mutable)
+
+(: set-tile-population! (planet integer population-type flonum -> Void))
+(define (set-tile-population! p n type amount)
+  (let ([population (planet-population p)])
+    (set-planet-population! p
+                            (lambda: ([n : integer])
+                              (lambda: ([key : population-type])
+                                (cond
+                                  [(eq? key type) amount]
+                                  [else ((population n) key)]))))))
+
+(define-type population-type (U 'forager 'pastoral 'agricultural 'urban))
+(define-type land-type (U 'unclaimed 'pasture 'farmland))
+(define-type land-ratio-access (integer -> (land-type -> (maybe Flonum))))
+(define-type population-access (integer -> (population-type -> (maybe Flonum))))
+(define-type population-hash (HashTable population-type (maybe Flonum)))
 
 (define tile-count grid-tile-count)
 (define corner-count grid-corner-count)

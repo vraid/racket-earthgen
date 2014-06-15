@@ -28,6 +28,18 @@
 
 (define product *)
 
+(: closest-within (case-> (Flonum Flonum -> (Flonum -> Flonum))
+                          (Integer Integer -> (Integer -> Integer))
+                          (Real Real -> (Real -> Real))))
+(define ((closest-within low high) num)
+  (max low (min high num)))
+
+(: ratio-within (Flonum Flonum -> (Flonum -> Flonum)))
+(define ((ratio-within low high) num)
+  (define closest ((closest-within low high) num))
+  (/ (- closest low)
+     high))
+
 (: angle-distance (Flonum Flonum -> Flonum))
 (define (angle-distance a b)
   (abs

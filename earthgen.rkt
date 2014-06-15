@@ -6,13 +6,12 @@
          (except-in "planet.rkt" planet)
          "planet-create.rkt"
          "climate-create.rkt"
-         "grid.rkt"
+         "turn.rkt"
          "color.rkt"
          "planet-color.rkt"
          "opengl.rkt"
          "projection.rkt"
          "sample-terrain.rkt"
-         "math.rkt"
          math/flonum
          ffi/cvector
          ffi/unsafe)
@@ -215,6 +214,9 @@
                     (set! planet-vector-position 0)
                     (set! planet (vector-ref planet-vector planet-vector-position))
                     (color-planet! color-mode)))))]
+         [#\t (when (and planet (planet-has-climate? planet))
+                (set! planet (next-turn default-turn-parameters planet))
+                (color-planet! color-mode))]
          ['left (begin
                   (when planet-vector
                     (set! planet-vector-position

@@ -1,5 +1,5 @@
 (values
- 6
+ 7
  (let* ([continent (heightmap-map
                     (lambda (a)
                       (if (< 0 a)
@@ -9,7 +9,7 @@
                      250.0
                      (heightmap-create
                       (heightmap-parameters/kw
-                       #:seed "vazhno"
+                       #:seed "niyash"
                        #:base-level 2
                        #:amplitude 800.0
                        #:persistence 0.65))))]

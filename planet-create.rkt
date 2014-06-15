@@ -21,6 +21,9 @@
 
 (: heightmap->planet (grid -> (heightmap -> planet)))
 (define (heightmap->planet grid)
+  (define empty-hash (lambda: ([n : integer])
+                    (lambda: ([key :  Symbol])
+                      #f)))
   (lambda: ([h : heightmap])
     (define empty (lambda: ([n : index]) 0.0))
     (define void-set (lambda: ([n : index]
@@ -50,4 +53,7 @@
                   empty empty empty
                   (lambda: ([n : index]
                             [b : Boolean]) (void))
-                  void-set void-set void-set))))
+                  void-set void-set void-set)
+     
+     #:land-ratio empty-hash
+     #:population empty-hash)))
