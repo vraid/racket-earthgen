@@ -39,7 +39,10 @@
                   (lambda: ([n : index])
                     (flvector-ref (heightmap-tiles h) n))
                   empty empty empty empty empty empty empty empty empty
-                  void-set void-set void-set void-set void-set void-set void-set void-set void-set void-set)
+                  (lambda: ([n : index]
+                            [e : Flonum])
+                    (flvector-set! (heightmap-tiles h) n e))
+                  void-set void-set void-set void-set void-set void-set void-set void-set void-set)
      
      #:corner (corner-data
                     (lambda: ([n : index])
