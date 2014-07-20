@@ -12,6 +12,7 @@
          "opengl.rkt"
          "projection.rkt"
          "sample-terrain.rkt"
+         "gui/edit-panel.rkt"
          math/flonum
          ffi/cvector
          ffi/unsafe)
@@ -273,10 +274,28 @@
      (define (update-info-panel tile)
        (delete-children info-panel)
        (when tile
-         (let ([t (new text-field%
-                       [label "tile id"]
-                       [parent info-panel])])
-           (send t set-value (number->string tile)))))
+         (let* ([label-width 100]
+                [p (edit-panel info-panel 30 label-width)])
+           (p "tile id" (thunk (number->string tile)) (thunk* #f))
+           (p "elevation"
+              (thunk (number->string (tile-elevation planet tile)))
+              (lambda (n)
+                (let ([num (exact->inexact (string->number n))])
+                  (when num
+                    (begin
+                      ((tile-data-elevation-set! (planet-tile planet)) tile num)
+                      (color-planet! color-mode))))))
+           (when (planet-has-climate? planet)
+             (p "temperature"
+                (thunk (number->string (tile-temperature planet tile)))
+                (thunk* #f))
+             (p "absolute humidity"
+                (thunk (number->string (tile-humidity planet tile)))
+                (thunk* #f))
+             (p "relative humidity"
+                (thunk (number->string (relative-humidity (tile-temperature planet tile)
+                                                          (tile-humidity planet tile))))
+                (thunk* #f))))))
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
