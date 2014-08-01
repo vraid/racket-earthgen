@@ -3,7 +3,8 @@
 (provide (all-defined-out)
          (all-from-out "constants.rkt"))
 
-(require "constants.rkt")
+(require "constants.rkt"
+         "types.rkt")
 
 (: negative (case-> (Flonum -> Flonum)
                     (Integer -> Integer)
@@ -28,15 +29,27 @@
 
 (define product *)
 
-(: closest-within (case-> (Flonum Flonum -> (Flonum -> Flonum))
-                          (Integer Integer -> (Integer -> Integer))
-                          (Real Real -> (Real -> Real))))
-(define ((closest-within low high) num)
-  (max low (min high num)))
+(define-type maybe-minmax ((maybe Real) -> (Real -> Real)))
+(: maybe-max maybe-minmax)
+(define ((maybe-max low) num)
+  (if low
+      (max low num)
+      num))
+
+(: maybe-min maybe-minmax)
+(define ((maybe-min high) num)
+  (if high
+      (min high num)
+      num))
+
+(: within-interval ((maybe Real) (maybe Real) -> (Real -> Real)))
+(define ((within-interval low high) num)
+  ((maybe-min high)
+   ((maybe-max low) num)))
 
 (: ratio-within (Flonum Flonum -> (Flonum -> Flonum)))
 (define ((ratio-within low high) num)
-  (define closest ((closest-within low high) num))
+  (define closest ((within-interval low high) num))
   (/ (- closest low)
      high))
 

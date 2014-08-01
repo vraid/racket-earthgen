@@ -5,7 +5,26 @@
 (require "quaternion-local.rkt"
          math/flonum
          "flvector3.rkt"
-         "matrix3.rkt")
+         "matrix3.rkt"
+         "types.rkt")
+
+(struct: axis-angle
+  ([axis : FlVector]
+   [angle : Flonum])
+  #:transparent)
+
+(: quaternion->axis-angle (FlVector -> axis-angle))
+(define (quaternion->axis-angle q)
+  (let* ([angle (fl* 2.0 (flacos (flvector-ref q 0)))]
+         [scale (let ([s (flsqrt (- 1.0 (flexpt (flvector-ref q 0) 2.0)))])
+                  (lambda: ([n : Integer])
+                    (fl/ (flvector-ref q n) s)))]
+         [axis (if (= 1 angle)
+                   (flvector 1.0 0.0 0.0)
+                   (flvector (scale 1)
+                             (scale 2)
+                             (scale 3)))])
+    (axis-angle axis angle)))
 
 (: quaternion-identity (-> quaternion))
 (define (quaternion-identity)

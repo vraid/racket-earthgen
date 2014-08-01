@@ -96,3 +96,7 @@
 (: flvector3-rejection (flvector3 flvector3 -> flvector3))
 (define (flvector3-rejection rejector v)
   (flvector3-subtract (flvector3-projection rejector v) v))
+
+(: flvector3-parallel? (flvector3 flvector3 -> Boolean))
+(define (flvector3-parallel? u v)
+  (zero? (flvector-sum (flvector3-cross-product u v))))
