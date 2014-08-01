@@ -68,7 +68,9 @@
 
 (: color-topography (planet index -> flcolor))
 (define (color-topography p n)
-  (find-color (tile-elevation p n)
+  (find-color (if (tile-land? p n)
+                  (- (tile-elevation p n) (planet-sea-level p))
+                  (- (tile-water-depth p n)))
               topography-intervals
               topography-colors))
 
@@ -108,7 +110,9 @@
 
 (: color-vegetation-topography (planet index -> flcolor))
 (define (color-vegetation-topography p n)
-  (find-color (tile-elevation p n)
+  (find-color (if (tile-land? p n)
+                  (- (tile-elevation p n) (planet-sea-level p))
+                  (- (tile-water-depth p n)))
               vegetation-topography-intervals
               vegetation-topography-colors))
 

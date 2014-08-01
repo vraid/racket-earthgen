@@ -6,9 +6,7 @@
          "flvector3.rkt"
          math/flonum)
 
-(: planet-axis (planet -> flvector3))
-(define (planet-axis p)
-  (flvector 0.0 0.0 1.0))
+(define default-axis (flvector 0.0 0.0 1.0))
 
 (: planet-radius (planet -> Flonum))
 (define (planet-radius p)

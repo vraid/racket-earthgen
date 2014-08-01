@@ -19,12 +19,13 @@
       0
       n))
 
-(: heightmap->planet (grid -> (heightmap -> planet)))
+(: heightmap->planet (grid -> (heightmap FlVector -> planet)))
 (define (heightmap->planet grid)
   (define empty-hash (lambda: ([n : integer])
                     (lambda: ([key :  Symbol])
                       #f)))
-  (lambda: ([h : heightmap])
+  (lambda: ([h : heightmap]
+            [axis : FlVector])
     (define empty (lambda: ([n : index]) 0.0))
     (define void-set (lambda: ([n : index]
                                [f : Flonum])
@@ -34,15 +35,23 @@
      #:has-climate? false
      #:climate-parameters (default-climate-parameters)
      #:climate-variables initial-climate-variables
+     #:axis axis
+     #:sea-level 0.0
      
-     #:tile (tile-data 
-                  (lambda: ([n : index])
-                    (flvector-ref (heightmap-tiles h) n))
-                  empty empty empty empty empty empty empty empty empty
-                  (lambda: ([n : index]
-                            [e : Flonum])
-                    (flvector-set! (heightmap-tiles h) n e))
-                  void-set void-set void-set void-set void-set void-set void-set void-set void-set)
+     #:tile (let ([water-level (make-flvector (grid-tile-count grid) 0.0)])
+              (tile-data
+               (lambda: ([n : index])
+                 (flvector-ref (heightmap-tiles h) n))
+               (lambda: ([n : index])
+                 (flvector-ref water-level n))
+               empty empty empty empty empty empty empty empty
+               (lambda: ([n : index]
+                         [e : Flonum])
+                 (flvector-set! (heightmap-tiles h) n e))
+               (lambda: ([n : index]
+                         [e : Flonum])
+                 (flvector-set! water-level n e))
+               void-set void-set void-set void-set void-set void-set void-set void-set))
      
      #:corner (corner-data
                     (lambda: ([n : index])

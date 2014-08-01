@@ -12,7 +12,7 @@
 
 (: tile-water? (planet index -> Boolean))
 (define (tile-water? p n)
-  (< 0.0 (tile-water-depth p n)))
+  (< (tile-elevation p n) (tile-water-level p n)))
 
 (: tile-land? (planet index -> Boolean))
 (define (tile-land? p n)

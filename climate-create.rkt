@@ -91,6 +91,8 @@
    #:has-climate? true
    #:climate-parameters (planet-climate-parameters p)
    #:climate-variables (planet-climate-variables p)
+   #:axis (planet-axis p)
+   #:sea-level (planet-sea-level p)
    #:tile (planet-tile p)
    #:corner (planet-corner p)
    #:edge (planet-edge p)
@@ -110,6 +112,8 @@
             #:has-climate? true
             #:climate-parameters par
             #:climate-variables initial-climate-variables
+            #:axis (planet-axis prev)
+            #:sea-level (planet-sea-level prev)
             #:tile (make-tile-data (tile-count prev))
             #:corner (make-corner-data (corner-count prev))
             #:edge (make-edge-data (edge-count prev))
@@ -304,6 +308,8 @@
                  #:has-climate? true
                  #:climate-parameters par
                  #:climate-variables (next-climate-variables par (planet-climate-variables prev))
+                 #:axis (planet-axis prev)
+                 #:sea-level (planet-sea-level prev)
                  #:tile (make-tile-data (tile-count prev))
                  #:corner (make-corner-data (corner-count prev))
                  #:edge (make-edge-data (edge-count prev))

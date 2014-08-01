@@ -16,6 +16,8 @@
             ([has-climate? : Boolean]
              [climate-parameters : climate-parameters]
              [climate-variables : climate-variables]
+             [axis : FlVector]
+             [sea-level : Flonum]
              [tile : tile-data]
              [corner : corner-data]
              [edge : edge-data]
