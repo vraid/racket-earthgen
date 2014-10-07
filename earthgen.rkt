@@ -13,6 +13,7 @@
          "sample-terrain.rkt"
          "gui/edit-panel.rkt"
          "control.rkt"
+         "grid-handler.rkt"
          "if-let.rkt"
          math/flonum
          ffi/cvector
@@ -42,7 +43,8 @@
 (define planet #f)
 (define planet-vector #f)
 (define planet-vector-position #f)
-(define grids (n-grid-list null 0))
+(define grid-handler (new-grid-handler))
+(define default-grid-size 5)
 (define color-mode color-vegetation)
 (define selected-tile #f)
 
@@ -61,8 +63,7 @@
          "heightmap-functions.rkt")
 
 (define (generate-terrain size method axis)
-  (set! grids (n-grid-list grids size))
-  (let ([grids (n-grid-list grids size)])
+  (let ([grids (send grid-handler get-grids size)])
     (set! planet ((heightmap->planet (first grids)) (method grids) axis))))
 
 (define (->gl-vertex coord color)
@@ -75,9 +76,8 @@
    (flcolor->byte (flcolor-blue color))
    (flcolor->byte (flcolor-alpha color))))
 
-(define (make-tile-buffers!)
-  (let* ([grid (first grids)]
-         [tile-count (grid-tile-count grid)]
+(define (make-tile-buffers! grid)
+  (let* ([tile-count (grid-tile-count grid)]
          [vertices (make-cvector _gl-vertex (* 7 tile-count))]
          [indices (make-cvector _uint (* 18 tile-count))]
          [color (flcolor3 0.0 0.0 0.0)])
@@ -109,7 +109,7 @@
           (set-vertex-color! vertices (+ 1 i (* n 7)) color))))
     (set-gl-vertex-buffer! 'tile-vertices vertices)))
 
-(generate-terrain 5 sample-terrain default-axis)
+(generate-terrain default-grid-size sample-terrain default-axis)
 
 (define no-frame
   (new frame%
@@ -302,7 +302,7 @@
        (with-gl-context
           (thunk
            (unless (= buffer-tile-count (tile-count planet))
-             (make-tile-buffers!)))))
+             (make-tile-buffers! planet)))))
      (define (generate-terrain!)
        (thread
         (thunk
@@ -433,7 +433,7 @@
 
 (define gl-context canvas)
 (send canvas with-gl-context (thunk 
-                              (make-tile-buffers!)
+                              (make-tile-buffers! (send grid-handler get-grid default-grid-size))
                               (update-vertices! (curry color-mode planet))))
 
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
