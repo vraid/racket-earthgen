@@ -14,6 +14,7 @@
          "gui/edit-panel.rkt"
          "control.rkt"
          "grid-handler.rkt"
+         "planet-handler.rkt"
          "if-let.rkt"
          math/flonum
          ffi/cvector
@@ -40,9 +41,8 @@
 (define last-draw (current-inexact-milliseconds))
 
 (define buffer-tile-count 0)
-(define planet #f)
-(define planet-vector #f)
-(define planet-vector-position #f)
+(define planet-handler (new planet-handler%
+                            [max-elements 12]))
 (define grid-handler (new-grid-handler))
 (define default-grid-size 5)
 (define color-mode color-vegetation)
@@ -64,7 +64,9 @@
 
 (define (generate-terrain size method axis)
   (let ([grids (send grid-handler get-grids size)])
-    (set! planet ((heightmap->planet (first grids)) (method grids) axis))))
+    (send planet-handler
+          terrain/scratch
+          (thunk ((heightmap->planet (first grids)) (method grids) axis)))))
 
 (define (->gl-vertex coord color)
   (make-gl-vertex
@@ -102,7 +104,7 @@
 
 (define (update-vertices! color-mode)
   (let* ([vertices (gl-buffer-data (get-gl-buffer 'tile-vertices))])
-    (for ([n (tile-count planet)])
+    (for ([n (tile-count (send planet-handler current))])
       (let ([color (flcolor->byte-color (color-mode n))])
         (set-vertex-color! vertices (* n 7) color)
         (for ([i 6])
@@ -135,7 +137,7 @@
                    (if (= n selection)
                        info-panel
                        no-frame)))))
-           
+       
        [choices (list)]
        [parent frame-panel]
        [min-width 300]
@@ -152,7 +154,7 @@
          [water-edit (p "water level")])
     (send size-edit
           link
-          (thunk (number->string (grid-subdivision-level planet)))
+          (thunk (number->string (grid-subdivision-level (send planet-handler current))))
           (lambda (size)
             (let ([size (string->number size)])
               (when (and (integer? size)
@@ -164,15 +166,16 @@
                   (color-planet! color-mode)))))))
     (send water-edit
           link
-          (thunk (number->string (planet-sea-level planet)))
+          (thunk (number->string (planet-sea-level (send planet-handler current))))
           (lambda (level)
-            (let ([level (string->number level)])
-              (when (real? level)
-                (let ([level (fl level)])
-                  (set-planet-sea-level! planet level)
-                  (for ([n (tile-count planet)])
-                    ((tile-data-water-level-set! (planet-tile planet)) n level))
-                  (color-planet! color-mode))))))
+            (let ([planet (send planet-handler current)])
+              (let ([level (string->number level)])
+                (when (real? level)
+                  (let ([level (fl level)])
+                    (set-planet-sea-level! planet level)
+                    (for ([n (tile-count planet)])
+                      ((tile-data-water-level-set! (planet-tile planet)) n level))
+                    (color-planet! color-mode)))))))
     panel))
 
 (define tile-panel
@@ -201,43 +204,44 @@
          [vegetation-edit (climate "vegetation")])
     (lambda (tile)
       (send general-panel show tile)
-      (send climate-panel show (and tile (planet-has-climate? planet)))
+      (send climate-panel show (and tile (planet-has-climate? (send planet-handler current))))
       (when tile
-        (let ([link (lambda (panel get set) (send panel link get set))])
-          (link id-edit (thunk (number->string tile)) (thunk* #f))
-          (link elevation-edit
-                (thunk (number->string (tile-elevation planet tile)))
-                (lambda (n)
-                  (let ([num (exact->inexact (string->number n))])
-                    (when (real? num)
-                      (begin
-                        ((tile-data-elevation-set! (planet-tile planet)) tile num)
-                        (color-planet! color-mode))))))
-          (link water-level-edit
-                (thunk (number->string (tile-water-level planet tile)))
-                (lambda (n)
-                  (let ([num (exact->inexact (string->number n))])
-                    (when (real? num)
-                      (begin
-                        ((tile-data-water-level-set! (planet-tile planet)) tile num)
-                        (color-planet! color-mode))))))
-          (when (planet-has-climate? planet)
-            (link temperature-edit
-                  (thunk (number->string (tile-temperature planet tile)))
-                  (thunk* #f))
-            (link absolute-humidity-edit
-                  (thunk (number->string (tile-humidity planet tile)))
-                  (thunk* #f))
-            (link relative-humidity-edit
-                  (thunk (number->string (relative-humidity (tile-temperature planet tile)
-                                                            (tile-humidity planet tile))))
-                  (thunk* #f))
-            (link precipitation-edit
-                  (thunk (number->string (tile-precipitation planet tile)))
-                  (thunk* #f))
-            (link vegetation-edit
-                  (thunk (number->string (tile-vegetation planet tile)))
-                  (thunk* #f))))))))
+        (let ([planet (send planet-handler current)])
+          (let ([link (lambda (panel get set) (send panel link get set))])
+            (link id-edit (thunk (number->string tile)) (thunk* #f))
+            (link elevation-edit
+                  (thunk (number->string (tile-elevation planet tile)))
+                  (lambda (n)
+                    (let ([num (exact->inexact (string->number n))])
+                      (when (real? num)
+                        (begin
+                          ((tile-data-elevation-set! (planet-tile planet)) tile num)
+                          (color-planet! color-mode))))))
+            (link water-level-edit
+                  (thunk (number->string (tile-water-level planet tile)))
+                  (lambda (n)
+                    (let ([num (exact->inexact (string->number n))])
+                      (when (real? num)
+                        (begin
+                          ((tile-data-water-level-set! (planet-tile planet)) tile num)
+                          (color-planet! color-mode))))))
+            (when (planet-has-climate? planet)
+              (link temperature-edit
+                    (thunk (number->string (tile-temperature planet tile)))
+                    (thunk* #f))
+              (link absolute-humidity-edit
+                    (thunk (number->string (tile-humidity planet tile)))
+                    (thunk* #f))
+              (link relative-humidity-edit
+                    (thunk (number->string (relative-humidity (tile-temperature planet tile)
+                                                              (tile-humidity planet tile))))
+                    (thunk* #f))
+              (link precipitation-edit
+                    (thunk (number->string (tile-precipitation planet tile)))
+                    (thunk* #f))
+              (link vegetation-edit
+                    (thunk (number->string (tile-vegetation planet tile)))
+                    (thunk* #f)))))))))
 
 (struct tab-choice
   (label panel))
@@ -255,14 +259,15 @@
   (send canvas on-paint))
 
 (define (color-planet! f)
-  (when planet
-    (thread
-     (thunk
-      (set! color-mode f)
-      (send canvas with-gl-context
-            (thunk
-             (update-vertices! (curry color-mode planet))))
-      (repaint!)))))
+  (let ([planet (send planet-handler current)])
+    (when planet
+      (thread
+       (thunk
+        (set! color-mode f)
+        (send canvas with-gl-context
+              (thunk
+               (update-vertices! (curry color-mode planet))))
+        (repaint!))))))
 
 (define canvas
   (new
@@ -282,7 +287,7 @@
            (with-gl-context
             (thunk
              (send control set-projection)
-             (gl-rotate (send control rotation-list planet))
+             (gl-rotate (send control rotation-list (send planet-handler current)))
              (gl-clear (list 0.0 0.0 0.0 0.0))
              (gl-cull-face 'back)
              (gl-draw 'tile-vertices
@@ -299,14 +304,15 @@
         (thunk
          (set-gl-viewport 0 0 width height))))
      (define/public (remake-mesh)
-       (with-gl-context
+       (let ([planet (send planet-handler current)])
+         (with-gl-context
           (thunk
            (unless (= buffer-tile-count (tile-count planet))
-             (make-tile-buffers! planet)))))
+             (make-tile-buffers! planet))))))
      (define (generate-terrain!)
        (thread
         (thunk
-         (generate-terrain (grid-subdivision-level planet) (load "terrain-gen.rkt") default-axis)
+         (generate-terrain (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)
          (remake-mesh)
          (color-planet! color-mode))))
      (define/override (on-char event)
@@ -314,59 +320,40 @@
        (match key-code
          ['escape (exit)]
          [#\q (generate-terrain!)]
-         [#\w (when planet
+         [#\w (and-let ([planet (send planet-handler current)])
                 (thread
                  (thunk
-                  (set! planet-vector #f)
-                  (set! planet (climate-next (default-climate-parameters) planet))
+                  (send planet-handler
+                        climate/scratch
+                        (curry climate-next (default-climate-parameters)))
                   (color-planet! color-mode))))]
-         [#\e (begin
-                (when planet
-                  (thread
-                   (thunk
-                    (set! planet-vector (list->vector
-                                         (let* ([par (default-climate-parameters)]
-                                                [seasons (climate-parameters-seasons-per-cycle par)])
-                                           (define (planet-list n ls)
-                                             (if (= seasons n)
-                                                 ls
-                                                 (planet-list (+ 1 n) 
-                                                              (if (zero? n)
-                                                                  (list (climate-next par planet))
-                                                                  (cons (climate-next par (first ls)) ls)))))
-                                           (reverse (planet-list 0 #f)))))
-                    (set! planet-vector-position 0)
-                    (set! planet (vector-ref planet-vector planet-vector-position))
-                    (color-planet! color-mode)))))]
+         [#\e (and-let ([planet (send planet-handler current)])
+                (thread
+                 (thunk
+                  (send planet-handler
+                        climate/add
+                        (let* ([par (default-climate-parameters)]
+                               [seasons (climate-parameters-seasons-per-cycle par)])
+                          (curry climate-next par)))
+                  (color-planet! color-mode))))]
          #;[#\t (when (and planet (planet-has-climate? planet))
-                (set! planet (next-turn default-turn-parameters planet))
-                (color-planet! color-mode))]
-         ['left (begin
-                  (when planet-vector
-                    (set! planet-vector-position
-                          (modulo (- planet-vector-position 1)
-                                  (climate-parameters-seasons-per-cycle
-                                   (planet-climate-parameters planet))))
-                    (set! planet (vector-ref planet-vector planet-vector-position))
-                    (color-planet! color-mode)))]
-         ['right (begin
-                   (when planet-vector
-                     (set! planet-vector-position
-                           (modulo (+ planet-vector-position 1)
-                                   (climate-parameters-seasons-per-cycle
-                                    (planet-climate-parameters planet))))
-                     (set! planet (vector-ref planet-vector planet-vector-position))
-                     (color-planet! color-mode)))]
+                  (set! planet (next-turn default-turn-parameters planet))
+                  (color-planet! color-mode))]
+         ['left (when (send planet-handler earlier)
+                  (color-planet! color-mode))]
+         ['right (when (send planet-handler later)
+                   (color-planet! color-mode))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-humidity)]
          [#\g (color-planet! color-aridity)]
          [#\l (color-planet! (color-area
-                              (stream-fold (lambda (a n)
-                                             (max a (tile-area planet n)))
-                                           0.0
-                                           (in-range (tile-count planet)))))]
+                              (let ([planet (send planet-handler current)])
+                                (stream-fold (lambda (a n)
+                                               (max a (tile-area planet n)))
+                                             0.0
+                                             (in-range (tile-count planet))))))]
          ['wheel-up (begin
                       (send control wheel-up)
                       (repaint!))]
@@ -375,25 +362,26 @@
                         (repaint!))]
          [_ (void)]))
      (define (tile-at x y)
-       (if planet
-           (and-let* ([v (send control get-coordinates planet x y)]
-                      [distance (build-flvector (tile-count planet) (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
-                     (foldl (lambda (n closest)
-                              (if (< (flvector-ref distance n)
-                                     (flvector-ref distance closest))
-                                  n
-                                  closest))
-                            0
-                            (range (tile-count planet))))
-           #f))
+       (and-let* ([planet (send planet-handler current)]
+                  [v (send control get-coordinates planet x y)]
+                  [distance (build-flvector (tile-count planet)
+                                            (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
+         (foldl (lambda (n closest)
+                  (if (< (flvector-ref distance n)
+                         (flvector-ref distance closest))
+                      n
+                      closest))
+                0
+                (range (tile-count planet)))))
      
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
              (unless mouse-moving?
-               (when planet
-                 (let ([tile (tile-at (send event get-x)
-                                      (send event get-y))])
+               (and-let* ([planet (send planet-handler current)]
+                          [tile (tile-at (send event get-x)
+                                         (send event get-y))])
+                 (begin
                    (update-tile-panel tile)
                    (when tile
                      (let ([vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
@@ -434,7 +422,7 @@
 (define gl-context canvas)
 (send canvas with-gl-context (thunk 
                               (make-tile-buffers! (send grid-handler get-grid default-grid-size))
-                              (update-vertices! (curry color-mode planet))))
+                              (update-vertices! (curry color-mode (send planet-handler current)))))
 
 (send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
                                                            (let ([vectors (make-cvector _gl-vertex 7)]

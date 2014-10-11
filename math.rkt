@@ -53,6 +53,10 @@
   (/ (- closest low)
      high))
 
+(: index-within-range? (Integer Integer -> (Integer -> Boolean)))
+(define ((index-within-range? low high) i)
+  (and (>= i low) (< i high)))
+
 (: angle-distance (Flonum Flonum -> Flonum))
 (define (angle-distance a b)
   (abs
