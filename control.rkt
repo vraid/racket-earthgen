@@ -91,7 +91,7 @@
               (flvector->list (axis-angle-axis a)))))
     (define (rotation planet)
       (let ([q axis-angle->quaternion])
-        (quaternion-product 
+        (quaternion-product
          (let ([axis (planet-axis planet)])
            (q (if (flvector3-parallel? default-axis axis)
                   (flvector 1.0 0.0 0.0)

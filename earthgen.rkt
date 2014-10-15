@@ -6,7 +6,6 @@
          (except-in "planet.rkt" planet)
          "planet-create.rkt"
          "climate-create.rkt"
-         "color.rkt"
          "planet-color.rkt"
          "opengl.rkt"
          "projection.rkt"
@@ -15,6 +14,7 @@
          "control.rkt"
          "grid-handler.rkt"
          "planet-handler.rkt"
+         "planet-renderer.rkt"
          "if-let.rkt"
          math/flonum
          ffi/cvector
@@ -40,7 +40,6 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
-(define buffer-tile-count 0)
 (define planet-handler (new planet-handler%
                             [max-elements 12]))
 (define grid-handler (new-grid-handler))
@@ -67,49 +66,6 @@
     (send planet-handler
           terrain/scratch
           (thunk ((heightmap->planet (first grids)) (method grids) axis)))))
-
-(define (->gl-vertex coord color)
-  (make-gl-vertex
-   (flvector-ref coord 0)
-   (flvector-ref coord 1)
-   (flvector-ref coord 2)
-   (flcolor->byte (flcolor-red color))
-   (flcolor->byte (flcolor-green color))
-   (flcolor->byte (flcolor-blue color))
-   (flcolor->byte (flcolor-alpha color))))
-
-(define (make-tile-buffers! grid)
-  (let* ([tile-count (grid-tile-count grid)]
-         [vertices (make-cvector _gl-vertex (* 7 tile-count))]
-         [indices (make-cvector _uint (* 18 tile-count))]
-         [color (flcolor3 0.0 0.0 0.0)])
-    (set! buffer-tile-count tile-count)
-    (for ([n tile-count])
-      (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
-      (for ([i 6])
-        (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i))
-                                                            color))
-        (let ([k (+ (* i 3) (* n 18))])
-          (cvector-set! indices k (* n 7))
-          (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
-          (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))
-    (set-gl-vertex-buffer! 'tile-vertices vertices)
-    (set-gl-index-buffer! 'tile-indices indices)))
-
-(define (set-vertex-color! vertices n color)
-  (let ([v (cvector-ref vertices n)])
-    (set-gl-vertex-red! v (byte-color-red color))
-    (set-gl-vertex-green! v (byte-color-green color))
-    (set-gl-vertex-blue! v (byte-color-blue color))))
-
-(define (update-vertices! color-mode)
-  (let* ([vertices (gl-buffer-data (get-gl-buffer 'tile-vertices))])
-    (for ([n (tile-count (send planet-handler current))])
-      (let ([color (flcolor->byte-color (color-mode n))])
-        (set-vertex-color! vertices (* n 7) color)
-        (for ([i 6])
-          (set-vertex-color! vertices (+ 1 i (* n 7)) color))))
-    (set-gl-vertex-buffer! 'tile-vertices vertices)))
 
 (generate-terrain default-grid-size sample-terrain default-axis)
 
@@ -144,6 +100,11 @@
        [stretchable-width #f]
        [callback (lambda (panel event)
                    (send panel set-tab (send panel get-selection)))]))
+
+(define (color-planet! color-function)
+  (send canvas with-gl-context
+        (thunk (send planet-renderer set-tile-colors color-function)))
+  (repaint!))
 
 (define global-panel
   (let* ([panel (new vertical-panel%
@@ -258,17 +219,6 @@
   (set! last-draw 0.0)
   (send canvas on-paint))
 
-(define (color-planet! f)
-  (let ([planet (send planet-handler current)])
-    (when planet
-      (thread
-       (thunk
-        (set! color-mode f)
-        (send canvas with-gl-context
-              (thunk
-               (update-vertices! (curry color-mode planet))))
-        (repaint!))))))
-
 (define canvas
   (new
    (class* canvas% ()
@@ -280,20 +230,15 @@
                           [scale-min 0.1]
                           [scale-max 100.0]))
      (define/override (on-paint)
-       (when (fl< milliseconds-between-frames
-                  (fl- (current-inexact-milliseconds) last-draw))
+       (when (< milliseconds-between-frames
+                (- (current-inexact-milliseconds) last-draw))
          (thread
           (thunk
            (with-gl-context
             (thunk
              (send control set-projection)
              (gl-rotate (send control rotation-list (send planet-handler current)))
-             (gl-clear (list 0.0 0.0 0.0 0.0))
-             (gl-cull-face 'back)
-             (gl-draw 'tile-vertices
-                      'tile-indices)
-             #;(gl-draw 'selected-tile-vertices
-                        'selected-tile-indices)
+             (send planet-renderer render)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
      (define/override (on-size width height)
@@ -303,17 +248,10 @@
        (with-gl-context
         (thunk
          (set-gl-viewport 0 0 width height))))
-     (define/public (remake-mesh)
-       (let ([planet (send planet-handler current)])
-         (with-gl-context
-          (thunk
-           (unless (= buffer-tile-count (tile-count planet))
-             (make-tile-buffers! planet))))))
      (define (generate-terrain!)
        (thread
         (thunk
          (generate-terrain (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)
-         (remake-mesh)
          (color-planet! color-mode))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
@@ -382,16 +320,7 @@
                           [tile (tile-at (send event get-x)
                                          (send event get-y))])
                  (begin
-                   (update-tile-panel tile)
-                   (when tile
-                     (let ([vertices (gl-buffer-data (get-gl-buffer 'selected-tile-vertices))])
-                       (begin
-                         (cvector-set! vertices 0 (->gl-vertex (tile-coordinates planet tile) (flcolor3 1.0 0.0 0.0)))
-                         (for ([n 6])
-                           (cvector-set! vertices (+ 1 n) (->gl-vertex (corner-coordinates planet (tile-corner planet tile n)) (flcolor3 1.0 0.0 0.0))))
-                         (with-gl-context
-                          (thunk
-                           (set-gl-vertex-buffer! 'selected-tile-vertices vertices))))))))
+                   (update-tile-panel tile)))
                (repaint!))
              (set! mouse-down? false)
              (set! mouse-moving? #f))
@@ -419,29 +348,12 @@
    [min-width 400]
    [min-height 400]))
 
-(define gl-context canvas)
-(send canvas with-gl-context (thunk 
-                              (make-tile-buffers! (send grid-handler get-grid default-grid-size))
-                              (update-vertices! (curry color-mode (send planet-handler current)))))
-
-(send canvas with-gl-context (thunk (set-gl-vertex-buffer! 'selected-tile-vertices
-                                                           (let ([vectors (make-cvector _gl-vertex 7)]
-                                                                 [zero-vertex (->gl-vertex (flvector 0.0 0.0 0.0)
-                                                                                           (flcolor3 0.0 0.0 0.0))])
-                                                             (for ([i 7])
-                                                               (cvector-set! vectors i zero-vertex))
-                                                             vectors))))
-(send canvas with-gl-context (thunk (set-gl-index-buffer! 'selected-tile-indices
-                                                          (let ([indices (make-cvector _uint 18)])
-                                                            (for ([i 6])
-                                                              (let ([k (+ (* i 3))])
-                                                                (cvector-set! indices k 0)
-                                                                (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6)))
-                                                                (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6)))))
-                                                            indices))))
-
 (init-info-panel)
 (send frame maximize #t)
 (send frame show #t)
 (send canvas focus)
-(send canvas on-paint)
+
+(define planet-renderer (send canvas with-gl-context
+                              (thunk (new planet-renderer%
+                                          [planet (thunk (send planet-handler current))]))))
+(color-planet! color-vegetation)

@@ -12,14 +12,13 @@
 (define float-size 4)
 (define vertex-size (+ (* 3 float-size) (* 4 byte-size)))
 
-(struct gl-buffer
+(struct gl-vertex-buffer
   (handle
    data))
 
-(define buffers (make-hash))
-
-(define (get-gl-buffer id)
-  (hash-ref buffers id #f))
+(struct gl-index-buffer
+  (handle
+   data))
 
 (define-cstruct _gl-vertex
   ([x _float]
@@ -30,30 +29,20 @@
    [blue _byte]
    [alpha _byte]))
 
-(define (generate-buffer-handle)
+(define (generate-gl-buffer-handle)
   (let ((buffer (glGenBuffers 1)))
     (u32vector-ref buffer 0)))
 
-(define (set-gl-vertex-buffer! id vertices)
-  (let* ([handle (if (not (get-gl-buffer id))
-                     (generate-buffer-handle)
-                     (gl-buffer-handle (get-gl-buffer id)))]
-         [buffer (gl-buffer
-                  handle
-                  vertices)])
-    (hash-set! buffers id buffer)
+(define (set-gl-vertex-buffer! buffer)
+  (let ([handle (gl-vertex-buffer-handle buffer)]
+        [vertices (gl-vertex-buffer-data buffer)])
     (glBindBuffer GL_ARRAY_BUFFER handle)
     (glBufferData GL_ARRAY_BUFFER (* vertex-size (cvector-length vertices)) (cvector-ptr vertices) GL_STATIC_DRAW)
     (glBindBuffer GL_ARRAY_BUFFER 0)))
 
-(define (set-gl-index-buffer! id indices)
-  (let* ([handle (if (not (get-gl-buffer id))
-                     (generate-buffer-handle)
-                     (gl-buffer-handle (get-gl-buffer id)))]
-         [buffer (gl-buffer
-                  handle
-                  indices)])
-    (hash-set! buffers id buffer)
+(define (set-gl-index-buffer! buffer)
+  (let* ([handle (gl-index-buffer-handle buffer)]
+         [indices (gl-index-buffer-data buffer)])
     (glBindBuffer GL_ELEMENT_ARRAY_BUFFER handle)
     (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
     (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)))
@@ -88,17 +77,17 @@
   (glFrontFace GL_CCW)
   (glShadeModel GL_SMOOTH)
   
-  (glBindBuffer GL_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer vertex-buffer)))
+  (glBindBuffer GL_ARRAY_BUFFER (gl-vertex-buffer-handle vertex-buffer))
   (glVertexPointer 3 GL_FLOAT vertex-size 0)
   (glColorPointer 4 GL_UNSIGNED_BYTE vertex-size (* 3 float-size))
   (glBindBuffer GL_ARRAY_BUFFER 0)
   
   (glEnableClientState GL_VERTEX_ARRAY)
   (glEnableClientState GL_COLOR_ARRAY)
-  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER (gl-buffer-handle (get-gl-buffer index-buffer)))
+  (glBindBuffer GL_ELEMENT_ARRAY_BUFFER (gl-index-buffer-handle index-buffer))
   
   (glDrawElements GL_TRIANGLES
-                  (cvector-length (gl-buffer-data (get-gl-buffer index-buffer)))
+                  (cvector-length (gl-index-buffer-data index-buffer))
                   GL_UNSIGNED_INT
                   0)
   
