@@ -2,10 +2,9 @@
 
 (provide (all-defined-out))
 
-(require "logic.rkt"
-         "heightmap-structs.rkt"
-         "heightmap-create.rkt"
-         "heightmap-functions.rkt")
+(require "planet/heightmap/heightmap-structs.rkt"
+         "planet/heightmap/heightmap-create.rkt"
+         "planet/heightmap/heightmap-functions.rkt")
 
 (define sample-terrain
   (let* ([continent (heightmap-map
@@ -47,8 +46,7 @@
                             #:persistence 0.6)))]
          [mountain-base (heightmap-map*
                          (lambda (a b . ns)
-                           (if (both
-                                true?
+                           (if (and
                                 (< -200.0 a)
                                 (< 0.0 b))
                                b

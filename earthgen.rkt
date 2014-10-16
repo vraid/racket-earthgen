@@ -1,24 +1,20 @@
 #lang racket
 
 (require racket/gui/base
-         "flvector3.rkt"
-         "quaternion.rkt"
-         (except-in "planet.rkt" planet)
-         "planet-create.rkt"
-         "climate-create.rkt"
+         vraid/math
+         vraid/flow
+         vraid/opengl
+         "planet/planet.rkt"
+         "planet/planet-create.rkt"
+         "planet/climate-create.rkt"
          "planet-color.rkt"
-         "opengl.rkt"
-         "projection.rkt"
          "sample-terrain.rkt"
          "gui/edit-panel.rkt"
-         "control.rkt"
-         "grid-handler.rkt"
-         "planet-handler.rkt"
-         "planet-renderer.rkt"
-         "if-let.rkt"
-         math/flonum
-         ffi/cvector
-         ffi/unsafe)
+         "interface/control.rkt"
+         "interface/grid-handler.rkt"
+         "interface/planet-handler.rkt"
+         "interface/planet-renderer.rkt"
+         math/flonum)
 
 (require plot
          profile
@@ -56,10 +52,9 @@
   (values 800 600))
 
 ; required by terrain-gen
-(require "logic.rkt"
-         "heightmap-structs.rkt"
-         "heightmap-create.rkt"
-         "heightmap-functions.rkt")
+(require "planet/heightmap/heightmap-structs.rkt"
+         "planet/heightmap/heightmap-create.rkt"
+         "planet/heightmap/heightmap-functions.rkt")
 
 (define (generate-terrain size method axis)
   (let ([grids (send grid-handler get-grids size)])

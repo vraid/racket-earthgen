@@ -2,13 +2,9 @@
 
 (provide (all-defined-out))
 
-(require "types.rkt"
-         "math.rkt"
-         "color.rkt"
-         "planet.rkt"
-         "temperature.rkt"
-         "typed-logic.rkt"
-         racket/flonum)
+(require vraid/types
+         vraid/color
+         "planet/planet.rkt")
 
 (define color-undefined
   (flcolor3 0.7 0.7 0.7))
@@ -118,7 +114,7 @@
 
 (: color-vegetation (planet index -> flcolor))
 (define (color-vegetation p n)
-  (if (fl< 0.0 (tile-snow-cover p n))
+  (if (< 0.0 (tile-snow-cover p n))
       snow-color
       (flcolor-interpolate (color-vegetation-topography p n)
                            vegetation-color
