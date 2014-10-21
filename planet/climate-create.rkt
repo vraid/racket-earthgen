@@ -12,6 +12,7 @@
          "planet.rkt"
          "planet-typed-data-structs.rkt"
          "climate-structs.rkt"
+         "river-generation.rkt"
          "math/wind.rkt")
 
 (: next-climate-variables (climate-parameters climate-variables -> climate-variables))
@@ -286,6 +287,7 @@
             (for ([n (tile-count p)])
               ((tile-data-humidity-set! (planet-tile p)) n
                                                          (flvector-ref (climate-data-tile-humidity climate-values) n)))))))
+    (set-river-directions! p)
     (set-wind!)
     (climate-iterate!)
     (for ([n (tile-count p)])

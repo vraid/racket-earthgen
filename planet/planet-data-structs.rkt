@@ -24,10 +24,9 @@
 
 (struct-array corner-data
               ([elevation _float]
-               [river-direction _uint8]))
+               [river-direction _int8]))
 
 (struct-array edge-data
-              ([has-river? _bool]
-               [river-flow _float]
+              ([river-flow _float]
                [surface-air-flow _float]
                [troposphere-air-flow _float]))

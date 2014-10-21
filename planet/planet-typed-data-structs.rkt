@@ -37,11 +37,9 @@
                                   [elevation-set! : flonum-set!]
                                   [river-direction-set! : fixnum-set!])]
                        [#:struct edge-data
-                                 ([has-river? : boolean-access]
-                                  [river-flow : flonum-access]
+                                 ([river-flow : flonum-access]
                                   [surface-air-flow : flonum-access]
                                   [troposphere-air-flow : flonum-access]
-                                  [has-river?-set! : boolean-set!]
                                   [river-flow-set! : flonum-set!]
                                   [surface-air-flow-set! : flonum-set!]
                                   [troposphere-air-flow-set! : flonum-set!])]

@@ -118,7 +118,7 @@
                 (thread
                  (thunk
                   (generate-terrain size (load "terrain-gen.rkt") default-axis)
-                  (send canvas remake-mesh)
+                  (send canvas with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode)))))))
     (send water-edit
           link
@@ -247,6 +247,7 @@
        (thread
         (thunk
          (generate-terrain (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)
+         (with-gl-context (thunk (send planet-renderer update/planet)))
          (color-planet! color-mode))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
@@ -259,6 +260,7 @@
                   (send planet-handler
                         climate/scratch
                         (curry climate-next (default-climate-parameters)))
+                  (with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode))))]
          [#\e (and-let ([planet (send planet-handler current)])
                 (thread
@@ -268,6 +270,7 @@
                         (let* ([par (default-climate-parameters)]
                                [seasons (climate-parameters-seasons-per-cycle par)])
                           (curry climate-next par)))
+                  (with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode))))]
          #;[#\t (when (and planet (planet-has-climate? planet))
                   (set! planet (next-turn default-turn-parameters planet))
@@ -348,7 +351,9 @@
 (send frame show #t)
 (send canvas focus)
 
-(define planet-renderer (send canvas with-gl-context
-                              (thunk (new planet-renderer%
-                                          [planet (thunk (send planet-handler current))]))))
-(color-planet! color-vegetation)
+(define planet-renderer
+  (send canvas with-gl-context
+        (thunk (new planet-renderer%
+                    [planet (thunk (send planet-handler current))]))))
+
+;(color-planet! color-vegetation)

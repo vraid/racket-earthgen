@@ -61,10 +61,7 @@
                                        [d : Integer]) (void)))
      
      #:edge (edge-data
-                  (lambda: ([n : index]) #f)
                   empty empty empty
-                  (lambda: ([n : index]
-                            [b : Boolean]) (void))
                   void-set void-set void-set)
      
      #:land-ratio empty-hash

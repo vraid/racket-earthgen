@@ -124,9 +124,14 @@
                 [vegetation Flonum]))
 
 (direct-access planet corner corner-data
-               ([elevation Flonum]
-                [river-direction Fixnum]))
+               ([elevation Flonum]))
+
+(: corner-river-direction (planet integer -> (maybe integer)))
+(define (corner-river-direction planet n)
+  (let ([direction ((corner-data-river-direction (planet-corner planet)) n)])
+    (if (<= 0 direction)
+        direction
+        #f)))
 
 (direct-access planet edge edge-data
-               ([has-river? Boolean]
-                [river-flow Flonum]))
+               ([river-flow Flonum]))
