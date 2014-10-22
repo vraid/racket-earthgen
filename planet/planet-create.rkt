@@ -56,7 +56,7 @@
      #:corner (corner-data
                     (lambda: ([n : index])
                       (flvector-ref (heightmap-corners h) n))
-                    (lambda: ([n : index]) 0)
+                    (lambda: ([n : index]) -1)
                     void-set (lambda: ([n : index]
                                        [d : Integer]) (void)))
      

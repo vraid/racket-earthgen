@@ -31,4 +31,4 @@
     (define/public (render)
       (gl-clear (list 0.0 0.0 0.0 0.0))
       (send tile-renderer render)
-      #;(send river-renderer render))))
+      (send river-renderer render))))

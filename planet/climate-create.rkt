@@ -30,13 +30,17 @@
 
 (: copy-geography! (planet planet -> Void))
 (define (copy-geography! prev p)
-  (let ([init-tile-array (init-array (tile-count p))])
+  (let ([init-tile-array (init-array (tile-count p))]
+        [init-corner-array (init-array (corner-count p))])
     (init-tile-array (tile-data-elevation-set! (planet-tile p))
                      (curry tile-elevation prev))
     (init-tile-array (tile-data-water-level-set! (planet-tile p))
                      (curry tile-water-level prev))
-    ((init-array (corner-count p)) (corner-data-elevation-set! (planet-corner p))
-                                   (curry corner-elevation prev))))
+    (init-corner-array (corner-data-elevation-set! (planet-corner p))
+                       (curry corner-elevation prev))
+    (init-corner-array (corner-data-river-direction-set! (planet-corner p))
+                       (lambda: ([n : integer])
+                         ((corner-data-river-direction (planet-corner prev)) n)))))
 
 (: sunlight (flonum flonum -> flonum))
 (define (sunlight solar-equator latitude)
@@ -126,6 +130,7 @@
                                 (lambda: ([key : population-type])
                                   #f)))])
     (copy-geography! prev p)
+    (generate-rivers! p)
     (let ([init-tile-array (init-array (tile-count p))])
       (init-tile-array (tile-data-sunlight-set! (planet-tile p))
                        (lambda: ([n : integer])
@@ -287,7 +292,6 @@
             (for ([n (tile-count p)])
               ((tile-data-humidity-set! (planet-tile p)) n
                                                          (flvector-ref (climate-data-tile-humidity climate-values) n)))))))
-    (set-river-directions! p)
     (set-wind!)
     (climate-iterate!)
     (for ([n (tile-count p)])

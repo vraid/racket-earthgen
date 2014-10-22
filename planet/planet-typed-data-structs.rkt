@@ -4,8 +4,8 @@
 
 (define-type boolean-access (index -> Boolean))
 (define-type boolean-set! (index Boolean -> Void))
-(define-type fixnum-access (index -> Fixnum))
-(define-type fixnum-set! (index Fixnum -> Void))
+(define-type integer-access (index -> integer))
+(define-type integer-set! (index integer -> Void))
 (define-type flonum-access (index -> Flonum))
 (define-type flonum-set! (index Flonum -> Void))
 
@@ -33,9 +33,9 @@
                                   [tropopause-altitude-set! : flonum-set!])]
                        [#:struct corner-data
                                  ([elevation : flonum-access]
-                                  [river-direction : fixnum-access]
+                                  [river-direction : integer-access]
                                   [elevation-set! : flonum-set!]
-                                  [river-direction-set! : fixnum-set!])]
+                                  [river-direction-set! : integer-set!])]
                        [#:struct edge-data
                                  ([river-flow : flonum-access]
                                   [surface-air-flow : flonum-access]
