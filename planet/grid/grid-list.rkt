@@ -10,7 +10,7 @@
 
 (define-type grid-list (Listof grid))
 
-(: n-grid-list (grid-list index -> grid-list))
+(: n-grid-list (grid-list integer -> grid-list))
 (define (n-grid-list grids n)
   (cond [(zero? n)
          (list (n-grid 0))]

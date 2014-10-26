@@ -1,7 +1,6 @@
 #lang typed/racket
 
-(provide (all-defined-out)
-         (all-from-out "constants.rkt"))
+(provide (all-defined-out))
 
 (require "constants.rkt"
          "../types.rkt")
@@ -19,8 +18,8 @@
 (define (divide a b)
   (/ b a))
 
-(: subtract (case-> (Integer Integer -> Integer)
-                    (Flonum Flonum -> Flonum)
+(: subtract (case-> (Flonum Flonum -> Flonum)
+                    (Integer Integer -> Integer)
                     (Number Number -> Number)))
 (define (subtract a b)
   (- b a))
@@ -60,5 +59,5 @@
 (: angle-distance (Flonum Flonum -> Flonum))
 (define (angle-distance a b)
   (abs
-   (subtract tau
-             (abs (- a b)))))
+   (- (abs (- a b))
+      tau)))

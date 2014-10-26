@@ -7,9 +7,9 @@
 (require/typed "carray.rkt"
                [make-int-array (Integer -> (values (Integer -> Integer) (Integer Integer -> Void)))])
 
-(: init-array (natural -> (case-> ((index Integer -> Void) (index -> Integer) -> Void)
-                                  ((index Flonum -> Void) (index -> Flonum) -> Void)
-                                  ((index Any -> Void) (index -> Any) -> Void))))
+(: init-array (integer -> (case-> ((integer Integer -> Void) (integer -> Integer) -> Void)
+                                  ((integer Flonum -> Void) (integer -> Flonum) -> Void)
+                                  ((integer Any -> Void) (integer -> Any) -> Void))))
 (define ((init-array length) set! get)
   (for ([n length])
     (set! n (get n))))

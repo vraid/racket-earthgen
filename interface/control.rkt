@@ -97,8 +97,8 @@
               (flvector3-angle default-axis axis)))
          (q (flvector 0.0 0.0 1.0) longitude)
          (q (flvector 0.0 1.0 0.0) latitude)
-         (q (flvector 0.0 0.0 -1.0) (/ tau 4))
-         (q (flvector -1.0 0.0 0.0) (/ tau 4)))))
+         (q (flvector 0.0 0.0 -1.0) (/ pi 2))
+         (q (flvector -1.0 0.0 0.0) (/ pi 2)))))
     (define/override (set-projection)
       (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ viewport-width viewport-height)))]
             [my (fl/ 1.0 scale)])

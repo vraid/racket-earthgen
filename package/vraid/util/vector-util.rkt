@@ -5,7 +5,7 @@
 (require "../types.rkt"
          math/flonum)
 
-(: vector-index (All (A) (A (Vectorof A) -> index)))
+(: vector-index (All (A) (A (Vectorof A) -> integer)))
 (define (vector-index e v)
   (let ([m (vector-member e v)])
     (if (false? m)

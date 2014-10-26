@@ -9,16 +9,6 @@
          "heightmap/heightmap-structs.rkt"
          racket/flonum)
 
-(: natural->integer (natural -> Integer))
-(define (natural->integer n)
-  n)
-
-(: integer->index (Integer -> index))
-(define (integer->index n)
-  (if (> 0 n)
-      0
-      n))
-
 (: heightmap->planet (grid -> (heightmap FlVector -> planet)))
 (define (heightmap->planet grid)
   (define empty-hash (lambda: ([n : integer])
@@ -26,8 +16,8 @@
                       #f)))
   (lambda: ([h : heightmap]
             [axis : FlVector])
-    (define empty (lambda: ([n : index]) 0.0))
-    (define void-set (lambda: ([n : index]
+    (define empty (lambda: ([n : integer]) 0.0))
+    (define void-set (lambda: ([n : integer]
                                [f : Flonum])
                        (void)))
     (planet/kw
@@ -40,29 +30,31 @@
      
      #:tile (let ([water-level (make-flvector (grid-tile-count grid) 0.0)])
               (tile-data
-               (lambda: ([n : index])
+               (lambda: ([n : integer])
                  (flvector-ref (heightmap-tiles h) n))
-               (lambda: ([n : index])
+               (lambda: ([n : integer])
                  (flvector-ref water-level n))
                empty empty empty empty empty empty empty empty
-               (lambda: ([n : index]
+               (lambda: ([n : integer]
                          [e : Flonum])
                  (flvector-set! (heightmap-tiles h) n e))
-               (lambda: ([n : index]
+               (lambda: ([n : integer]
                          [e : Flonum])
                  (flvector-set! water-level n e))
                void-set void-set void-set void-set void-set void-set void-set void-set))
      
      #:corner (corner-data
-                    (lambda: ([n : index])
+                    (lambda: ([n : integer])
                       (flvector-ref (heightmap-corners h) n))
-                    (lambda: ([n : index]) -1)
-                    void-set (lambda: ([n : index]
+                    (lambda: ([n : integer]) -1)
+                    void-set (lambda: ([n : integer]
                                        [d : Integer]) (void)))
      
      #:edge (edge-data
-                  empty empty empty
-                  void-set void-set void-set)
+                  empty empty
+                  void-set void-set)
+     
+     #:rivers '()
      
      #:land-ratio empty-hash
      #:population empty-hash)))

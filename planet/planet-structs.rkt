@@ -21,9 +21,17 @@
              [tile : tile-data]
              [corner : corner-data]
              [edge : edge-data]
+             [rivers : river-list]
              [land-ratio : land-ratio-access]
              [population : population-access])
             #:mutable)
+
+(struct/kw: river
+            ([location : integer]
+             [sources : river-list])
+            #:transparent)
+
+(define-type river-list (Listof river))
 
 (: set-tile-population! (planet integer population-type flonum -> Void))
 (define (set-tile-population! p n type amount)

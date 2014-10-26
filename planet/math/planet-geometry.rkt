@@ -101,6 +101,10 @@
   (let ([r (planet-radius p)])
     (* r r)))
 
+(: planet-circumference (planet -> Flonum))
+(define (planet-circumference p)
+  (* tau (planet-radius p)))
+
 (: tile-area (planet integer -> Flonum))
 (define (tile-area p n)
   (: tile-segment-area (integer -> Flonum))

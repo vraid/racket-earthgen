@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require "../planet-structs.rkt"
+         "time.rkt"
          vraid/math
          math/flonum)
 
@@ -12,4 +13,4 @@
 
 (: planet-rotation-period (planet -> Flonum))
 (define (planet-rotation-period p)
-  (* 24.0 60.0 60.0))
+  (fl seconds-per-day))

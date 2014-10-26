@@ -21,13 +21,13 @@
   (fl+ (fl* a (fl- 1.0 d))
        (fl* b d)))
 
-(: water-surface-albedo (planet index -> Flonum))
+(: water-surface-albedo (planet integer -> Flonum))
 (define (water-surface-albedo p n)
   (interpolate water-albedo
                water-ice-albedo
                (tile-ice-cover p n)))
 
-(: land-surface-albedo (planet index -> Flonum))
+(: land-surface-albedo (planet integer -> Flonum))
 (define (land-surface-albedo p n)
   (interpolate
    (interpolate desert-albedo
@@ -36,18 +36,18 @@
    snow-albedo
    (tile-snow-cover p n)))
 
-(: surface-albedo (planet index -> Flonum))
+(: surface-albedo (planet integer -> Flonum))
 (define (surface-albedo p n)
   (if (tile-water? p n)
       (water-surface-albedo p n)
       (land-surface-albedo p n)))
 
-(: sky-albedo (planet index -> Flonum))
+(: sky-albedo (planet integer -> Flonum))
 (define (sky-albedo p n)
   (* cloud-albedo
      (tile-cloud-cover p n)))
 
-(: tile-albedo (planet index -> Flonum))
+(: tile-albedo (planet integer -> Flonum))
 (define (tile-albedo p n)
   (- 1.0 (* (- 1.0 (surface-albedo p n))
             (- 1.0 (sky-albedo p n)))))

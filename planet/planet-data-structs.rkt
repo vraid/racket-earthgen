@@ -28,5 +28,4 @@
 
 (struct-array edge-data
               ([river-flow _float]
-               [surface-air-flow _float]
-               [troposphere-air-flow _float]))
+               [air-flow _float]))

@@ -6,31 +6,31 @@
 
 (provide (all-defined-out))
 
-(: subdivision-level-tile-count (natural -> natural))
+(: subdivision-level-tile-count (natural -> integer))
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
 
-(: subdivision-level-corner-count (natural -> natural))
+(: subdivision-level-corner-count (natural -> integer))
 (define (subdivision-level-corner-count n)
   (* 20 (expt 3 n)))
 
-(: subdivision-level-edge-count (natural -> natural))
+(: subdivision-level-edge-count (natural -> integer))
 (define (subdivision-level-edge-count n)
   (* 30 (expt 3 n)))
 
-(: grid-tile-count (grid -> natural))
+(: grid-tile-count (grid -> integer))
 (define (grid-tile-count grid)
   (subdivision-level-tile-count (grid-subdivision-level grid)))
 
-(: grid-corner-count (grid -> natural))
+(: grid-corner-count (grid -> integer))
 (define (grid-corner-count grid)
   (subdivision-level-corner-count (grid-subdivision-level grid)))
 
-(: grid-edge-count (grid -> natural))
+(: grid-edge-count (grid -> integer))
 (define (grid-edge-count grid)
   (subdivision-level-edge-count (grid-subdivision-level grid)))
 
-(: tile-edge-count (integer -> natural))
+(: tile-edge-count (integer -> integer))
 (define (tile-edge-count t)
   (if (> 12 t) 5 6))
 
@@ -49,7 +49,7 @@
         [(eq? c ((grid-edge-corner g) e 1)) -1]
         [else 0]))
 
-(: grid-access-position ((grid -> get-grid-integer) (integer -> natural) grid integer integer -> Integer))
+(: grid-access-position ((grid -> get-grid-integer) (integer -> integer) grid integer integer -> Integer))
 (define (grid-access-position f count g n i)
   (let ([n-count (count n)]
         [f-g (f g)])
@@ -62,15 +62,15 @@
               (iterate (+ 1 k)))))
     (iterate 0)))
 
-(: grid-access-list ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-list))
+(: grid-access-list ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-list))
 (define (grid-access-list f count g n)
   (map (curry (f g) n) (range (count n))))
 
-(: grid-access-set ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-set))
+(: grid-access-set ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-set))
 (define (grid-access-set f count g n)
   (list->set (grid-access-list f count g n)))
 
-(: grid-access-vector ((grid -> get-grid-integer) (integer -> natural) grid integer -> integer-vector))
+(: grid-access-vector ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-vector))
 (define (grid-access-vector f count g n)
   (build-vector (count n) (curry (f g) n)))
 

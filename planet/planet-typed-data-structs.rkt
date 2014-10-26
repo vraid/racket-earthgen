@@ -2,12 +2,12 @@
 
 (require vraid/types)
 
-(define-type boolean-access (index -> Boolean))
-(define-type boolean-set! (index Boolean -> Void))
-(define-type integer-access (index -> integer))
-(define-type integer-set! (index integer -> Void))
-(define-type flonum-access (index -> Flonum))
-(define-type flonum-set! (index Flonum -> Void))
+(define-type boolean-access (integer -> Boolean))
+(define-type boolean-set! (integer Boolean -> Void))
+(define-type integer-access (integer -> integer))
+(define-type integer-set! (integer integer -> Void))
+(define-type flonum-access (integer -> Flonum))
+(define-type flonum-set! (integer Flonum -> Void))
 
 (require/typed/provide "planet-data-structs.rkt"
                        [#:struct tile-data
@@ -38,11 +38,9 @@
                                   [river-direction-set! : integer-set!])]
                        [#:struct edge-data
                                  ([river-flow : flonum-access]
-                                  [surface-air-flow : flonum-access]
-                                  [troposphere-air-flow : flonum-access]
+                                  [air-flow : flonum-access]
                                   [river-flow-set! : flonum-set!]
-                                  [surface-air-flow-set! : flonum-set!]
-                                  [troposphere-air-flow-set! : flonum-set!])]
+                                  [air-flow-set! : flonum-set!])]
                        [make-tile-data (Integer -> tile-data)]
                        [make-corner-data (Integer -> corner-data)]
                        [make-edge-data (Integer -> edge-data)])

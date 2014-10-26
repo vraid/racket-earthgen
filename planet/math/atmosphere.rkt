@@ -6,6 +6,6 @@
 
 (provide (all-defined-out))
 
-(: tile-cloud-cover (planet index -> Flonum))
+(: tile-cloud-cover (planet integer -> Flonum))
 (define (tile-cloud-cover p n)
   0.0)

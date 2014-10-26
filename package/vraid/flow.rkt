@@ -29,3 +29,13 @@
   (syntax-case stx ()
     [(_ (bindings ...) expression)
      #'(if-let* (bindings ...) expression #f)]))
+
+(define-syntax (when-let stx)
+  (syntax-case stx ()
+    [(_ ((binding value) ...) then)
+     #'(if-let ((binding value) ...) then (void))]))
+
+(define-syntax (when-let* stx)
+  (syntax-case stx ()
+    [(_ (bindings ...) expression)
+     #'(if-let* (bindings ...) expression (void))]))

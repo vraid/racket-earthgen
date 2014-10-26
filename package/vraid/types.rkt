@@ -2,8 +2,8 @@
 
 (provide (all-defined-out))
 
-(define-type flonum Flonum)
 (define-type natural Natural)
+(define-type flonum Flonum)
 (define-type (maybe a) (U False a))
 
 (require (for-syntax racket/syntax
@@ -26,5 +26,3 @@
            (define-type type-vector (Vectorof type))))]))
 
 (define-contained-type integer Integer)
-(define-contained-type index Integer)
-(define-contained-type maybe-index (maybe index))
