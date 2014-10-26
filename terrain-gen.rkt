@@ -7,7 +7,7 @@
                     250.0
                     (heightmap-create
                      (heightmap-parameters/kw
-                      #:seed "niyash"
+                      #:seed "jioapgw"
                       #:base-level 2
                       #:amplitude 800.0
                       #:persistence 0.65))))]

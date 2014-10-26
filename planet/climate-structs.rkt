@@ -21,7 +21,7 @@
   (climate-parameters/kw
    #:acceptable-delta 0.01
    #:axial-tilt (/ pi 8.0)
-   #:seasons-per-cycle 12))
+   #:seasons-per-cycle 24))
 
 (define initial-climate-variables
   (climate-variables/kw

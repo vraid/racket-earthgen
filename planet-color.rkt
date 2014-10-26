@@ -4,7 +4,8 @@
 
 (require vraid/types
          vraid/color
-         "planet/planet.rkt")
+         "planet/planet.rkt"
+         "planet/math/time.rkt")
 
 (define color-undefined
   (flcolor3 0.7 0.7 0.7))
@@ -62,7 +63,7 @@
   (filter-colors
    topography-intervals/colors))
 
-(: color-topography (planet index -> flcolor))
+(: color-topography (planet integer -> flcolor))
 (define (color-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -104,7 +105,7 @@
   (filter-colors
    vegetation-topography-intervals/colors))
 
-(: color-vegetation-topography (planet index -> flcolor))
+(: color-vegetation-topography (planet integer -> flcolor))
 (define (color-vegetation-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -112,7 +113,7 @@
               vegetation-topography-intervals
               vegetation-topography-colors))
 
-(: color-vegetation (planet index -> flcolor))
+(: color-vegetation (planet integer -> flcolor))
 (define (color-vegetation p n)
   (if (< 0.0 (tile-snow-cover p n))
       snow-color
@@ -141,7 +142,7 @@
   (filter-colors
    temperature-intervals/colors))
 
-(: color-temperature (planet index -> flcolor))
+(: color-temperature (planet integer -> flcolor))
 (define (color-temperature p n)
   (find-color (tile-temperature p n)
               temperature-intervals
@@ -151,7 +152,7 @@
 (define humidity-max (flcolor3 0.0 1.0 0.0))
 (define humidity-water (flcolor3 0.0 0.0 0.5))
 
-(: color-humidity (planet index -> flcolor))
+(: color-humidity (planet integer -> flcolor))
 (define (color-humidity p n)
   (if (tile-water? p n)
       humidity-water
@@ -159,12 +160,26 @@
                            humidity-max
                            (tile-relative-humidity p n))))
 
+(define precipitation-min (flcolor3 1.0 1.0 1.0))
+(define precipitation-max (flcolor3 0.0 1.0 0.0))
+
+(define 3-meters-per-year (/ 3.0 seconds-per-year))
+
+(: color-precipitation (planet integer -> flcolor))
+(define (color-precipitation p n)
+  (if (tile-water? p n)
+      humidity-water
+      (flcolor-interpolate precipitation-min
+                           precipitation-max
+                           (/ (tile-precipitation p n)
+                              3-meters-per-year))))
+
 (define aridity-min color-neutral)
 (define aridity-medium (flcolor3 1.0 1.0 0.0))
 (define aridity-max (flcolor3 1.0 0.0 0.0))
 (define aridity-water humidity-water)
 
-(: color-aridity (planet index -> flcolor))
+(: color-aridity (planet integer -> flcolor))
 (define (color-aridity p n)
   (if (tile-water? p n)
       aridity-water
@@ -183,7 +198,7 @@
 (define albedo-min (flcolor3 0.0 0.0 0.1))
 (define albedo-max (flcolor3 1.0 1.0 1.0))
 
-(: color-albedo (planet index -> flcolor))
+(: color-albedo (planet integer -> flcolor))
 (define (color-albedo p n)
   (flcolor-interpolate albedo-min
                        albedo-max
@@ -192,7 +207,7 @@
 (define area-min (flcolor3 0.0 0.0 0.0))
 (define area-max (flcolor3 1.0 1.0 1.0))
 
-(: color-area (Flonum -> (planet index -> flcolor)))
+(: color-area (Flonum -> (planet integer -> flcolor)))
 (define ((color-area largest-area) p n)
   (flcolor-interpolate area-min
                        area-max

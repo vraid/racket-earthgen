@@ -40,7 +40,7 @@
 (define planet-handler%
   (class vector-stepper%
     (super-new)
-    (init-field [max-elements 12])
+    (init-field [max-elements 24])
     (inherit earliest latest earlier later current element-count set-vec! get-vec index)
     (define terrain-func #f)
     (define (reset/planet p)

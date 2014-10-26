@@ -93,30 +93,45 @@
       #(4 5 1)
       #(1 5 0)))
   (let* ([count (river-buffer-count buffer)]
-         [max-scale (flvector3-distance
-                     (tile-coordinates planet 0)
-                     (corner-coordinates planet ((grid-tile-corner planet) 0 0)))]
-         [scale (/ max-scale 5)]
+         [max-scale (/ (flvector3-distance
+                        (tile-coordinates planet 0)
+                        (corner-coordinates planet ((grid-tile-corner planet) 0 0)))
+                       2)]
          [vertices (river-buffer-vertices buffer)]
          [indices (river-buffer-indices buffer)]
          [color river-color])
     (for ([n count])
-      (let ([river? (and (corner-river-direction planet n)
-                         (corner-land? planet n))])
+      (let* ([direction (corner-river-direction planet n)]
+             [river? direction])
         (when river?
-          (let* ([direction (corner-river-direction planet n)]
+          (let* ([flow->scale (lambda (flow)
+                                (min max-scale
+                                     (/ (* 60000.0 (sqrt (/ flow 140000.0)))
+                                        (planet-radius planet))))]
+                 [flow (edge-river-flow planet (corner-edge planet n direction))]
+                 [inflow (if (zero? (length (corner-river-sources planet n)))
+                             0.0
+                             flow)]
+                 [outflow (if-let* ([i (corner-corner planet n direction)]
+                                    [dir (corner-river-direction planet i)]
+                                    [_ (= 1 (length (corner-river-sources planet i)))])
+                            (edge-river-flow planet (corner-edge planet i dir))
+                            flow)]
+                 [inscale (flow->scale inflow)]
+                 [outscale (flow->scale outflow)]
                  [opposite ((grid-corner-corner planet) n direction)]
                  [opposite-direction (grid-corner-corner-position planet opposite n)]
-                 [vectors (lambda (n direction)
+                 [vectors (lambda (scale n direction)
                             (let ([v (corner-coordinates planet n)]
                                   [a (corner-coordinates planet ((grid-corner-corner planet) n (- direction 1)))]
                                   [b (corner-coordinates planet ((grid-corner-corner planet) n (+ direction 1)))]
                                   [scaled (lambda (v u)
-                                            (flvector3-sum v (flvector3-scale-to scale
-                                                                                 (flvector3-subtract v u))))])
+                                            (flvector3-sum v (flvector3-scale-to
+                                                              scale
+                                                              (flvector3-subtract v u))))])
                               (values (scaled v b) v (scaled v a))))])
-            (let-values ([(b v a) (vectors n direction)]
-                         [(d u c) (vectors opposite opposite-direction)])
+            (let-values ([(b v a) (vectors inscale n direction)]
+                         [(d u c) (vectors outscale opposite opposite-direction)])
               (cvector-set! vertices (* n 6) (->gl-vertex b color))
               (cvector-set! vertices (+ 1 (* n 6)) (->gl-vertex v color))
               (cvector-set! vertices (+ 2 (* n 6)) (->gl-vertex a color))

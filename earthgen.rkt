@@ -37,7 +37,7 @@
 (define last-draw (current-inexact-milliseconds))
 
 (define planet-handler (new planet-handler%
-                            [max-elements 12]))
+                            [max-elements 24]))
 (define grid-handler (new-grid-handler))
 (define default-grid-size 5)
 (define color-mode color-vegetation)
@@ -60,7 +60,8 @@
   (let ([grids (send grid-handler get-grids size)])
     (send planet-handler
           terrain/scratch
-          (thunk ((heightmap->planet (first grids)) (method grids) axis)))))
+          (thunk ((heightmap->planet (first grids)) (method grids) axis)))
+    (void)))
 
 (generate-terrain default-grid-size sample-terrain default-axis)
 
@@ -272,18 +273,33 @@
                           (curry climate-next par)))
                   (with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode))))]
+         [#\t (and-let ([planet (send planet-handler current)])
+                (thread
+                 (thunk
+                  (for ([n 23])
+                    (displayln n)
+                    (send planet-handler
+                          climate/add
+                          (let* ([par (default-climate-parameters)]
+                                 [seasons (climate-parameters-seasons-per-cycle par)])
+                            (curry climate-next par))))
+                  (with-gl-context (thunk (send planet-renderer update/planet)))
+                  (color-planet! color-mode))))]
          #;[#\t (when (and planet (planet-has-climate? planet))
                   (set! planet (next-turn default-turn-parameters planet))
                   (color-planet! color-mode))]
          ['left (when (send planet-handler earlier)
+                  (with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode))]
          ['right (when (send planet-handler later)
+                   (with-gl-context (thunk (send planet-renderer update/planet)))
                    (color-planet! color-mode))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
          [#\f (color-planet! color-humidity)]
          [#\g (color-planet! color-aridity)]
+         [#\h (color-planet! color-precipitation)]
          [#\l (color-planet! (color-area
                               (let ([planet (send planet-handler current)])
                                 (stream-fold (lambda (a n)
