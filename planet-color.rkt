@@ -95,7 +95,7 @@
         0.0 water-surface
         0.0 barren-land-low
         2000.0 barren-land-high
-        3000.0 barren-land-high))
+        4000.0 barren-land-high))
 
 (define vegetation-topography-intervals
   (filter-intervals

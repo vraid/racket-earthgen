@@ -20,19 +20,10 @@
          profile
          profile/render-text)
 
-(define longitude pi)
-(define latitude 0.0)
-(define (rotation) (quaternion-product
-                    (axis-angle->quaternion (flvector 1.0 0.0 0.0) (fl/ pi 2.0))
-                    (axis-angle->quaternion (flvector -1.0 0.0 0.0) latitude)
-                    (axis-angle->quaternion (flvector 0.0 0.0 -1.0) longitude)))
-
 (define mouse-moving? #f)
 (define mouse-down? #f)
 (define mouse-down-x 0)
 (define mouse-down-y 0)
-(define mouse-down-latitude latitude)
-(define mouse-down-longitude longitude)
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
@@ -353,8 +344,6 @@
                      (set! mouse-down-x (send event get-x))
                      (set! mouse-down-y (send event get-y))
                      (set! mouse-down? true)
-                     (set! mouse-down-latitude latitude)
-                     (set! mouse-down-longitude longitude)
                      (send control on-event event))
                    (void)))))
      (super-instantiate () (style '(gl))))
