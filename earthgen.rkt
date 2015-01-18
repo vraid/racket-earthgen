@@ -80,7 +80,7 @@
        [parent frame]))
 
 (define info-panel
-  (new (class* tab-panel% ()
+  (new (class tab-panel%
          (super-instantiate ())
          (define/public (set-tab selection)
            (for ([n (vector-length info-panel-choices)])
@@ -217,7 +217,7 @@
 
 (define canvas
   (new
-   (class* canvas% ()
+   (class canvas%
      (inherit with-gl-context swap-gl-buffers)
      (define control (new fixed-axis-control%
                           [viewport-width 800]
