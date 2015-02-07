@@ -91,47 +91,34 @@
 
 (: planet/default-population (planet -> planet))
 (define (planet/default-population p)
-  (planet/kw
-   #:grid p
-   #:has-climate? true
-   #:climate-parameters (planet-climate-parameters p)
-   #:climate-variables (planet-climate-variables p)
-   #:axis (planet-axis p)
-   #:sea-level (planet-sea-level p)
-   #:tile (planet-tile p)
-   #:corner (planet-corner p)
-   #:edge (planet-edge p)
-   #:rivers (planet-rivers p)
-   #:land-ratio (lambda: ([n : integer])
-                  (lambda: ([key : land-type])
-                    (match key
-                      ['unclaimed 1.0]
-                      [_ #f])))
-   #:population (lambda: ([n : integer])
-                  (lambda: ([key : population-type])
-                    #f))))
+  (struct-copy planet p
+               [has-climate? #t]
+               [land-ratio (lambda: ([n : integer])
+                             (lambda: ([key : land-type])
+                               (match key
+                                 ['unclaimed 1.0]
+                                 [_ #f])))]
+               [population (lambda: ([n : integer])
+                             (lambda: ([key : population-type])
+                               #f))]))
 
 (: climate-first (climate-parameters planet -> planet))
 (define (climate-first par prev)
-  (let ([p (planet/kw
-            #:grid prev
-            #:has-climate? true
-            #:climate-parameters par
-            #:climate-variables initial-climate-variables
-            #:axis (planet-axis prev)
-            #:sea-level (planet-sea-level prev)
-            #:tile (make-tile-data (tile-count prev))
-            #:corner (make-corner-data (corner-count prev))
-            #:edge (make-edge-data (edge-count prev))
-            #:rivers (planet-rivers prev)
-            #:land-ratio (lambda: ([n : integer])
+  (let ([p (struct-copy planet prev
+            [has-climate? #t]
+            [climate-parameters par]
+            [climate-variables initial-climate-variables]
+            [tile (make-tile-data (tile-count prev))]
+            [corner (make-corner-data (corner-count prev))]
+            [edge (make-edge-data (edge-count prev))]
+            [land-ratio (lambda: ([n : integer])
                            (lambda: ([key : land-type])
                              (match key
                                ['unclaimed 1.0]
-                               [_ #f])))
-            #:population (lambda: ([n : integer])
+                               [_ #f])))]
+            [population (lambda: ([n : integer])
                            (lambda: ([key : population-type])
-                             #f)))])
+                             #f))])])
     (copy-geography! prev p)
     (generate-rivers! p)
     (let ([init-tile-array (init-array (tile-count p))])
@@ -360,25 +347,21 @@
 (define (initial-values par prev)
   (if (not (planet-has-climate? prev))
       (climate-first par prev)
-      (let* ([p (planet/kw
-                 #:grid prev
-                 #:has-climate? true
-                 #:climate-parameters par
-                 #:climate-variables (next-climate-variables par (planet-climate-variables prev))
-                 #:axis (planet-axis prev)
-                 #:sea-level (planet-sea-level prev)
-                 #:tile (make-tile-data (tile-count prev))
-                 #:corner (make-corner-data (corner-count prev))
-                 #:edge (make-edge-data (edge-count prev))
-                 #:rivers (planet-rivers prev)
-                 #:land-ratio (lambda: ([n : integer])
+      (let* ([p (struct-copy planet prev
+                 [has-climate? #t]
+                 [climate-parameters par]
+                 [climate-variables (next-climate-variables par (planet-climate-variables prev))]
+                 [tile (make-tile-data (tile-count prev))]
+                 [corner (make-corner-data (corner-count prev))]
+                 [edge (make-edge-data (edge-count prev))]
+                 [land-ratio (lambda: ([n : integer])
                                 (lambda: ([key : land-type])
                                   (match key
                                     ['unclaimed 1.0]
-                                    [_ #f])))
-                 #:population (lambda: ([n : integer])
+                                    [_ #f])))]
+                 [population (lambda: ([n : integer])
                                 (lambda: ([key : population-type])
-                                  #f)))]
+                                  #f))])]
              [init-tile-array (init-array (tile-count p))]
              [init-corner-array (init-array (corner-count p))]
              [init-edge-array (init-array (edge-count p))])
