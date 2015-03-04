@@ -245,40 +245,41 @@
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
-         [#\q (generate-terrain!)]
-         [#\w (and-let ([planet (send planet-handler current)])
-                (thread
-                 (thunk
-                  (send planet-handler
-                        climate/scratch
-                        (curry climate-next (default-climate-parameters)))
-                  (with-gl-context (thunk (send planet-renderer update/planet)))
-                  (color-planet! color-mode))))]
-         [#\e (and-let ([planet (send planet-handler current)])
-                (thread
-                 (thunk
-                  (send planet-handler
-                        climate/add
-                        (let* ([par (default-climate-parameters)]
-                               [seasons (climate-parameters-seasons-per-cycle par)])
-                          (curry climate-next par)))
-                  (with-gl-context (thunk (send planet-renderer update/planet)))
-                  (color-planet! color-mode))))]
-         [#\t (and-let ([planet (send planet-handler current)])
-                (thread
-                 (thunk
-                  (for ([n 23])
-                    (displayln n)
+         [#\q (when (send planet-handler ready?)
+                (generate-terrain!))]
+         [#\w (when (send planet-handler ready?)
+                (and-let ([planet (send planet-handler current)])
+                  (thread
+                   (thunk
+                    (send planet-handler
+                          climate/scratch
+                          (curry climate-next (default-climate-parameters)))
+                    (with-gl-context (thunk (send planet-renderer update/planet)))
+                    (color-planet! color-mode)))))]
+         [#\e (when (send planet-handler ready?)
+                (and-let ([planet (send planet-handler current)])
+                  (thread
+                   (thunk
                     (send planet-handler
                           climate/add
                           (let* ([par (default-climate-parameters)]
                                  [seasons (climate-parameters-seasons-per-cycle par)])
-                            (curry climate-next par))))
-                  (with-gl-context (thunk (send planet-renderer update/planet)))
-                  (color-planet! color-mode))))]
-         #;[#\t (when (and planet (planet-has-climate? planet))
-                  (set! planet (next-turn default-turn-parameters planet))
-                  (color-planet! color-mode))]
+                            (curry climate-next par)))
+                    (with-gl-context (thunk (send planet-renderer update/planet)))
+                    (color-planet! color-mode)))))]
+         [#\t (when (send planet-handler ready?)
+                (and-let ([planet (send planet-handler current)])
+                  (thread
+                   (thunk
+                    (for ([n 23])
+                      (displayln n)
+                      (send planet-handler
+                            climate/add
+                            (let* ([par (default-climate-parameters)]
+                                   [seasons (climate-parameters-seasons-per-cycle par)])
+                              (curry climate-next par))))
+                    (with-gl-context (thunk (send planet-renderer update/planet)))
+                    (color-planet! color-mode)))))]
          ['left (when (send planet-handler earlier)
                   (with-gl-context (thunk (send planet-renderer update/planet)))
                   (color-planet! color-mode))]
