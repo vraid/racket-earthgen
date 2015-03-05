@@ -1,12 +1,18 @@
-#lang racket
+#lang typed/racket
 
 (provide new-grid-handler)
 
-(require "../planet/grid/grid-list.rkt")
+(require typed/racket/class
+         "../planet/grid/grid.rkt")
 
+(define-type grid-handler-class (Class [get-grids (Integer -> grid-list)]
+                                       [get-grid (Integer -> grid)]))
+
+(: new-grid-handler (-> (Instance grid-handler-class)))
 (define (new-grid-handler)
   (new grid-handler%))
-  
+
+(: grid-handler% grid-handler-class)
 (define grid-handler%
   (class object%
     (super-new)
