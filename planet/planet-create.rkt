@@ -1,10 +1,11 @@
 #lang typed/racket
 
-(provide heightmap->planet)
+(provide (all-defined-out))
 
 (require vraid/types
          vraid/math
-         "planet.rkt"
+         "planet-structs.rkt"
+         "planet-variables.rkt"
          "grid/grid.rkt"
          "heightmap/heightmap-structs.rkt"
          racket/flonum)
@@ -58,3 +59,11 @@
      
      #:land-ratio empty-hash
      #:population empty-hash)))
+
+(: empty-planet planet)
+(define empty-planet
+  ((heightmap->planet (n-grid 0))
+   (heightmap
+    (make-flvector 12 0.0)
+    (make-flvector 20 0.0))
+   default-axis))
