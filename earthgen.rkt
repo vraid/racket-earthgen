@@ -10,7 +10,7 @@
          "planet-color.rkt"
          "sample-terrain.rkt"
          "gui/edit-panel.rkt"
-         "interface/control.rkt"
+         "interface/fixed-axis-control.rkt"
          "interface/grid-handler.rkt"
          "interface/planet-handler.rkt"
          "interface/planet-renderer.rkt"
