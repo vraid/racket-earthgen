@@ -54,7 +54,7 @@
       (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ viewport-width viewport-height)))]
             [my (fl/ 1.0 scale)])
         (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0)))
-    (: get-coordinates (planet Flonum Flonum -> (maybe FlVector)))
+    (: get-coordinates (planet Integer Integer -> (maybe FlVector)))
     (define/public (get-coordinates planet x y)
       (let ([mx (fl* 2.0 (fl* (fl* (fl/ 1.0 scale) (fl- (exact->inexact (/ x viewport-width)) 0.5)) (exact->inexact (/ viewport-width viewport-height))))]
             [my (fl* -2.0 (fl/ (fl- (exact->inexact (/ y viewport-height)) 0.5) scale))])
