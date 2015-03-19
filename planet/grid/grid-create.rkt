@@ -127,19 +127,8 @@
         (edge-get edge-tile)
         (edge-get edge-corner))))))
 
-(: tile-coordinates (grid -> flvector-vector))
-(define (tile-coordinates grid)
-  (let* ([tile-count (grid-tile-count grid)]
-         [corner-count (grid-corner-count grid)]
-         [total (+ tile-count corner-count)])
-    (build-vector total
-                  (lambda: ([n : integer])
-                    (if (< n tile-count)
-                        ((grid-tile-coordinates grid) n)
-                        ((grid-corner-coordinates grid) (- n tile-count)))))))
-
-(: corner-coordinates (grid -> flvector-vector))
-(define (corner-coordinates grid)
+(: make-corner-coordinates (grid -> flvector-vector))
+(define (make-corner-coordinates grid)
   (build-vector
    (grid-corner-count grid)
    (lambda: ([n : integer])
@@ -151,7 +140,7 @@
 
 (: grid-with-corner-coordinates (grid -> grid))
 (define (grid-with-corner-coordinates g)
-  (let ([corners (corner-coordinates g)])
+  (let ([corners (make-corner-coordinates g)])
     (grid
      (grid-subdivision-level g)
      (grid-tile-coordinates g)
@@ -246,9 +235,20 @@
         ((mutable-grid-tile-tile-set! mgrid) n i (vector-ref (vector-ref 0-grid-tile-tiles n) i))))
     (complete-grid mgrid)))
 
+(: make-tile-coordinates (grid -> flvector-vector))
+(define (make-tile-coordinates grid)
+  (let* ([tile-count (grid-tile-count grid)]
+         [corner-count (grid-corner-count grid)]
+         [total (+ tile-count corner-count)])
+    (build-vector total
+                  (lambda: ([n : integer])
+                    (if (< n tile-count)
+                        ((grid-tile-coordinates grid) n)
+                        ((grid-corner-coordinates grid) (- n tile-count)))))))
+
 (: subdivided-grid (grid -> grid))
 (define (subdivided-grid g)
-  (let* ([mgrid (allocate-grid (+ 1 (grid-subdivision-level g)) (tile-coordinates g))]
+  (let* ([mgrid (allocate-grid (+ 1 (grid-subdivision-level g)) (make-tile-coordinates g))]
          [grid (mutable-grid-grid mgrid)]
          [tile-count (grid-tile-count g)])
     (: connect-tiles! (-> Void))

@@ -26,3 +26,10 @@
            (define-type type-vector (Vectorof type))))]))
 
 (define-contained-type integer Integer)
+
+(define-type boolean-get (integer -> Boolean))
+(define-type boolean-set! (integer Boolean -> Void))
+(define-type integer-get (integer -> integer))
+(define-type integer-set! (integer integer -> Void))
+(define-type flonum-get (integer -> Flonum))
+(define-type flonum-set! (integer Flonum -> Void))

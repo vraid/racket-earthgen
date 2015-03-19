@@ -53,7 +53,7 @@
     (: scale-by (Flonum -> Void))
     (define/public (scale-by n)
       (set! scale (fl ((within-interval scale-min scale-max) (* scale n)))))
-    (: rotation-list (planet -> (Listof Real)))
+    (: rotation-list (planet-geometry -> (Listof Real)))
     (define/public (rotation-list planet)
       (list))
     (: set-projection (-> Any))

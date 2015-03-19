@@ -3,7 +3,7 @@
 (provide new-grid-handler)
 
 (require typed/racket/class
-         "../planet/grid/grid.rkt")
+         "../planet/grid.rkt")
 
 (define-type grid-handler-class (Class [get-grids (Integer -> grid-list)]
                                        [get-grid (Integer -> grid)]))

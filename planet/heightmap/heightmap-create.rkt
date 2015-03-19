@@ -8,8 +8,7 @@
 (require vraid/types
          vraid/random
          vraid/struct
-         "../grid/grid.rkt"
-         "../grid/grid-list.rkt"
+         "../grid.rkt"
          "heightmap-structs.rkt"
          math/flonum)
 

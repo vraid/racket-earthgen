@@ -7,7 +7,6 @@
          vraid/opengl
          vraid/color
          "../planet/planet.rkt"
-         "../planet/corner-terrain.rkt"
          racket/flonum
          ffi/cvector
          ffi/unsafe)

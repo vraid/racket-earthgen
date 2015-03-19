@@ -4,8 +4,7 @@
 
 (require vraid/types
          vraid/color
-         "planet/planet.rkt"
-         "planet/math/time.rkt")
+         "planet/planet.rkt")
 
 (define color-undefined
   (flcolor3 0.7 0.7 0.7))
@@ -63,7 +62,7 @@
   (filter-colors
    topography-intervals/colors))
 
-(: color-topography (planet integer -> flcolor))
+(: color-topography (planet-terrain integer -> flcolor))
 (define (color-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -105,7 +104,7 @@
   (filter-colors
    vegetation-topography-intervals/colors))
 
-(: color-vegetation-topography (planet integer -> flcolor))
+(: color-vegetation-topography (planet-climate integer -> flcolor))
 (define (color-vegetation-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -113,13 +112,18 @@
               vegetation-topography-intervals
               vegetation-topography-colors))
 
-(: color-vegetation (planet integer -> flcolor))
+(: color-vegetation (planet-climate integer -> flcolor))
 (define (color-vegetation p n)
   (if (< 0.0 (tile-snow-cover p n))
       snow-color
       (flcolor-interpolate (color-vegetation-topography p n)
                            vegetation-color
-                           (vegetation-cover (tile-vegetation p n)))))
+                           (if (tile-water? p n)
+                               0.0
+                               (vegetation-cover (supported-vegetation
+                                                  (tile-sunlight p n)
+                                                  (tile-temperature p n)
+                                                  (tile-humidity p n)))))))
 
 (define temperature-intervals/colors
   (list (- freezing-temperature) (flcolor3 1.0 1.0 1.0)
@@ -142,7 +146,7 @@
   (filter-colors
    temperature-intervals/colors))
 
-(: color-temperature (planet integer -> flcolor))
+(: color-temperature (planet-climate integer -> flcolor))
 (define (color-temperature p n)
   (find-color (tile-temperature p n)
               temperature-intervals
@@ -152,7 +156,7 @@
 (define humidity-max (flcolor3 0.0 1.0 0.0))
 (define humidity-water (flcolor3 0.0 0.0 0.5))
 
-(: color-humidity (planet integer -> flcolor))
+(: color-humidity (planet-climate integer -> flcolor))
 (define (color-humidity p n)
   (if (tile-water? p n)
       humidity-water
@@ -165,7 +169,7 @@
 
 (define 3-meters-per-year (/ 3.0 seconds-per-year))
 
-(: color-precipitation (planet integer -> flcolor))
+(: color-precipitation (planet-climate integer -> flcolor))
 (define (color-precipitation p n)
   (if (tile-water? p n)
       humidity-water
@@ -179,7 +183,7 @@
 (define aridity-max (flcolor3 1.0 0.0 0.0))
 (define aridity-water humidity-water)
 
-(: color-aridity (planet integer -> flcolor))
+(: color-aridity (planet-climate integer -> flcolor))
 (define (color-aridity p n)
   (if (tile-water? p n)
       aridity-water
@@ -195,19 +199,10 @@
                                        1.0)
                                     1.0))))))
 
-(define albedo-min (flcolor3 0.0 0.0 0.1))
-(define albedo-max (flcolor3 1.0 1.0 1.0))
-
-(: color-albedo (planet integer -> flcolor))
-(define (color-albedo p n)
-  (flcolor-interpolate albedo-min
-                       albedo-max
-                       (tile-albedo p n)))
-
 (define area-min (flcolor3 0.0 0.0 0.0))
 (define area-max (flcolor3 1.0 1.0 1.0))
 
-(: color-area (Flonum -> (planet integer -> flcolor)))
+(: color-area (Flonum -> (planet-geometry integer -> flcolor)))
 (define ((color-area largest-area) p n)
   (flcolor-interpolate area-min
                        area-max

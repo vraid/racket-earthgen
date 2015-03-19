@@ -3,9 +3,8 @@
 (provide (all-defined-out))
 
 (require vraid/types
-         "temperature.rkt"
-         "humidity.rkt"
-         math/flonum)
+         math/flonum
+         "../climate.rkt")
 
 (: supported-vegetation (flonum flonum flonum -> flonum))
 (define (supported-vegetation sunlight temperature humidity)
@@ -14,7 +13,7 @@
       0.0
       (fl* 3.0 (fl* (max 0.0 (fl- 1.0 (aridity temperature humidity)))
                     sunlight))))
-       
+
 (: vegetation-cover (flonum -> flonum))
 (define (vegetation-cover vegetation)
   (let* ([half-cover 1.0]

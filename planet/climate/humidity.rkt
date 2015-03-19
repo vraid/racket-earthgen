@@ -13,8 +13,9 @@
 
 (: relative-humidity (Flonum Flonum -> Flonum))
 (define (relative-humidity temperature humidity)
-  (/ humidity
-     (saturation-humidity temperature)))
+  (min 1.0
+       (/ humidity
+          (saturation-humidity temperature))))
 
 (: potential-evapotranspiration (Flonum Flonum -> Flonum))
 (define (potential-evapotranspiration temperature humidity)

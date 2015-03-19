@@ -5,8 +5,7 @@
          vraid/flow
          vraid/opengl
          "planet/planet.rkt"
-         "planet/planet-create.rkt"
-         "planet/climate-create.rkt"
+         "planet/planet-generation.rkt"
          "planet-color.rkt"
          "sample-terrain.rkt"
          "gui/edit-panel.rkt"
@@ -31,8 +30,7 @@
                             [max-elements 24]))
 (define grid-handler (new-grid-handler))
 (define default-grid-size 5)
-(define color-mode color-vegetation)
-(define selected-tile #f)
+(define color-mode color-topography)
 
 (define-values
   (display-width display-height)
@@ -42,17 +40,21 @@
   (window-width window-height)
   (values 800 600))
 
-; required by terrain-gen
-(require "planet/heightmap/heightmap-structs.rkt"
-         "planet/heightmap/heightmap-create.rkt"
-         "planet/heightmap/heightmap-functions.rkt")
-
 (define (generate-terrain size method axis)
   (let ([grids (send grid-handler get-grids size)])
     (send planet-handler
           terrain/scratch
           (thunk ((heightmap->planet (first grids)) (method grids) axis)))
     (void)))
+
+(define (repaint mode)
+  (set! color-mode mode)
+  (send canvas with-gl-context (thunk (send planet-renderer update/planet)))
+  (color-planet! color-mode))
+
+(define (generate-terrain/repaint size method axis)
+  (generate-terrain size method axis)
+  (repaint color-topography))
 
 (generate-terrain default-grid-size sample-terrain default-axis)
 
@@ -89,6 +91,7 @@
                    (send panel set-tab (send panel get-selection)))]))
 
 (define (color-planet! color-function)
+  (set! color-mode color-function)
   (send canvas with-gl-context
         (thunk (send planet-renderer set-tile-colors color-function)))
   (repaint!))
@@ -98,8 +101,7 @@
                      [parent no-frame]
                      [stretchable-height #f])]
          [p (edit-panel panel 30 100)]
-         [size-edit (p "grid size")]
-         [water-edit (p "water level")])
+         [size-edit (p "grid size")])
     (send size-edit
           link
           (thunk (number->string (grid-subdivision-level (send planet-handler current))))
@@ -109,21 +111,7 @@
                          (<= 0 size))
                 (thread
                  (thunk
-                  (generate-terrain size (load "terrain-gen.rkt") default-axis)
-                  (send canvas with-gl-context (thunk (send planet-renderer update/planet)))
-                  (color-planet! color-mode)))))))
-    (send water-edit
-          link
-          (thunk (number->string (planet-sea-level (send planet-handler current))))
-          (lambda (level)
-            (let ([planet (send planet-handler current)])
-              (let ([level (string->number level)])
-                (when (real? level)
-                  (let ([level (fl level)])
-                    (set-planet-sea-level! planet level)
-                    (for ([n (tile-count planet)])
-                      ((tile-data-water-level-set! (planet-tile planet)) n level))
-                    (color-planet! color-mode)))))))
+                  (generate-terrain/repaint size (load "terrain-gen.rkt") default-axis)))))))
     panel))
 
 (define tile-panel
@@ -138,42 +126,40 @@
                              [parent tile-panel]
                              [stretchable-height #f])]
          [general (edit-panel general-panel height label-width)]
+         [terrain-panel (new vertical-panel%
+                             [parent tile-panel]
+                             [stretchable-height #f])]
+         [terrain (edit-panel terrain-panel height label-width)]
          [climate-panel (new vertical-panel%
                              [parent tile-panel]
                              [stretchable-height #f])]
          [climate (edit-panel climate-panel height label-width)]
          [id-edit (general "tile id")]
-         [elevation-edit (general "elevation")]
-         [water-level-edit (general "water level")]
+         [elevation-edit (terrain "elevation")]
          [temperature-edit (climate "temperature")]
          [absolute-humidity-edit (climate "absolute humidity")]
          [relative-humidity-edit (climate "relative humidity")]
-         [precipitation-edit (climate "precipitation")]
-         [vegetation-edit (climate "vegetation")])
+         [precipitation-edit (climate "precipitation")])
     (lambda (tile)
-      (send general-panel show tile)
-      (send climate-panel show (and tile (planet-has-climate? (send planet-handler current))))
-      (when tile
-        (let ([planet (send planet-handler current)])
+      (let* ([planet (send planet-handler current)]
+             [terrain (planet-terrain? planet)]
+             [climate (planet-climate? planet)])
+        (send general-panel show tile)
+        (send terrain-panel show (and tile terrain))
+        (send climate-panel show (and tile climate))
+        (when tile
           (let ([link (lambda (panel get set) (send panel link get set))])
             (link id-edit (thunk (number->string tile)) (thunk* #f))
-            (link elevation-edit
-                  (thunk (number->string (tile-elevation planet tile)))
-                  (lambda (n)
-                    (let ([num (exact->inexact (string->number n))])
-                      (when (real? num)
-                        (begin
-                          ((tile-data-elevation-set! (planet-tile planet)) tile num)
-                          (color-planet! color-mode))))))
-            (link water-level-edit
-                  (thunk (number->string (tile-water-level planet tile)))
-                  (lambda (n)
-                    (let ([num (exact->inexact (string->number n))])
-                      (when (real? num)
-                        (begin
-                          ((tile-data-water-level-set! (planet-tile planet)) tile num)
-                          (color-planet! color-mode))))))
-            (when (planet-has-climate? planet)
+            (when terrain
+              (link elevation-edit
+                    (thunk (number->string (tile-elevation planet tile)))
+                    (lambda (n)
+                      (let ([num (exact->inexact (string->number n))])
+                        (when (real? num)
+                          (begin
+                            ((tile-terrain-data-elevation-set! (planet-terrain-tile planet)) tile num)
+                            (color-planet! color-mode)))))))
+            (when climate
               (link temperature-edit
                     (thunk (number->string (tile-temperature planet tile)))
                     (thunk* #f))
@@ -186,9 +172,6 @@
                     (thunk* #f))
               (link precipitation-edit
                     (thunk (number->string (tile-precipitation planet tile)))
-                    (thunk* #f))
-              (link vegetation-edit
-                    (thunk (number->string (tile-vegetation planet tile)))
                     (thunk* #f)))))))))
 
 (struct tab-choice
@@ -238,46 +221,36 @@
      (define (generate-terrain!)
        (thread
         (thunk
-         (generate-terrain (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)
-         (with-gl-context (thunk (send planet-renderer update/planet)))
-         (color-planet! color-mode))))
+         (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis))))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
-         [#\q (when (send planet-handler ready?)
-                (generate-terrain!))]
-         [#\w (when (send planet-handler ready?)
-                (and-let ([planet (send planet-handler current)])
-                  (thread
-                   (thunk
+         [#\q (thread
+               (thunk
+                (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)))]
+         [#\w (and-let ([terrain (send planet-handler get-terrain)])
+                (thread
+                 (thunk
+                  (let* ([climate-func (static-climate (default-climate-parameters) terrain)]
+                         [initial (climate-func #f)])
                     (send planet-handler
-                          climate/scratch
-                          (curry climate-next (default-climate-parameters)))
-                    (with-gl-context (thunk (send planet-renderer update/planet)))
-                    (color-planet! color-mode)))))]
-         [#\e (when (send planet-handler ready?)
+                          reset/climate
+                          climate-func
+                          initial))
+                  (repaint color-vegetation))))]
+         [#\e (thread
+               (thunk
+                (send planet-handler add/tick)
+                (with-gl-context (thunk (send planet-renderer update/planet)))
+                (color-planet! color-mode)))]
+         [#\r (when (send planet-handler ready?)
                 (and-let ([planet (send planet-handler current)])
                   (thread
                    (thunk
-                    (send planet-handler
-                          climate/add
-                          (let* ([par (default-climate-parameters)]
-                                 [seasons (climate-parameters-seasons-per-cycle par)])
-                            (curry climate-next par)))
-                    (with-gl-context (thunk (send planet-renderer update/planet)))
-                    (color-planet! color-mode)))))]
-         [#\t (when (send planet-handler ready?)
-                (and-let ([planet (send planet-handler current)])
-                  (thread
-                   (thunk
-                    (for ([n 23])
+                    (for ([n 15])
                       (displayln n)
-                      (send planet-handler
-                            climate/add
-                            (let* ([par (default-climate-parameters)]
-                                   [seasons (climate-parameters-seasons-per-cycle par)])
-                              (curry climate-next par))))
+                      (send planet-handler add/tick))
                     (with-gl-context (thunk (send planet-renderer update/planet)))
                     (color-planet! color-mode)))))]
          ['left (when (send planet-handler earlier)
@@ -362,4 +335,5 @@
         (thunk (new planet-renderer%
                     [planet (thunk (send planet-handler current))]))))
 
-;(color-planet! color-vegetation)
+(send canvas with-gl-context
+      (thunk (send planet-renderer update/planet)))

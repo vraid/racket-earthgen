@@ -36,9 +36,9 @@
       (let ([a (quaternion->axis-angle (rotation planet))])
         (cons (radians->degrees (axis-angle-angle a))
               (flvector->list (axis-angle-axis a)))))
-    (: rotation (planet -> FlVector))
+    (: rotation (planet-geometry -> FlVector))
     (define rotation
-      (lambda: ([planet : planet])
+      (lambda ([planet : planet-geometry])
         (let ([q axis-angle->quaternion])
           (quaternion-product
            (let ([axis (planet-axis planet)])
@@ -54,7 +54,7 @@
       (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ viewport-width viewport-height)))]
             [my (fl/ 1.0 scale)])
         (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0)))
-    (: get-coordinates (planet Integer Integer -> (maybe FlVector)))
+    (: get-coordinates (planet-geometry Integer Integer -> (maybe FlVector)))
     (define/public (get-coordinates planet x y)
       (let ([mx (fl* 2.0 (fl* (fl* (fl/ 1.0 scale) (fl- (exact->inexact (/ x viewport-width)) 0.5)) (exact->inexact (/ viewport-width viewport-height))))]
             [my (fl* -2.0 (fl/ (fl- (exact->inexact (/ y viewport-height)) 0.5) scale))])

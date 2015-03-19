@@ -1,7 +1,9 @@
 #lang typed/racket
 
 (require vraid/types
+         vraid/math
          vraid/util
+         math/flonum
          "grid-structs.rkt")
 
 (provide (all-defined-out))
@@ -112,3 +114,54 @@
 
 (grid-access edge (lambda: ([n : integer]) 2)
              ([tile] [corner]))
+
+(require (for-syntax racket/syntax))
+
+(define-syntax (planet-grid-access stx)
+  (syntax-case stx ()
+    [(_ struct ([field] ...))
+     (with-syntax ([(function ...) (map (lambda (field)
+                                          (format-id stx "~a-~a" #'struct field))
+                                        (syntax->list #'(field ...)))]
+                   [(struct-function ...) (map (lambda (field)
+                                                 (format-id stx "grid-~a-~a" #'struct field))
+                                               (syntax->list #'(field ...)))])
+       #'(begin
+           (provide function ...)
+           (: function (grid integer integer -> integer)) ...
+           (define (function p n i)
+             ((struct-function p) n i)) ...))]))
+
+(planet-grid-access tile
+                    ([tile]
+                     [corner]
+                     [edge]))
+
+(planet-grid-access corner
+                    ([tile]
+                     [corner]
+                     [edge]))
+
+(planet-grid-access edge
+                    ([tile]
+                     [corner]))
+
+(define tile-count grid-tile-count)
+(define corner-count grid-corner-count)
+(define edge-count grid-edge-count)
+
+(: edge-tile-sign (grid integer integer -> flonum))
+(define (edge-tile-sign p e t)
+  (fl (grid-edge-tile-sign p e t)))
+
+(: edge-corner-sign (grid integer integer -> flonum))
+(define (edge-corner-sign p e c)
+  (fl (grid-edge-corner-sign p e c)))
+
+(: tile-coordinates (grid integer -> flvector3))
+(define (tile-coordinates p n)
+  ((grid-tile-coordinates p) n))
+
+(: corner-coordinates (grid integer -> flvector3))
+(define (corner-coordinates p n)
+  ((grid-corner-coordinates p) n))

@@ -2,10 +2,10 @@
 
 (provide (all-defined-out))
 
-(require "../planet-structs.rkt" 
-         "../planet-variables.rkt"
+(require "geometry-structs.rkt"
          "planet-rotation.rkt"
          "planet-geometry.rkt"
+         vraid/types
          vraid/math
          math/flonum)
 
@@ -15,7 +15,7 @@
 (define (coriolis-coefficient angular-velocity latitude)
   (* 2.0 angular-velocity latitude))
 
-(: prevailing-wind (planet FlVector FlVector Flonum -> FlVector))
+(: prevailing-wind (planet-geometry flvector3 flvector3 flonum -> flvector3))
 (define (prevailing-wind p
                          normal
                          pressure-gradient-force
