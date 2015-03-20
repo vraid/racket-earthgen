@@ -109,6 +109,7 @@
         (set! terrain-func f)
         (let ([p (f)])
           (set! terrain p)
+          (set-vec! (vector))
           p)))
     (: reset/climate ((planet-climate -> planet-climate) full-planet -> Void))
     (define/public reset/climate

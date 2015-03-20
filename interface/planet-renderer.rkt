@@ -21,9 +21,9 @@
     (define river-renderer
       (new river-renderer%
            [planet planet]))
-    (define/public (update/planet)
+    (define/public (update/planet color-function)
       (send tile-renderer resize-buffer)
-      (send tile-renderer remake-buffer)
+      (send tile-renderer remake-buffer color-function)
       (when (planet-climate? (planet))
         (send river-renderer resize-buffer)
         (send river-renderer remake-buffer)))

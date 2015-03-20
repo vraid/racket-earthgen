@@ -47,14 +47,14 @@
           (thunk ((heightmap->planet (first grids)) (method grids) axis)))
     (void)))
 
-(define (repaint mode)
-  (set! color-mode mode)
-  (send canvas with-gl-context (thunk (send planet-renderer update/planet)))
-  (color-planet! color-mode))
+(define (update/repaint mode)
+  (set-color-mode mode)
+  (send canvas with-gl-context (thunk (send planet-renderer update/planet color-mode)))
+  (repaint!))
 
 (define (generate-terrain/repaint size method axis)
   (generate-terrain size method axis)
-  (repaint color-topography))
+  (update/repaint color-topography))
 
 (generate-terrain default-grid-size sample-terrain default-axis)
 
@@ -90,10 +90,16 @@
        [callback (lambda (panel event)
                    (send panel set-tab (send panel get-selection)))]))
 
+(define (set-color-mode color-function)
+  (set! color-mode
+        (if (planet-color-valid? color-function (send planet-handler current))
+            color-function
+            color-topography)))
+
 (define (color-planet! color-function)
-  (set! color-mode color-function)
+  (set-color-mode color-function)
   (send canvas with-gl-context
-        (thunk (send planet-renderer set-tile-colors color-function)))
+        (thunk (send planet-renderer set-tile-colors color-mode)))
   (repaint!))
 
 (define global-panel
@@ -226,9 +232,7 @@
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
-         [#\q (thread
-               (thunk
-                (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis)))]
+         [#\q (generate-terrain!)]
          [#\w (and-let ([terrain (send planet-handler get-terrain)])
                 (thread
                  (thunk
@@ -238,12 +242,11 @@
                           reset/climate
                           climate-func
                           initial))
-                  (repaint color-vegetation))))]
+                  (update/repaint color-vegetation))))]
          [#\e (thread
                (thunk
                 (send planet-handler add/tick)
-                (with-gl-context (thunk (send planet-renderer update/planet)))
-                (color-planet! color-mode)))]
+                (update/repaint color-mode)))]
          [#\r (when (send planet-handler ready?)
                 (and-let ([planet (send planet-handler current)])
                   (thread
@@ -251,14 +254,11 @@
                     (for ([n 15])
                       (displayln n)
                       (send planet-handler add/tick))
-                    (with-gl-context (thunk (send planet-renderer update/planet)))
-                    (color-planet! color-mode)))))]
+                   (update/repaint color-mode)))))]
          ['left (when (send planet-handler earlier)
-                  (with-gl-context (thunk (send planet-renderer update/planet)))
-                  (color-planet! color-mode))]
+                   (update/repaint color-mode))]
          ['right (when (send planet-handler later)
-                   (with-gl-context (thunk (send planet-renderer update/planet)))
-                   (color-planet! color-mode))]
+                   (update/repaint color-mode))]
          [#\a (color-planet! color-topography)]
          [#\s (color-planet! color-vegetation)]
          [#\d (color-planet! color-temperature)]
@@ -335,5 +335,4 @@
         (thunk (new planet-renderer%
                     [planet (thunk (send planet-handler current))]))))
 
-(send canvas with-gl-context
-      (thunk (send planet-renderer update/planet)))
+(update/repaint color-topography)

@@ -13,7 +13,6 @@
   (class object%
     (super-new)
     (init-field planet)
-    (define color-function (thunk* (flcolor3 0.0 0.0 0.0)))
     (define buffer-tile-count 0)
     (define tile-vertex-buffer
       (gl-vertex-buffer
@@ -38,14 +37,13 @@
                  (gl-vertex-buffer-handle tile-vertex-buffer)
                  (tile-buffer-vertices b)))
           (set-gl-index-buffer! tile-index-buffer))))
-    (define/public (remake-buffer)
+    (define/public (remake-buffer color-function)
       (update-vertices! (grid-tile-count (planet))
                         tile-vertex-buffer
                         (curry color-function (planet)))
       (set-gl-vertex-buffer! tile-vertex-buffer))
-    (define/public (set-tile-colors f)
-      (set! color-function f)
-      (remake-buffer))
+    (define/public (set-tile-colors color-function)
+      (remake-buffer color-function))
     (define/public (render)
       (gl-cull-face 'back)
       (gl-draw tile-vertex-buffer
