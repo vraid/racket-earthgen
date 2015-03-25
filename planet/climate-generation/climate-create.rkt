@@ -34,17 +34,14 @@
                         0)])
         (force (vector-ref v season))))))
 
-(: sunlight (flonum flonum -> flonum))
-(define (sunlight solar-equator latitude)
-  (max 0.0 (flcos (fl- solar-equator latitude))))
-
 (: default-temperature (planet-climate integer -> Flonum))
 (define (default-temperature p n)
   (-
    (+ 200.0
-      (* 130.0 (if (tile-land? p n)
-                   (tile-sunlight p n)
-                   (sunlight 0.0 (tile-latitude p n)))))
+      (* (/ 130.0 solar-constant)
+         (if (tile-land? p n)
+             (tile-sunlight p n)
+             (sunlight 0.0 (tile-latitude p n)))))
    (max 0.0
         (temperature-lapse (tile-elevation p n)))))
 

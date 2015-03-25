@@ -11,10 +11,11 @@
   (let ([validate (cond
                     [(member f (list color-topography)) planet-terrain?]
                     [(member f (list color-temperature
+                                     color-insolation
                                      color-humidity
                                      color-aridity
                                      color-precipitation
-                                     color-vegetation)) planet-climate?]
+                                     color-supported-vegetation)) planet-climate?]
                     [else (lambda ([p : Any])
                             #f)])])
     (validate planet)))
@@ -125,8 +126,8 @@
               vegetation-topography-intervals
               vegetation-topography-colors))
 
-(: color-vegetation (planet-climate integer -> flcolor))
-(define (color-vegetation p n)
+(: color-supported-vegetation (planet-climate integer -> flcolor))
+(define (color-supported-vegetation p n)
   (if (< 0.0 (tile-snow-cover p n))
       snow-color
       (flcolor-interpolate (color-vegetation-topography p n)
@@ -200,8 +201,7 @@
 (define (color-aridity p n)
   (if (tile-water? p n)
       aridity-water
-      (let ([aridity (aridity (tile-temperature p n)
-                              (tile-humidity p n))])
+      (let ([aridity (tile-aridity p n)])
         (if (> 1.0 aridity)
             (flcolor-interpolate aridity-min
                                  aridity-medium
@@ -211,6 +211,29 @@
                                  (/ (- (min 2.0 aridity)
                                        1.0)
                                     1.0))))))
+
+(define color-yellow (flcolor3 1.0 1.0 0.0))
+(define color-red (flcolor3 1.0 0.0 0.0))
+
+(define insolation-min color-neutral)
+(define insolation-medium color-yellow)
+(define insolation-max color-red)
+(define insolation-water humidity-water)
+
+(: color-insolation (planet-climate integer -> flcolor))
+(define (color-insolation p n)
+  (if (tile-water? p n)
+      insolation-water
+      (let ([insolation (/ (tile-insolation p n)
+                           solar-constant)])
+        (if (> 0.5 insolation)
+            (flcolor-interpolate insolation-min
+                                 insolation-medium
+                                 (/ insolation 0.5))
+            (flcolor-interpolate insolation-medium
+                                 insolation-max
+                                 (/ (- insolation 0.5)
+                                    0.5))))))
 
 (define area-min (flcolor3 0.0 0.0 0.0))
 (define area-max (flcolor3 1.0 1.0 1.0))

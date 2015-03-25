@@ -145,7 +145,8 @@
          [temperature-edit (climate "temperature")]
          [absolute-humidity-edit (climate "absolute humidity")]
          [relative-humidity-edit (climate "relative humidity")]
-         [precipitation-edit (climate "precipitation")])
+         [precipitation-edit (climate "precipitation")]
+         [aridity-edit (climate "aridity")])
     (lambda (tile)
       (let* ([planet (send planet-handler current)]
              [terrain (planet-terrain? planet)]
@@ -178,6 +179,10 @@
                     (thunk* #f))
               (link precipitation-edit
                     (thunk (number->string (tile-precipitation planet tile)))
+                    (thunk* #f))
+              (link aridity-edit
+                    (thunk (number->string (aridity (tile-temperature planet tile)
+                                                    (tile-humidity planet tile))))
                     (thunk* #f)))))))))
 
 (struct tab-choice
@@ -242,7 +247,7 @@
                           reset/climate
                           climate-func
                           initial))
-                  (update/repaint color-vegetation))))]
+                  (update/repaint color-supported-vegetation))))]
          [#\e (thread
                (thunk
                 (send planet-handler add/tick)
@@ -254,23 +259,18 @@
                     (for ([n 15])
                       (displayln n)
                       (send planet-handler add/tick))
-                   (update/repaint color-mode)))))]
+                    (update/repaint color-mode)))))]
          ['left (when (send planet-handler earlier)
-                   (update/repaint color-mode))]
+                  (update/repaint color-mode))]
          ['right (when (send planet-handler later)
                    (update/repaint color-mode))]
          [#\a (color-planet! color-topography)]
-         [#\s (color-planet! color-vegetation)]
+         [#\s (color-planet! color-supported-vegetation)]
          [#\d (color-planet! color-temperature)]
-         [#\f (color-planet! color-humidity)]
+         [#\f (color-planet! color-insolation)]
          [#\g (color-planet! color-aridity)]
-         [#\h (color-planet! color-precipitation)]
-         [#\l (color-planet! (color-area
-                              (let ([planet (send planet-handler current)])
-                                (stream-fold (lambda (a n)
-                                               (max a (tile-area planet n)))
-                                             0.0
-                                             (in-range (tile-count planet))))))]
+         [#\h (color-planet! color-humidity)]
+         [#\j (color-planet! color-precipitation)]
          ['wheel-up (begin
                       (send control wheel-up)
                       (repaint!))]
