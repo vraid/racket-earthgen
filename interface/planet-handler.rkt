@@ -87,8 +87,7 @@
   (class planet-stepper%
     (super-new)
     (init-field [max-elements : Integer 24]
-                [work-start : (String -> Void) (lambda (s) (void))]
-                [work-end : (String -> Void) (lambda (s) (void))])
+                [set-status : (String -> Void) (lambda (s) (void))])
     (inherit earliest latest earlier later at-current-index element-count set-vec! get-vec index vector-from-index)
     (: terrain-func (-> planet-terrain))
     (define terrain-func (thunk empty-planet-terrain))
@@ -111,40 +110,43 @@
           (set! terrain p)
           (set-vec! (vector))
           p)))
-    (: reset/climate ((planet-climate -> planet-climate) full-planet -> Void))
-    (define/public reset/climate
-      (lambda ([f : (planet-climate -> planet-climate)]
-               [initial : full-planet])
-        (set! climate-func f)
-        (set-vec! (vector initial))))
+    (: reset/climate ((-> (planet-climate -> planet-climate)) (-> full-planet) -> Void))
+    (define/public (reset/climate f initial)
+      (work "generating climate"
+            (thunk
+             (set! climate-func (f))
+             (set-vec! (vector (initial))))))
     (define/public (get-terrain)
       terrain)
     (define/public (ready?)
       (not working?))
-    (: work ((-> Any) -> Void))
+    (: work (String (-> Any) -> Void))
     (define work
-      (lambda ([f : (-> Any)])
+      (lambda ([status : String]
+               [f : (-> Any)])
         (unless working?
-          (work-start "")
+          (set-status status)
           (set! working? #t)
           (f)
           (set! working? #f)
-          (work-end ""))))
+          (set-status "ready"))))
     (: terrain/scratch ((-> planet-terrain) -> Void))
     (define/public (terrain/scratch f)
-      (work (thunk
+      (work "generating terrain"
+            (thunk
              (reset/terrain f))))
     (: terrain/modify ((planet-terrain -> planet-terrain) -> Void))
     (define/public (terrain/modify f)
-      (work (thunk
+      (work "generating terrain"
+            (thunk
              (reset/terrain (thunk (f (terrain-func)))))))
     (: add/tick (-> Void))
     (define/public (add/tick)
       (let ([climate (current)])
         (when (planet-climate? climate)
-          (work
-           (thunk
-            (set-vec!
-             (vector-append
-              (vector (climate-func climate))
-              (vector-from-index))))))))))
+          (work "turning world"
+                (thunk
+                 (set-vec!
+                  (vector-append
+                   (vector (climate-func climate))
+                   (vector-from-index))))))))))
