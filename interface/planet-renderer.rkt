@@ -5,11 +5,7 @@
 (require "tile-renderer.rkt"
          "river-renderer.rkt"
          vraid/opengl
-         vraid/color
-         "../planet/planet.rkt"
-         racket/flonum
-         ffi/cvector
-         ffi/unsafe)
+         "../planet/planet.rkt")
 
 (define planet-renderer%
   (class object%
