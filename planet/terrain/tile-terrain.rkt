@@ -10,10 +10,6 @@
   (- (tile-water-level p n)
      (tile-elevation p n)))
 
-(: tile-water-level (planet-terrain integer -> Flonum))
-(define (tile-water-level p n)
-  (planet-sea-level p))
-
 (: tile-water? (planet-terrain integer -> Boolean))
 (define (tile-water? p n)
   (< (tile-elevation p n) (tile-water-level p n)))

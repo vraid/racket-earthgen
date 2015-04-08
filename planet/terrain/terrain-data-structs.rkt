@@ -5,7 +5,9 @@
 (require/typed/provide "terrain-data.rkt"
                        [#:struct tile-terrain-data
                                  ([elevation : flonum-get]
-                                  [elevation-set! : flonum-set!])]
+                                  [water-level : flonum-get]
+                                  [elevation-set! : flonum-set!]
+                                  [water-level-set! : flonum-set!])]
                        [#:struct corner-terrain-data
                                  ([elevation : flonum-get]
                                   [river-direction : integer-get]

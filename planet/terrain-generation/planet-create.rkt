@@ -1,3 +1,4 @@
+
 #lang typed/racket
 
 (provide (all-defined-out))
@@ -5,6 +6,7 @@
 (require vraid/types
          vraid/math
          vraid/typed-array
+         vraid/util
          "../grid.rkt"
          "../geometry.rkt"
          "../terrain.rkt"
@@ -21,6 +23,8 @@
          [corners (make-corner-terrain-data corner-count)])
     (init-tile-array (tile-terrain-data-elevation-set! tiles)
                      (curry tile-elevation p))
+    (init-tile-array (tile-terrain-data-water-level-set! tiles)
+                     (curry tile-water-level p))
     (init-corner-array (corner-terrain-data-elevation-set! corners)
                        (curry corner-elevation p))
     (init-corner-array (corner-terrain-data-river-direction-set! corners)
@@ -39,6 +43,8 @@
                          #f)))
   (lambda ([h : heightmap]
            [axis : FlVector])
+    (define sea-level 0.0)
+    (define radius 6371000.0)
     (define zero (lambda ([n : integer]) 0.0))
     (define void-set (lambda ([n : integer]
                               [f : Flonum])
@@ -47,9 +53,12 @@
                    (tile-terrain-data
                     (lambda ([n : integer])
                       (flvector-ref v n))
+                    (lambda ([n : integer])
+                      sea-level)
                     (lambda ([n : integer]
                              [value : flonum])
-                      (flvector-set! v n value)))))
+                      (flvector-set! v n value))
+                    void-set)))
     
     (define corner (let* ([corner-count (corner-count grid)]
                           [corner (make-corner-terrain-data corner-count)]
@@ -63,8 +72,13 @@
     (planet-terrain/kw
      #:planet-geometry (planet-geometry/kw
                         #:grid grid
-                        #:axis axis)
-     #:sea-level 0.0
+                        #:axis axis
+                        #:radius radius
+                        #:tile (tile-geometry-data
+                                (build-flvector-ref (tile-count grid)
+                                                    (lambda ([n : integer])
+                                                      (n-gon-area radius grid n)))))
+     #:sea-level sea-level
      #:tile tile
      #:corner corner
      #:rivers '())))

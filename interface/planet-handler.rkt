@@ -16,7 +16,11 @@
 (define empty-planet-geometry
   (planet-geometry/kw
    #:grid (n-grid 0)
-   #:axis default-axis))
+   #:axis default-axis
+   #:radius 0.0
+   #:tile (tile-geometry-data
+           (lambda ([n : integer])
+             0.0))))
 
 (define empty-planet-terrain
   (let ([fl-zero (lambda ([n : integer])
@@ -32,7 +36,7 @@
     (planet-terrain/kw
      #:planet-geometry empty-planet-geometry
      #:sea-level 0.0
-     #:tile (tile-terrain-data fl-zero void-fl-set)
+     #:tile (tile-terrain-data fl-zero fl-zero void-fl-set void-fl-set)
      #:corner (corner-terrain-data fl-zero int-1 void-fl-set void-int-set)
      #:rivers '())))
 

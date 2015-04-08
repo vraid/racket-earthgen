@@ -23,7 +23,8 @@
              [rivers : river-list]))
 
 (direct-access planet-terrain tile tile-terrain-data
-               ([elevation flonum]))
+               ([elevation flonum]
+                [water-level flonum]))
 
 (direct-access planet-terrain corner corner-terrain-data
                ([elevation flonum]))

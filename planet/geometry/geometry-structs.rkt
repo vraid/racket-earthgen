@@ -3,13 +3,21 @@
 (provide (all-defined-out))
 
 (require vraid/struct
+         vraid/types
+         "../direct-access.rkt"
          "../grid/grid-structs.rkt")
 
+(struct: tile-geometry-data
+  ([area : (integer -> flonum)]))
+
 (struct/kw: planet-geometry grid
-            ([axis : FlVector]))
+            ([axis : FlVector]
+             [radius : flonum]
+             [tile : tile-geometry-data]))
 
 (define planet-axis planet-geometry-axis)
 
-(: planet-radius (planet-geometry -> Flonum))
-(define (planet-radius p)
-  6371000.0)
+(define planet-radius planet-geometry-radius)
+
+(direct-access planet-geometry tile tile-geometry-data
+               ([area flonum]))

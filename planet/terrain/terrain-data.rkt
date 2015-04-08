@@ -9,7 +9,8 @@
          ffi/unsafe)
 
 (struct-array tile-terrain-data
-              ([elevation _float]))
+              ([elevation _float]
+               [water-level _float]))
 
 (struct-array corner-terrain-data
               ([elevation _float]
