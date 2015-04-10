@@ -10,6 +10,7 @@
          "../grid.rkt"
          "../geometry.rkt"
          "../terrain.rkt"
+         "../water.rkt"
          "../climate.rkt")
 
 (: default-temperature (planet-climate integer -> Flonum))

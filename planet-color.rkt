@@ -76,7 +76,7 @@
   (filter-colors
    topography-intervals/colors))
 
-(: color-topography (planet-terrain integer -> flcolor))
+(: color-topography (planet-water integer -> flcolor))
 (define (color-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -128,7 +128,7 @@
 
 (: color-supported-vegetation (planet-climate integer -> flcolor))
 (define (color-supported-vegetation p n)
-  (if (< 0.0 (tile-snow-cover p n))
+  (if (< 0.0 (tile-snow p n))
       snow-color
       (flcolor-interpolate (color-vegetation-topography p n)
                            vegetation-color

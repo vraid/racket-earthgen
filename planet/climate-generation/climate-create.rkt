@@ -14,18 +14,20 @@
          "../grid.rkt"
          "../geometry.rkt"
          "../terrain.rkt"
+         "../water.rkt"
          "../climate.rkt"
+         "../terrain-generation/planet-create.rkt"
          "climate-create-base.rkt"
          "../terrain-generation/river-generation.rkt")
 
-(: static-climate (climate-parameters planet-terrain -> ((maybe planet-climate) -> planet-climate)))
-(define (static-climate param terrain)
-  (let* ([terrain/rivers (generate-rivers terrain)]
+(: static-climate (climate-parameters planet-water -> ((maybe planet-climate) -> planet-climate)))
+(define (static-climate param planet)
+  (let* ([planet/rivers (planet/rivers planet)]
          [season-count (climate-parameters-seasons-per-cycle param)]
-         [initial ((climate/closed-season param terrain/rivers) 0)]
+         [initial ((climate/closed-season param planet/rivers) 0)]
          [v (build-vector season-count
                           (lambda ([n : integer])
-                            (delay (let ([p ((climate/closed-season param terrain/rivers) n)])
+                            (delay (let ([p ((climate/closed-season param planet/rivers) n)])
                                      (generate-climate! param initial p)
                                      p))))])
     (lambda ([planet : (maybe planet-climate)])
@@ -35,15 +37,15 @@
                         0)])
         (force (vector-ref v season))))))
 
-(: climate/closed-season (climate-parameters planet-terrain -> (integer -> planet-climate)))
-(define ((climate/closed-season par terrain) season)
+(: climate/closed-season (climate-parameters planet-water -> (integer -> planet-climate)))
+(define ((climate/closed-season par planet) season)
   (let ([p (planet-climate/kw
-            #:planet-terrain terrain
+            #:planet-water planet
             #:parameters par
             #:season season
-            #:tile (make-tile-climate-data (tile-count terrain))
-            #:edge (make-edge-climate-data (edge-count terrain)))])
-    (let ([init-tile-array (init-array (tile-count p))])
+            #:tile (make-tile-climate-data (tile-count planet))
+            #:edge (make-edge-climate-data (edge-count planet)))])
+    (let ([init-tile-array (tile-init p)])
       (init-tile-array (tile-climate-data-sunlight-set! (planet-climate-tile p))
                        (lambda ([n : integer])
                          (sunlight
@@ -51,7 +53,7 @@
                           (tile-latitude p n))))
       (init-tile-array (tile-climate-data-temperature-set! (planet-climate-tile p))
                        (curry default-temperature p))
-      (init-tile-array (tile-climate-data-snow-cover-set! (planet-climate-tile p))
+      (init-tile-array (tile-climate-data-snow-set! (planet-climate-tile p))
                        (curry default-snow-cover p)))
     p))
 
@@ -197,6 +199,6 @@
                         (tile-latitude p n))))
     (init-tile-array (tile-climate-data-temperature-set! tile)
                      (curry default-temperature p))
-    (init-tile-array (tile-climate-data-snow-cover-set! tile)
+    (init-tile-array (tile-climate-data-snow-set! tile)
                      (curry default-snow-cover p))
     p))

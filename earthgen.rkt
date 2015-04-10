@@ -108,7 +108,7 @@
   (let ([grids (send grid-handler get-grids size)])
     (send planet-handler
           terrain/scratch
-          (thunk ((heightmap->planet (first grids)) (method grids) axis)))))
+          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) (method grids) axis))))))
 
 (define (update/repaint mode)
   (set-color-mode mode)
@@ -217,7 +217,8 @@
 
 (define (repaint!)
   (set! last-draw 0.0)
-  (send canvas on-paint))
+  (send canvas on-paint)
+  (void))
 
 (define canvas
   (new

@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide generate-rivers)
+(provide planet/rivers)
 
 (require racket/promise
          vraid/flow
@@ -8,20 +8,21 @@
          vraid/sorted-tree
          "../grid.rkt"
          "../terrain.rkt"
+         "../water.rkt"
          "planet-create.rkt")
 
-(: bad-river-end? (planet-terrain integer -> Boolean))
+(: bad-river-end? (planet-water integer -> Boolean))
 (define (bad-river-end? planet n)
   (and (corner-land? planet n)
        (not (corner-river-direction planet n))))
 
-(: has-bad-ends? (planet-terrain -> Boolean))
+(: has-bad-ends? (planet-water -> Boolean))
 (define (has-bad-ends? planet)
   (ormap (lambda ([n : integer])
            (bad-river-end? planet n))
          (range (corner-count planet))))
 
-(: lowest-nearby (planet-terrain integer -> Flonum))
+(: lowest-nearby (planet-water integer -> Flonum))
 (define (lowest-nearby planet n)
   (foldl min
          +inf.0
@@ -37,7 +38,7 @@
                 (corner-elevation planet n))
               (grid-corner-corner-list planet n))))
 
-(: elevate-ends! (planet-terrain -> Void))
+(: elevate-ends! (planet-water -> Void))
 (define (elevate-ends! planet)
   (for ([n (corner-count planet)])
     (when (bad-river-end? planet n)
@@ -47,7 +48,7 @@
 
 (define-type corner-node (Pair Integer Flonum))
 
-(: set-directions/floodfill! (planet-terrain -> Void))
+(: set-directions/floodfill! (planet-water -> Void))
 (define (set-directions/floodfill! planet)
   (let: ([tree : (sorted-tree corner-node) (make-sorted-tree
                                             (lambda ([a : corner-node]
@@ -89,7 +90,7 @@
                                (corner-visit! k)
                                (let ([prev-elevation (corner-elevation planet k)])
                                  (check-corner-elevation k elevation)
-                                 ((corner-terrain-data-river-direction-set! (planet-terrain-corner planet)) k (grid-corner-corner-position planet k n))
+                                 ((corner-water-data-river-direction-set! (planet-water-corner planet)) k (grid-corner-corner-position planet k n))
                                  (let ([new-elevation (corner-elevation planet k)])
                                    (sorted-tree-add! tree (cons k prev-elevation))
                                    (for ([t (grid-corner-tile-list planet k)])
@@ -120,7 +121,7 @@
         (make-next)
         (void)))))
 
-(: river-trees (planet-terrain -> river-list))
+(: river-trees (planet-water -> river-list))
 (define (river-trees planet)
   (: corner-node (integer -> river))
   (define (corner-node n)
@@ -134,16 +135,26 @@
          '()
          (range (corner-count planet))))
 
-(: generate-rivers (planet-terrain -> planet-terrain))
-(define (generate-rivers planet)
-  (let ([p (copy-planet-geography planet)])
+(: planet/rivers (planet-water -> planet-water))
+(define (planet/rivers p)
+  (let* ([tiles (make-tile-water-data (tile-count p))]
+         [corners (make-corner-water-data (corner-count p))]
+         [p (begin
+              ((tile-init p) (tile-water-data-water-level-set! tiles)
+                             (lambda ([n : integer])
+                               (planet-sea-level p)))
+              ((corner-init p) (corner-water-data-river-direction-set! corners)
+                               (lambda ([n : integer])
+                                 -1))
+              (planet-water/kw
+               #:planet-terrain (copy-planet-geography p)
+               #:sea-level (planet-sea-level p)
+               #:tile tiles
+               #:corner corners
+               #:rivers '()))])
     (set-directions/floodfill! p)
-    (planet-terrain/kw
-     #:planet-geometry p
-     #:sea-level (planet-sea-level p)
-     #:tile (planet-terrain-tile p)
-     #:corner (planet-terrain-corner p)
-     #:rivers (river-trees p))))
+    (struct-copy planet-water p
+                 [rivers (river-trees p)])))
 
 ; direction is -1 if no neighbouring corner has lower elevation
 (: lowest-corner-direction (planet-terrain Integer -> Fixnum))
