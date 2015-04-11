@@ -16,8 +16,8 @@
 (: default-temperature (planet-climate integer -> Flonum))
 (define (default-temperature p n)
   (-
-   (+ 200.0
-      (* (/ 130.0 solar-constant)
+   (+ 220.0
+      (* (/ 110.0 solar-constant)
          (if (tile-land? p n)
              (tile-sunlight p n)
              (sunlight 0.0 (tile-latitude p n)))))
