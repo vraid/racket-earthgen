@@ -11,6 +11,20 @@
 (define (negative a)
   (- a))
 
+(: nonzero? (Number -> Boolean))
+(define (nonzero? a)
+  (not (zero? a)))
+
+(: relative-difference (Flonum Flonum -> Flonum))
+(define (relative-difference a b)
+  (cond
+    [(= a b) 0.0]
+    [(or (zero? a) (zero? b)) +inf.0]
+    [else (subtract 1.0
+                    (if (> a b)
+                        (/ a b)
+                        (/ b a)))]))
+
 (: divide (case-> (Flonum Flonum -> Flonum)
                   (Number Zero -> Zero)
                   (Integer Integer -> Exact-Rational)
