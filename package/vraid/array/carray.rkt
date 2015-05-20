@@ -23,6 +23,13 @@
     [(_ id ([field type] ...))
      (with-syntax* ([c-id (format-id stx "c~a" #'id)]
                     [cstruct-id (format-id stx "_c~a" #'id)]
+                    [copy-array (format-id stx "copy-~a" #'id)]
+                    [(get-struct-field ...) (map (lambda (field)
+                                                   (format-id stx "~a-~a" #'id field))
+                                                 (syntax->list #'(field ...)))]
+                    [(set-struct-field! ...) (map (lambda (field)
+                                                    (format-id stx "~a-~a-set!" #'id field))
+                                                  (syntax->list #'(field ...)))]
                     [(c-field ...) (map (lambda (field)
                                           (format-id stx "~a-~a" #'c-id field))
                                         (syntax->list #'(field ...)))]
@@ -33,17 +40,22 @@
                                              (format-id stx "~a-set!" field))
                                            (syntax->list #'(field ...)))]
                     [make-array (format-id stx "make-~a" #'id)])
-                   #'(begin
-                       (define-cstruct cstruct-id
-                         ([field type] ...))
-                       (struct id
-                         (field ... set-field! ...))
-                       (define (make-array n)
-                         (let* ([arr-type (_array cstruct-id n)]
-                                [arr (let ([a (malloc arr-type)])
-                                       (memset a 0 n cstruct-id) a)]
-                                [ref (lambda (i)
-                                       (ptr-ref arr cstruct-id i))])
-                           (id
-                            (lambda (i) (c-field (ref i))) ...
-                            (lambda (i a) (set-cfield! (ref i) a)) ...)))))]))
+       #'(begin
+           (define-cstruct cstruct-id
+             ([field type] ...))
+           (struct id
+             (field ... set-field! ...))
+           (define (make-array n)
+             (let* ([arr-type (_array cstruct-id n)]
+                    [arr (let ([a (malloc arr-type)])
+                           (memset a 0 n cstruct-id) a)]
+                    [ref (lambda (i)
+                           (ptr-ref arr cstruct-id i))])
+               (id
+                (lambda (i) (c-field (ref i))) ...
+                (lambda (i a) (set-cfield! (ref i) a)) ...)))
+           (define ((copy-array length) origin target)
+             (let ([get (get-struct-field origin)]
+                   [set (set-struct-field! target)])
+               (for ([n length])
+                 (set n (get n)))) ...)))]))
