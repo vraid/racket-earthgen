@@ -5,7 +5,7 @@
                          (* 2.0 a)))
                    (heightmap-create
                     (heightmap-parameters/kw
-                     #:seed "poia2"
+                     #:seed "kcusi"
                      #:base-level 2
                      #:amplitude 800.0
                      #:persistence 0.65)))]
@@ -19,7 +19,7 @@
                         width)))
                   (heightmap-create
                    (heightmap-parameters/kw
-                    #:seed "friboz"
+                    #:seed "jredr"
                     #:base-level 2
                     #:amplitude 1.0
                     #:persistence 0.0))))]
@@ -30,14 +30,14 @@
          (heightmap-raise 600.0
          (heightmap-create
           (heightmap-parameters/kw
-           #:seed "jyzjs"
+           #:seed "vrgs"
            #:base-level 3
            #:amplitude 3000.0
            #:persistence 0.7)))
          (heightmap-raise 400.0
          (heightmap-create
           (heightmap-parameters/kw
-           #:seed "zhsa"
+           #:seed "tewss"
            #:base-level 2
            #:amplitude 2000.0
            #:persistence 0.7))))]
@@ -48,7 +48,7 @@
          mountain-mod
          snakey)])
   (heightmap-lower
-   200.0
+   100.0
    (heightmap-map*
     (lambda (a b . n)
       (let* ([max-scale (* 10 a)]

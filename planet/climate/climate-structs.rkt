@@ -7,7 +7,7 @@
          vraid/types
          vraid/math
          math/flonum
-         "../terrain/terrain-structs.rkt"
+         "../water.rkt"
          "climate-data-structs.rkt"
          "../direct-access.rkt")
 
@@ -34,18 +34,18 @@
   (* (sin (* tau (planet-time-of-year planet)))
      (climate-parameters-axial-tilt (planet-climate-parameters planet))))
 
-(struct/kw: planet-climate planet-terrain
+(struct/kw: planet-climate planet-water
             ([parameters : climate-parameters]
              [season : integer]
              [tile : tile-climate-data]
              [edge : edge-climate-data]))
 
 (direct-access planet-climate tile tile-climate-data
-               ([sunlight flonum]
+               ([snow flonum]
+                [sunlight flonum]
                 [temperature flonum]
                 [humidity flonum]
-                [precipitation flonum]
-                [snow-cover flonum]))
+                [precipitation flonum]))
 
 (direct-access planet-climate edge edge-climate-data
                ([river-flow flonum]

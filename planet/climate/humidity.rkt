@@ -2,9 +2,10 @@
 
 (provide (all-defined-out))
 
-(require "temperature.rkt"
+(require vraid/types
          vraid/math
-         math/flonum)
+         math/flonum
+         "temperature.rkt")
 
 (: saturation-humidity (Flonum -> Flonum))
 (define (saturation-humidity temperature)
@@ -29,5 +30,6 @@
 
 (: aridity (Flonum Flonum -> Flonum))
 (define (aridity temperature humidity)
-  (fl/ (potential-evapotranspiration temperature humidity)
-       aridity-reference))
+  (max 0.0
+       (fl/ (potential-evapotranspiration temperature humidity)
+            aridity-reference)))

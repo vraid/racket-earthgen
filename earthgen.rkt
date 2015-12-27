@@ -26,12 +26,6 @@
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
-(define planet-handler (new planet-handler%
-                            [max-elements 24]))
-(define grid-handler (new-grid-handler))
-(define default-grid-size 5)
-(define color-mode color-topography)
-
 (define-values
   (display-width display-height)
   (get-display-size))
@@ -39,24 +33,6 @@
 (define-values
   (window-width window-height)
   (values 800 600))
-
-(define (generate-terrain size method axis)
-  (let ([grids (send grid-handler get-grids size)])
-    (send planet-handler
-          terrain/scratch
-          (thunk ((heightmap->planet (first grids)) (method grids) axis)))
-    (void)))
-
-(define (update/repaint mode)
-  (set-color-mode mode)
-  (send canvas with-gl-context (thunk (send planet-renderer update/planet color-mode)))
-  (repaint!))
-
-(define (generate-terrain/repaint size method axis)
-  (generate-terrain size method axis)
-  (update/repaint color-topography))
-
-(generate-terrain default-grid-size sample-terrain default-axis)
 
 (define no-frame
   (new frame%
@@ -72,23 +48,49 @@
   (new horizontal-panel%
        [parent frame]))
 
+(define left-panel
+  (new vertical-panel%
+       [parent frame-panel]
+       [min-width 300]
+       [stretchable-width #f]))
+
 (define info-panel
   (new (class* tab-panel% ()
          (super-instantiate ())
          (define/public (set-tab selection)
-           (for ([n (vector-length info-panel-choices)])
-             (send (tab-choice-panel (vector-ref info-panel-choices n))
+           (for ([n (vector-length info-panel-tabs)])
+             (send (tab-choice-panel (vector-ref info-panel-tabs n))
                    reparent
                    (if (= n selection)
                        info-panel
                        no-frame)))))
        
        [choices (list)]
-       [parent frame-panel]
-       [min-width 300]
-       [stretchable-width #f]
+       [parent left-panel]
        [callback (lambda (panel event)
                    (send panel set-tab (send panel get-selection)))]))
+
+(define status-panel
+  (new panel%
+       [parent left-panel]
+       [min-height 20]
+       [stretchable-height #f]))
+
+(define status-message
+  (new message%
+       [parent status-panel]
+       [label "ready"]
+       [auto-resize #t]))
+
+(define (set-status-message! str)
+  (send status-message set-label str))
+
+(define planet-handler (new planet-handler%
+                            [max-elements 24]
+                            [set-status set-status-message!]))
+(define grid-handler (new-grid-handler))
+(define default-grid-size 5)
+(define color-mode color-topography)
 
 (define (set-color-mode color-function)
   (set! color-mode
@@ -101,6 +103,23 @@
   (send canvas with-gl-context
         (thunk (send planet-renderer set-tile-colors color-mode)))
   (repaint!))
+
+(define (generate-terrain size method axis)
+  (let ([grids (send grid-handler get-grids size)])
+    (send planet-handler
+          terrain/scratch
+          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) (method grids) axis))))))
+
+(define (update/repaint mode)
+  (set-color-mode mode)
+  (send canvas with-gl-context (thunk (send planet-renderer update/planet color-mode)))
+  (repaint!))
+
+(define (generate-terrain/repaint size method axis)
+  (generate-terrain size method axis)
+  (update/repaint color-topography))
+
+(generate-terrain default-grid-size sample-terrain default-axis)
 
 (define global-panel
   (let* ([panel (new vertical-panel%
@@ -145,7 +164,8 @@
          [temperature-edit (climate "temperature")]
          [absolute-humidity-edit (climate "absolute humidity")]
          [relative-humidity-edit (climate "relative humidity")]
-         [precipitation-edit (climate "precipitation")])
+         [precipitation-edit (climate "precipitation")]
+         [aridity-edit (climate "aridity")])
     (lambda (tile)
       (let* ([planet (send planet-handler current)]
              [terrain (planet-terrain? planet)]
@@ -178,22 +198,27 @@
                     (thunk* #f))
               (link precipitation-edit
                     (thunk (number->string (tile-precipitation planet tile)))
+                    (thunk* #f))
+              (link aridity-edit
+                    (thunk (number->string (aridity (tile-temperature planet tile)
+                                                    (tile-humidity planet tile))))
                     (thunk* #f)))))))))
 
 (struct tab-choice
   (label panel))
 
-(define info-panel-choices
+(define info-panel-tabs
   (vector (tab-choice "global" global-panel)
           (tab-choice "tile" tile-panel)))
 
 (define (init-info-panel)
-  (send info-panel set (map tab-choice-label (vector->list info-panel-choices)))
+  (send info-panel set (map tab-choice-label (vector->list info-panel-tabs)))
   (send info-panel set-tab 0))
 
 (define (repaint!)
   (set! last-draw 0.0)
-  (send canvas on-paint))
+  (send canvas on-paint)
+  (void))
 
 (define canvas
   (new
@@ -236,13 +261,13 @@
          [#\w (and-let ([terrain (send planet-handler get-terrain)])
                 (thread
                  (thunk
-                  (let* ([climate-func (static-climate (default-climate-parameters) terrain)]
-                         [initial (climate-func #f)])
+                  (let* ([climate-func (delay (static-climate (default-climate-parameters) terrain))]
+                         [initial (thunk ((force climate-func) #f))])
                     (send planet-handler
                           reset/climate
-                          climate-func
+                          (thunk (force climate-func))
                           initial))
-                  (update/repaint color-vegetation))))]
+                  (update/repaint color-supported-vegetation))))]
          [#\e (thread
                (thunk
                 (send planet-handler add/tick)
@@ -254,23 +279,18 @@
                     (for ([n 15])
                       (displayln n)
                       (send planet-handler add/tick))
-                   (update/repaint color-mode)))))]
+                    (update/repaint color-mode)))))]
          ['left (when (send planet-handler earlier)
-                   (update/repaint color-mode))]
+                  (update/repaint color-mode))]
          ['right (when (send planet-handler later)
                    (update/repaint color-mode))]
          [#\a (color-planet! color-topography)]
-         [#\s (color-planet! color-vegetation)]
+         [#\s (color-planet! color-supported-vegetation)]
          [#\d (color-planet! color-temperature)]
-         [#\f (color-planet! color-humidity)]
+         [#\f (color-planet! color-insolation)]
          [#\g (color-planet! color-aridity)]
-         [#\h (color-planet! color-precipitation)]
-         [#\l (color-planet! (color-area
-                              (let ([planet (send planet-handler current)])
-                                (stream-fold (lambda (a n)
-                                               (max a (tile-area planet n)))
-                                             0.0
-                                             (in-range (tile-count planet))))))]
+         [#\h (color-planet! color-humidity)]
+         [#\j (color-planet! color-precipitation)]
          ['wheel-up (begin
                       (send control wheel-up)
                       (repaint!))]

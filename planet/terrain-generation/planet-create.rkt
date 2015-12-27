@@ -1,3 +1,4 @@
+
 #lang typed/racket
 
 (provide (all-defined-out))
@@ -5,32 +6,55 @@
 (require vraid/types
          vraid/math
          vraid/typed-array
+         vraid/util
          "../grid.rkt"
+         "../heightmap.rkt"
          "../geometry.rkt"
          "../terrain.rkt"
-         "../heightmap.rkt"
+         "../water.rkt"
          racket/flonum)
+
+(define tile-init
+  (lambda ([grid : grid])
+    (init-array (tile-count grid))))
+
+(define corner-init
+  (lambda ([grid : grid])
+    (init-array (corner-count grid))))
+
+(define edge-init
+  (lambda ([grid : grid])
+    (init-array (edge-count grid))))
+
+(: planet/sea-level (flonum planet-terrain -> planet-water))
+(define (planet/sea-level sea-level p)
+  (let* ([void-fl-set! (lambda ([n : integer]
+                                [v : flonum])
+                         (void))]
+         [void-int-set! (lambda ([n : integer]
+                                 [v : integer])
+                          (void))])
+    (planet-water/kw
+     #:planet-terrain p
+     #:sea-level sea-level
+     #:tile (tile-water-data (lambda ([n : integer]) sea-level)
+                             void-fl-set!)
+     #:corner (corner-water-data (lambda ([n : integer]) -1)
+                                 void-int-set!)
+     #:rivers '())))
 
 (: copy-planet-geography (planet-terrain -> planet-terrain))
 (define (copy-planet-geography p)
-  (let* ([tile-count (tile-count p)]
-         [corner-count (corner-count p)]
-         [init-tile-array (init-array tile-count)]
-         [init-corner-array (init-array corner-count)]
-         [tiles (make-tile-terrain-data tile-count)]
-         [corners (make-corner-terrain-data corner-count)])
-    (init-tile-array (tile-terrain-data-elevation-set! tiles)
-                     (curry tile-elevation p))
-    (init-corner-array (corner-terrain-data-elevation-set! corners)
-                       (curry corner-elevation p))
-    (init-corner-array (corner-terrain-data-river-direction-set! corners)
-                       (corner-terrain-data-river-direction (planet-terrain-corner p)))
+  (let ([tiles (make-tile-terrain-data (tile-count p))]
+        [corners (make-corner-terrain-data (corner-count p))])
+    ((tile-init p) (tile-terrain-data-elevation-set! tiles)
+                   (curry tile-elevation p))
+    ((corner-init p) (corner-terrain-data-elevation-set! corners)
+                     (curry corner-elevation p))
     (planet-terrain/kw
      #:planet-geometry p
-     #:sea-level (planet-sea-level p)
      #:tile tiles
-     #:corner corners
-     #:rivers (planet-rivers p))))
+     #:corner corners)))
 
 (: heightmap->planet (grid -> (heightmap FlVector -> planet-terrain)))
 (define (heightmap->planet grid)
@@ -39,6 +63,8 @@
                          #f)))
   (lambda ([h : heightmap]
            [axis : FlVector])
+    (define sea-level 0.0)
+    (define radius 6371000.0)
     (define zero (lambda ([n : integer]) 0.0))
     (define void-set (lambda ([n : integer]
                               [f : Flonum])
@@ -56,18 +82,19 @@
                           [init-corner-array (init-array corner-count)])
                      (init-corner-array (corner-terrain-data-elevation-set! corner)
                                         (curry flvector-ref (heightmap-corners h)))
-                     (init-corner-array (corner-terrain-data-river-direction-set! corner)
-                                        (lambda ([n : integer]) -1))
                      corner))
     
     (planet-terrain/kw
      #:planet-geometry (planet-geometry/kw
                         #:grid grid
-                        #:axis axis)
-     #:sea-level 0.0
+                        #:axis axis
+                        #:radius radius
+                        #:tile (tile-geometry-data
+                                (build-flvector-ref (tile-count grid)
+                                                    (lambda ([n : integer])
+                                                      (n-gon-area radius grid n)))))
      #:tile tile
-     #:corner corner
-     #:rivers '())))
+     #:corner corner)))
 
 (: empty-planet planet-terrain)
 (define empty-planet

@@ -1,9 +1,6 @@
 #lang racket
 
-(provide (struct-out tile-terrain-data)
-         (struct-out corner-terrain-data)
-         make-tile-terrain-data
-         make-corner-terrain-data)
+(provide (all-defined-out))
 
 (require vraid/array
          ffi/unsafe)
@@ -12,5 +9,4 @@
               ([elevation _float]))
 
 (struct-array corner-terrain-data
-              ([elevation _float]
-               [river-direction _int]))
+              ([elevation _float]))

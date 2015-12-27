@@ -7,7 +7,8 @@
          vraid/flow
          vraid/types
          vraid/util
-         "../planet/planet.rkt")
+         "../planet/planet.rkt"
+         "../planet/planet-generation.rkt")
 
 (define-type full-planet planet-climate)
 (define-type maybe-full-planet (maybe full-planet))
@@ -16,25 +17,24 @@
 (define empty-planet-geometry
   (planet-geometry/kw
    #:grid (n-grid 0)
-   #:axis default-axis))
+   #:axis default-axis
+   #:radius 0.0
+   #:tile (tile-geometry-data
+           (lambda ([n : integer])
+             0.0))))
 
-(define empty-planet-terrain
+(define empty-planet-water
   (let ([fl-zero (lambda ([n : integer])
                    0.0)]
         [void-fl-set (lambda ([n : integer]
                               [value : flonum])
-                       (void))]
-        [int-1 (lambda ([n : integer])
-                 -1)]
-        [void-int-set (lambda ([n : integer]
-                               [value : integer])
-                        (void))])
-    (planet-terrain/kw
-     #:planet-geometry empty-planet-geometry
-     #:sea-level 0.0
-     #:tile (tile-terrain-data fl-zero void-fl-set)
-     #:corner (corner-terrain-data fl-zero int-1 void-fl-set void-int-set)
-     #:rivers '())))
+                       (void))])
+    (planet/sea-level 
+     0.0
+     (planet-terrain/kw
+      #:planet-geometry empty-planet-geometry
+      #:tile (tile-terrain-data fl-zero void-fl-set)
+      #:corner (corner-terrain-data fl-zero void-fl-set)))))
 
 (define planet-stepper%
   (class object%
@@ -87,20 +87,19 @@
   (class planet-stepper%
     (super-new)
     (init-field [max-elements : Integer 24]
-                [work-start : (String -> Void) (lambda (s) (void))]
-                [work-end : (String -> Void) (lambda (s) (void))])
+                [set-status : (String -> Void) (lambda (s) (void))])
     (inherit earliest latest earlier later at-current-index element-count set-vec! get-vec index vector-from-index)
     (: terrain-func (-> planet-terrain))
-    (define terrain-func (thunk empty-planet-terrain))
+    (define terrain-func (thunk empty-planet-water))
     (: terrain planet-terrain)
-    (define terrain empty-planet-terrain)
+    (define terrain empty-planet-water)
     (: climate-func (planet-climate -> planet-climate))
     (define climate-func identity)
     (: current (-> (maybe planet-terrain)))
     (define/public (current)
       (if-let ([p (at-current-index)])
         p
-        (if terrain terrain empty-planet-terrain)))
+        (if terrain terrain empty-planet-water)))
     (: working? Boolean)
     (define working? #f)
     (: reset/terrain ((-> planet-terrain) -> planet-terrain))
@@ -111,40 +110,43 @@
           (set! terrain p)
           (set-vec! (vector))
           p)))
-    (: reset/climate ((planet-climate -> planet-climate) full-planet -> Void))
-    (define/public reset/climate
-      (lambda ([f : (planet-climate -> planet-climate)]
-               [initial : full-planet])
-        (set! climate-func f)
-        (set-vec! (vector initial))))
+    (: reset/climate ((-> (planet-climate -> planet-climate)) (-> full-planet) -> Void))
+    (define/public (reset/climate f initial)
+      (work "generating climate"
+            (thunk
+             (set! climate-func (f))
+             (set-vec! (vector (initial))))))
     (define/public (get-terrain)
       terrain)
     (define/public (ready?)
       (not working?))
-    (: work ((-> Any) -> Void))
+    (: work (String (-> Any) -> Void))
     (define work
-      (lambda ([f : (-> Any)])
+      (lambda ([status : String]
+               [f : (-> Any)])
         (unless working?
-          (work-start "")
+          (set-status status)
           (set! working? #t)
           (f)
           (set! working? #f)
-          (work-end ""))))
+          (set-status "ready"))))
     (: terrain/scratch ((-> planet-terrain) -> Void))
     (define/public (terrain/scratch f)
-      (work (thunk
+      (work "generating terrain"
+            (thunk
              (reset/terrain f))))
     (: terrain/modify ((planet-terrain -> planet-terrain) -> Void))
     (define/public (terrain/modify f)
-      (work (thunk
+      (work "generating terrain"
+            (thunk
              (reset/terrain (thunk (f (terrain-func)))))))
     (: add/tick (-> Void))
     (define/public (add/tick)
       (let ([climate (current)])
         (when (planet-climate? climate)
-          (work
-           (thunk
-            (set-vec!
-             (vector-append
-              (vector (climate-func climate))
-              (vector-from-index))))))))))
+          (work "turning world"
+                (thunk
+                 (set-vec!
+                  (vector-append
+                   (vector (climate-func climate))
+                   (vector-from-index))))))))))
