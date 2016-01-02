@@ -1,9 +1,6 @@
 #lang racket
 
-(provide (struct-out tile-climate-data)
-         (struct-out edge-climate-data)
-         make-tile-climate-data
-         make-edge-climate-data)
+(provide (all-defined-out))
 
 (require vraid/array
          ffi/unsafe)
@@ -14,6 +11,9 @@
                [temperature _float]
                [humidity _float]
                [precipitation _float]))
+
+(struct-array corner-climate-data
+              ([river-flow _float]))
 
 (struct-array edge-climate-data
               ([river-flow _float]

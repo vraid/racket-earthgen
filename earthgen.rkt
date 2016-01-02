@@ -253,33 +253,39 @@
        (thread
         (thunk
          (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis))))
+     (define (zoom-in)
+       (send control wheel-up)
+       (repaint!))
+     (define (zoom-out)
+       (send control wheel-down)
+       (repaint!))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
          ['escape (exit)]
          [#\q (generate-terrain!)]
          [#\w (and-let ([terrain (send planet-handler get-terrain)])
-                (thread
-                 (thunk
-                  (let* ([climate-func (delay (static-climate (default-climate-parameters) terrain))]
-                         [initial (thunk ((force climate-func) #f))])
-                    (send planet-handler
-                          reset/climate
-                          (thunk (force climate-func))
-                          initial))
-                  (update/repaint color-supported-vegetation))))]
+                       (thread
+                        (thunk
+                         (let* ([climate-func (delay (static-climate (default-climate-parameters) terrain))]
+                                [initial (thunk ((force climate-func) #f))])
+                           (send planet-handler
+                                 reset/climate
+                                 (thunk (force climate-func))
+                                 initial))
+                         (update/repaint color-supported-vegetation))))]
          [#\e (thread
                (thunk
                 (send planet-handler add/tick)
                 (update/repaint color-mode)))]
          [#\r (when (send planet-handler ready?)
                 (and-let ([planet (send planet-handler current)])
-                  (thread
-                   (thunk
-                    (for ([n 15])
-                      (displayln n)
-                      (send planet-handler add/tick))
-                    (update/repaint color-mode)))))]
+                         (thread
+                          (thunk
+                           (for ([n 15])
+                             (displayln n)
+                             (send planet-handler add/tick))
+                           (update/repaint color-mode)))))]
          ['left (when (send planet-handler earlier)
                   (update/repaint color-mode))]
          ['right (when (send planet-handler later)
@@ -291,25 +297,29 @@
          [#\g (color-planet! color-aridity)]
          [#\h (color-planet! color-humidity)]
          [#\j (color-planet! color-precipitation)]
-         ['wheel-up (begin
-                      (send control wheel-up)
-                      (repaint!))]
-         ['wheel-down (begin
-                        (send control wheel-down)
-                        (repaint!))]
+         [#\l (color-planet! (color-area
+                              (let ([planet (send planet-handler current)])
+                                (stream-fold (lambda (a n)
+                                               (max a (tile-area planet n)))
+                                             0.0
+                                             (in-range (tile-count planet))))))]
+         [#\z (zoom-in)]
+         [#\x (zoom-out)]
+         ['wheel-up (zoom-in)]
+         ['wheel-down (zoom-out)]
          [_ (void)]))
      (define (tile-at x y)
        (and-let* ([planet (send planet-handler current)]
                   [v (send control get-coordinates planet x y)]
                   [distance (build-flvector (tile-count planet)
                                             (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
-         (foldl (lambda (n closest)
-                  (if (< (flvector-ref distance n)
-                         (flvector-ref distance closest))
-                      n
-                      closest))
-                0
-                (range (tile-count planet)))))
+                 (foldl (lambda (n closest)
+                          (if (< (flvector-ref distance n)
+                                 (flvector-ref distance closest))
+                              n
+                              closest))
+                        0
+                        (range (tile-count planet)))))
      
      (define/override (on-event event)
        (if (send event button-up? 'left)
@@ -318,8 +328,8 @@
                (and-let* ([planet (send planet-handler current)]
                           [tile (tile-at (send event get-x)
                                          (send event get-y))])
-                 (begin
-                   (update-tile-panel tile)))
+                         (begin
+                           (update-tile-panel tile)))
                (repaint!))
              (set! mouse-down? false)
              (set! mouse-moving? #f))

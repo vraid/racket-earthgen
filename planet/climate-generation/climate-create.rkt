@@ -44,6 +44,7 @@
             #:parameters par
             #:season season
             #:tile (make-tile-climate-data (tile-count planet))
+            #:corner (make-corner-climate-data (corner-count planet))
             #:edge (make-edge-climate-data (edge-count planet)))])
     (let ([init-tile-array (tile-init p)])
       (init-tile-array (tile-climate-data-sunlight-set! (planet-climate-tile p))
