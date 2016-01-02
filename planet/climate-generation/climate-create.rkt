@@ -87,6 +87,7 @@
             #:parameters par
             #:season season
             #:tile (make-tile-climate-data (tile-count terrain))
+            #:corner (make-corner-climate-data (corner-count terrain))
             #:edge (make-edge-climate-data (edge-count terrain)))])
     (let ([init-tile-array (init-array (tile-count p))])
       (init-tile-array (tile-climate-data-sunlight-set! (planet-climate-tile p))
@@ -297,7 +298,13 @@
                     [dir (corner-river-direction p n)])
                    ((edge-climate-data-river-flow-set! (planet-climate-edge p)) (corner-edge p n dir) (river-flow n))))
       (for ([r (planet-rivers p)])
-        (visit-river r)))
+        (visit-river r))
+      (for ([c (corner-count p)])
+        ((corner-climate-data-river-flow-set! (planet-climate-corner p)) c (for/fold ([flow 0.0])
+                                                                                     ([dir 3])
+                                                                             (if ((river-flows-to? p c) (corner-corner p c dir))
+                                                                                 (+ flow (edge-river-flow p (corner-edge p c dir)))
+                                                                                 flow)))))
     (set-wind! p)
     (climate-iterate!)
     (set-river-flow!)

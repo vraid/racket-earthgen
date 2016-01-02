@@ -5,6 +5,9 @@
 (require ffi/vector
          ffi/cvector
          ffi/unsafe
+         racket/flonum
+         "color.rkt"
+         "gl-structs.rkt"
          (planet stephanh/RacketGL:1:4/rgl))
 
 (define uint-size 4)
@@ -14,11 +17,54 @@
 
 (struct gl-vertex-buffer
   (handle
-   data))
+   data)
+  #:mutable)
 
 (struct gl-index-buffer
   (handle
-   data))
+   data)
+  #:mutable)
+
+(define (make-vertex-vector count)
+  (make-cvector _gl-vertex count))
+
+(define (make-index-vector count)
+  (make-cvector _uint count))
+
+(define (set-vertex-color! vertices n color)
+  (let ([v (cvector-ref vertices n)])
+    (set-gl-vertex-red! v (byte-color-red color))
+    (set-gl-vertex-green! v (byte-color-green color))
+    (set-gl-vertex-blue! v (byte-color-blue color))))
+
+(define (set-vertex-coord! vertices n coord)
+  (let ([v (cvector-ref vertices n)])
+    (set-gl-vertex-x! v (flvector-ref coord 0))
+    (set-gl-vertex-y! v (flvector-ref coord 1))
+    (set-gl-vertex-z! v (flvector-ref coord 2))))
+
+(define (make-gl-buffer vertex-count index-count)
+  (let ([vertex-buffer (gl-vertex-buffer
+                        (generate-gl-buffer-handle)
+                        (make-vertex-vector vertex-count))]
+        [index-buffer (gl-index-buffer
+                       (generate-gl-buffer-handle)
+                       (make-index-vector index-count))])
+    (gl-buffer
+     (lambda (n coord)
+       (set-vertex-coord! (gl-vertex-buffer-data vertex-buffer) n coord))
+     (lambda (n color)
+       (set-vertex-color! (gl-vertex-buffer-data vertex-buffer) n (flcolor->byte-color color)))
+     (lambda (n k)
+       (cvector-set! (gl-index-buffer-data index-buffer) n k))
+     (lambda (vertex-count index-count)
+       (set-gl-vertex-buffer-data! (make-vertex-vector vertex-count))
+       (set-gl-index-buffer-data! (make-index-vector index-count)))
+     (lambda ()
+       (set-gl-vertex-buffer! vertex-buffer)
+       (set-gl-index-buffer! index-buffer))
+     (lambda ()
+       (gl-draw vertex-buffer index-buffer)))))
 
 (define-cstruct _gl-vertex
   ([x _float]

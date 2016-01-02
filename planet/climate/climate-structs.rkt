@@ -38,6 +38,7 @@
             ([parameters : climate-parameters]
              [season : integer]
              [tile : tile-climate-data]
+             [corner : corner-climate-data]
              [edge : edge-climate-data]))
 
 (direct-access planet-climate tile tile-climate-data
@@ -46,6 +47,9 @@
                 [humidity flonum]
                 [precipitation flonum]
                 [snow-cover flonum]))
+
+(direct-access planet-climate corner corner-climate-data
+               ([river-flow flonum]))
 
 (direct-access planet-climate edge edge-climate-data
                ([river-flow flonum]

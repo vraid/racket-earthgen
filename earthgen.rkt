@@ -228,6 +228,12 @@
        (thread
         (thunk
          (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis))))
+     (define (zoom-in)
+       (send control wheel-up)
+       (repaint!))
+     (define (zoom-out)
+       (send control wheel-down)
+       (repaint!))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (match key-code
@@ -271,12 +277,10 @@
                                                (max a (tile-area planet n)))
                                              0.0
                                              (in-range (tile-count planet))))))]
-         ['wheel-up (begin
-                      (send control wheel-up)
-                      (repaint!))]
-         ['wheel-down (begin
-                        (send control wheel-down)
-                        (repaint!))]
+         [#\z (zoom-in)]
+         [#\x (zoom-out)]
+         ['wheel-up (zoom-in)]
+         ['wheel-down (zoom-out)]
          [_ (void)]))
      (define (tile-at x y)
        (and-let* ([planet (send planet-handler current)]

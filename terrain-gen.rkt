@@ -5,7 +5,7 @@
                          (* 2.0 a)))
                    (heightmap-create
                     (heightmap-parameters/kw
-                     #:seed "poia2"
+                     #:seed "cijow"
                      #:base-level 2
                      #:amplitude 800.0
                      #:persistence 0.65)))]

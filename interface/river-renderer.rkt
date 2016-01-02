@@ -1,15 +1,14 @@
-#lang racket
+#lang typed/racket
 
 (provide river-renderer%)
 
 (require vraid/flow
          vraid/math
-         vraid/opengl
+         vraid/typed-gl
          vraid/color
-         "../planet/planet.rkt"
-         racket/flonum
-         ffi/cvector
-         ffi/unsafe)
+         vraid/util
+         math/flonum
+         "../planet/planet.rkt")
 
 (define river-color
   (flcolor3 0.06862745098039216 0.17450980392156862 0.37058823529411766))
@@ -17,136 +16,114 @@
 (define river-renderer%
   (class object%
     (super-new)
-    (init-field planet)
-    (define buffer-corner-count 0)
-    (define river-vertex-buffer
-      (gl-vertex-buffer
-       (generate-gl-buffer-handle)
-       (make-cvector _uint 0)))
-    (define river-index-buffer
-      (gl-index-buffer
-       (generate-gl-buffer-handle)
-       (make-cvector _uint 0)))
+    (init-field [planet : (-> planet-climate)])
+    (: buffer-tile-count Integer)
+    (define buffer-tile-count 0)
+    (: buffer gl-buffer)
+    (define buffer (make-gl-buffer 0 0))
+    (: resize-buffer? (-> Boolean))
     (define (resize-buffer?)
-      (not (= buffer-corner-count (corner-count (planet)))))
+      (not (= buffer-tile-count (tile-count (planet)))))
+    (: resize-buffer (-> Void))
     (define/public (resize-buffer)
       (when (resize-buffer?)
-        (let ([b (make-river-buffer (planet))])
-          (set! buffer-corner-count (river-buffer-count b))
-          (set! river-index-buffer
-                (gl-index-buffer
-                 (gl-index-buffer-handle river-index-buffer)
-                 (river-buffer-indices b)))
-          (set! river-vertex-buffer
-                (gl-vertex-buffer
-                 (gl-vertex-buffer-handle river-vertex-buffer)
-                 (river-buffer-vertices b))))))
+        (let* ([tile-count (tile-count (planet))]
+               [buf (make-gl-buffer (* 24 tile-count) (* 36 tile-count))])
+          (set! buffer-tile-count tile-count)
+          (set! buffer buf)
+          (init-buffer (planet) buffer))))
+    (: remake-buffer (-> Void))
     (define/public (remake-buffer)
-      (let* ([planet (planet)]
-             [b (update-buffer planet
-                              (river-buffer
-                               (corner-count planet)
-                               (gl-vertex-buffer-data river-vertex-buffer)
-                               (gl-index-buffer-data river-index-buffer)))])
-        (set! river-index-buffer
-              (gl-index-buffer
-               (gl-index-buffer-handle river-index-buffer)
-               (river-buffer-indices b)))
-        (set! river-vertex-buffer
-              (gl-vertex-buffer
-               (gl-vertex-buffer-handle river-vertex-buffer)
-               (river-buffer-vertices b)))
-        (set-gl-vertex-buffer! river-vertex-buffer)
-        (set-gl-index-buffer! river-index-buffer)))
+      (update-buffer (planet) buffer)
+      ((gl-buffer-bind buffer)))
+    (: render (-> Void))
     (define/public (render)
       (gl-cull-face 'back)
-      (gl-draw river-vertex-buffer
-               river-index-buffer))))
+      ((gl-buffer-draw buffer)))))
 
-(struct river-buffer
-  (count vertices indices))
+(: init-buffer (grid gl-buffer -> Void))
+(define (init-buffer planet buffer)
+  (let ([set-color (gl-buffer-set-vertex-color! buffer)])
+    (for ([n (* 24 (tile-count planet))])
+      (set-color n river-color)))
+  (let ([set-coord (gl-buffer-set-vertex-coord! buffer)]
+        [set-index (gl-buffer-set-index! buffer)])
+    (for ([n (tile-count planet)])
+      (for ([k 6])
+        (let* ([index-offset (+ (* n 36) (* k 6))]
+               [vertex-offset (+ (* n 24) (* k 4))]
+               [set-index/vertex (lambda ([i : Integer]
+                                          [v : Integer])
+                                   (set-index (+ index-offset i)
+                                              (+ vertex-offset v)))])
+          (set-index/vertex 0 0)
+          (set-index/vertex 1 1)
+          (set-index/vertex 2 2)
+          (set-index/vertex 3 1)
+          (set-index/vertex 4 3)
+          (set-index/vertex 5 2)
+          (let* ([corner (tile-corner planet n k)]
+                 [corner-coord (corner-coordinates planet corner)]
+                 [next-corner (tile-corner planet n (+ k 1))]
+                 [next-corner-coord (corner-coordinates planet next-corner)])
+            (for ([n 2])
+              (set-coord (+ vertex-offset (* 2 n)) corner-coord)
+              (set-coord (+ vertex-offset (* 2 n) 1) next-corner-coord))))))))
 
-(define (->gl-vertex coord color)
-  (make-gl-vertex
-   (flvector-ref coord 0)
-   (flvector-ref coord 1)
-   (flvector-ref coord 2)
-   (flcolor->byte (flcolor-red color))
-   (flcolor->byte (flcolor-green color))
-   (flcolor->byte (flcolor-blue color))
-   (flcolor->byte (flcolor-alpha color))))
-
-(define (make-river-buffer planet)
-  (let* ([count (corner-count planet)]
-         [vertices (make-cvector _gl-vertex (* 6 count))]
-         [indices (make-cvector _uint (* 12 count))])
-    (river-buffer
-     count
-     vertices
-     indices)))
-
+(: update-buffer (planet-climate gl-buffer -> Void))
 (define (update-buffer planet buffer)
-  (define base-indices
-    '(#(2 3 1)
-      #(1 3 4)
-      #(4 5 1)
-      #(1 5 0)))
-  (let* ([count (river-buffer-count buffer)]
-         [max-scale (/ (flvector3-distance
+  (let* ([max-scale (/ (flvector3-distance
                         (tile-coordinates planet 0)
                         (corner-coordinates planet ((grid-tile-corner planet) 0 0)))
                        2)]
-         [vertices (river-buffer-vertices buffer)]
-         [indices (river-buffer-indices buffer)]
-         [color river-color])
-    (for ([n count])
-      (let* ([direction (corner-river-direction planet n)]
-             [river? direction])
-        (when river?
-          (let* ([flow->scale (lambda (flow)
-                                (min max-scale
-                                     (/ (* 60000.0 (sqrt (/ flow 140000.0)))
-                                        (planet-radius planet))))]
-                 [flow (edge-river-flow planet (corner-edge planet n direction))]
-                 [inflow (if (zero? (length (corner-river-sources planet n)))
-                             0.0
-                             flow)]
-                 [outflow (if-let* ([i (corner-corner planet n direction)]
-                                    [dir (corner-river-direction planet i)]
-                                    [_ (= 1 (length (corner-river-sources planet i)))])
-                            (edge-river-flow planet (corner-edge planet i dir))
-                            flow)]
-                 [inscale (flow->scale inflow)]
-                 [outscale (flow->scale outflow)]
-                 [opposite ((grid-corner-corner planet) n direction)]
-                 [opposite-direction (grid-corner-corner-position planet opposite n)]
-                 [vectors (lambda (scale n direction)
-                            (let ([v (corner-coordinates planet n)]
-                                  [a (corner-coordinates planet ((grid-corner-corner planet) n (- direction 1)))]
-                                  [b (corner-coordinates planet ((grid-corner-corner planet) n (+ direction 1)))]
-                                  [scaled (lambda (v u)
-                                            (flvector3-sum v (flvector3-scale-to
-                                                              scale
-                                                              (flvector3-subtract v u))))])
-                              (values (scaled v b) v (scaled v a))))])
-            (let-values ([(b v a) (vectors inscale n direction)]
-                         [(d u c) (vectors outscale opposite opposite-direction)])
-              (cvector-set! vertices (* n 6) (->gl-vertex b color))
-              (cvector-set! vertices (+ 1 (* n 6)) (->gl-vertex v color))
-              (cvector-set! vertices (+ 2 (* n 6)) (->gl-vertex a color))
-              (cvector-set! vertices (+ 3 (* n 6)) (->gl-vertex d color))
-              (cvector-set! vertices (+ 4 (* n 6)) (->gl-vertex u color))
-              (cvector-set! vertices (+ 5 (* n 6)) (->gl-vertex c color)))))
-        (for ([k (range 4)]
-              [v base-indices])
-          (let ([ref (if river?
-                         (curry vector-ref v)
-                         (thunk* 0))]
-                [offset (* n 6)])
-            (cvector-set! indices (+ (* k 3) (* n 12)) (+ offset (ref 0)))
-            (cvector-set! indices (+ 1 (* k 3) (* n 12)) (+ offset (ref 1)))
-            (cvector-set! indices (+ 2 (* k 3) (* n 12)) (+ offset (ref 2)))))))
-    (river-buffer
-     tile-count
-     vertices
-     indices)))
+         [flow->scale (lambda ([flow : Flonum])
+                        (min max-scale
+                             (fl/ (* 60000.0 (flsqrt (fl/ flow 140000.0)))
+                                  (planet-radius planet))))]
+         [set-coord (gl-buffer-set-vertex-coord! buffer)])
+    (for ([tile (grid-tile-count planet)])
+      (let* ([edge-count (tile-edge-count tile)]
+             [scale (lambda ([flow : (Integer -> Flonum)])
+                            (build-flvector-ref edge-count
+                                                (lambda ([n : Integer])
+                                                  (flow->scale (flow n)))))]
+             [corner-scale (scale (lambda ([n : Integer])
+                                    (corner-river-flow planet (tile-corner planet tile n))))]
+             [edge-scale (scale (lambda ([n : Integer])
+                                  (edge-river-flow planet (tile-edge planet tile n))))]            
+             [river-direction (build-vector-ref edge-count
+                                                (lambda ([edge : Integer])
+                                                  (let ([c1 (tile-corner planet tile edge)]
+                                                        [c2 (tile-corner planet tile (+ 1 edge))])
+                                                    (if ((river-flows-to? planet c1) c2)
+                                                        'cw
+                                                        (if ((river-flows-to? planet c2) c1)
+                                                            'ccw
+                                                            #f)))))])
+        (for ([edge edge-count])
+          (let* ([direction (river-direction edge)]
+                 [cw? (equal? direction 'cw)]
+                 [corner-coord (lambda ([n : Integer])
+                                 (corner-coordinates planet (tile-corner planet tile (+ edge n))))]
+                 [scale1 (if direction
+                             (if cw?
+                                 (edge-scale edge)
+                                 (corner-scale edge))
+                             0.0)]
+                 [scale2 (if direction
+                             (if cw?
+                                 (corner-scale (modulo (+ 1 edge) edge-count))
+                                 (edge-scale edge))
+                             0.0)]
+                 [tile-coord (tile-coordinates planet tile)]
+                 [scale-coord (lambda ([scale : Flonum]
+                                       [v : flvector3]
+                                       [u : flvector3])
+                                (flvector3-sum v (flvector3-scale-to
+                                                  scale
+                                                  (flvector3-subtract v u))))]
+                 [c1-scaled-coord (scale-coord scale1 (corner-coord 0) (corner-coord -1))]
+                 [c2-scaled-coord (scale-coord scale2 (corner-coord 1) (corner-coord 2))]
+                 [index-offset (+ (* 24 tile) (* 4 edge))])
+            (set-coord (+ index-offset 2) c1-scaled-coord)
+            (set-coord (+ index-offset 3) c2-scaled-coord)))))))

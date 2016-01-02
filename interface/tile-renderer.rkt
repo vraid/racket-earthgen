@@ -1,96 +1,67 @@
-#lang racket
+#lang typed/racket
 
 (provide tile-renderer%)
 
-(require vraid/opengl
+(require vraid/typed-gl
          vraid/color
-         "../planet/planet.rkt"
-         racket/flonum
-         ffi/cvector
-         ffi/unsafe)
+         "../planet/planet.rkt")
 
 (define tile-renderer%
   (class object%
     (super-new)
-    (init-field planet)
+    (init-field [planet : (-> grid)])
+    (: buffer-tile-count Integer)
     (define buffer-tile-count 0)
-    (define tile-vertex-buffer
-      (gl-vertex-buffer
-       (generate-gl-buffer-handle)
-       (make-cvector _uint 0)))
-    (define tile-index-buffer
-      (gl-index-buffer
-       (generate-gl-buffer-handle)
-       (make-cvector _uint 0)))
+    (: buffer gl-buffer)
+    (define buffer (make-gl-buffer 0 0))
+    (: resize-buffer? (-> Boolean))
     (define (resize-buffer?)
       (not (= buffer-tile-count (tile-count (planet)))))
+    (: resize-buffer (-> Void))
     (define/public (resize-buffer)
       (when (resize-buffer?)
-        (let ([b (make-tile-buffer (planet))])
-          (set! buffer-tile-count (tile-buffer-tile-count b))
-          (set! tile-index-buffer
-                (gl-index-buffer
-                 (gl-index-buffer-handle tile-index-buffer)
-                 (tile-buffer-indices b)))
-          (set! tile-vertex-buffer
-                (gl-vertex-buffer
-                 (gl-vertex-buffer-handle tile-vertex-buffer)
-                 (tile-buffer-vertices b)))
-          (set-gl-index-buffer! tile-index-buffer))))
+        (let* ([tile-count (tile-count (planet))]
+               [buf (make-gl-buffer (* 7 tile-count) (* 18 tile-count))])
+          (set! buffer-tile-count tile-count)
+          (set! buffer buf)
+          (init-buffer (planet) buffer))))
+    (: remake-buffer ((grid Integer -> flcolor) -> Void))
     (define/public (remake-buffer color-function)
-      (update-vertices! (grid-tile-count (planet))
-                        tile-vertex-buffer
+      (update-vertices! (tile-count (planet))
+                        buffer
                         (curry color-function (planet)))
-      (set-gl-vertex-buffer! tile-vertex-buffer))
+      ((gl-buffer-bind buffer)))
+    (: set-tile-colors ((grid Integer -> flcolor) -> Void))
     (define/public (set-tile-colors color-function)
       (remake-buffer color-function))
     (define/public (render)
       (gl-cull-face 'back)
-      (gl-draw tile-vertex-buffer
-               tile-index-buffer))))
+      ((gl-buffer-draw buffer)))))
 
-(struct tile-buffer
-  (tile-count vertices indices))
-
-(define (->gl-vertex coord color)
-  (make-gl-vertex
-   (flvector-ref coord 0)
-   (flvector-ref coord 1)
-   (flvector-ref coord 2)
-   (flcolor->byte (flcolor-red color))
-   (flcolor->byte (flcolor-green color))
-   (flcolor->byte (flcolor-blue color))
-   (flcolor->byte (flcolor-alpha color))))
-
-(define (make-tile-buffer grid)
-  (let* ([tile-count (grid-tile-count grid)]
-         [vertices (make-cvector _gl-vertex (* 7 tile-count))]
-         [indices (make-cvector _uint (* 18 tile-count))]
-         [color (flcolor3 0.0 0.0 0.0)])
-    (for ([n tile-count])
-      (cvector-set! vertices (* n 7) (->gl-vertex ((grid-tile-coordinates grid) n) color))
+(: init-buffer (grid gl-buffer -> Void))
+(define (init-buffer grid buffer)
+  (let ([set-coord (gl-buffer-set-vertex-coord! buffer)]
+        [set-color (gl-buffer-set-vertex-color! buffer)]
+        [set-index (gl-buffer-set-index! buffer)]
+        [color (flcolor3 0.0 0.0 0.0)])
+    (for ([n (tile-count grid)])
+      (let ([k (* n 7)])
+        (set-coord k ((grid-tile-coordinates grid) n))
+        (set-color k color))
       (for ([i 6])
-        (cvector-set! vertices (+ 1 i (* n 7)) (->gl-vertex ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i))
-                                                            color))
+        (let ([k (+ 1 i (* n 7))])
+          (set-coord k ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i)))
+          (set-color k color))
         (let ([k (+ (* i 3) (* n 18))])
-          (cvector-set! indices k (* n 7))
-          (cvector-set! indices (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
-          (cvector-set! indices (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))
-    (tile-buffer
-     tile-count
-     vertices
-     indices)))
+          (set-index k (* n 7))
+          (set-index (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+          (set-index (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))))
 
-(define (set-vertex-color! vertices n color)
-  (let ([v (cvector-ref vertices n)])
-    (set-gl-vertex-red! v (byte-color-red color))
-    (set-gl-vertex-green! v (byte-color-green color))
-    (set-gl-vertex-blue! v (byte-color-blue color))))
-
+(: update-vertices! (Integer gl-buffer (Integer -> flcolor) -> Void))
 (define (update-vertices! count buffer color-function)
-  (let* ([vertices (gl-vertex-buffer-data buffer)])
+  (let* ([set-color (gl-buffer-set-vertex-color! buffer)])
     (for ([n count])
-      (let ([color (flcolor->byte-color (color-function n))])
-        (set-vertex-color! vertices (* n 7) color)
+      (let ([color (color-function n)])
+        (set-color (* n 7) color)
         (for ([i 6])
-          (set-vertex-color! vertices (+ 1 i (* n 7)) color))))))
+          (set-color (+ 1 i (* n 7)) color))))))

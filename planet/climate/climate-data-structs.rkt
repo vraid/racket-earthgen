@@ -14,10 +14,14 @@
                                   [humidity-set! : flonum-set!]
                                   [precipitation-set! : flonum-set!]
                                   [snow-cover-set! : flonum-set!])]
+                       [#:struct corner-climate-data
+                                 ([river-flow : flonum-get]
+                                  [river-flow-set! : flonum-set!])]
                        [#:struct edge-climate-data
                                  ([river-flow : flonum-get]
                                   [air-flow : flonum-get]
                                   [river-flow-set! : flonum-set!]
                                   [air-flow-set! : flonum-set!])]
                        [make-tile-climate-data (Integer -> tile-climate-data)]
+                       [make-corner-climate-data (Integer -> corner-climate-data)]
                        [make-edge-climate-data (Integer -> edge-climate-data)])
