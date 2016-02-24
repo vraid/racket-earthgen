@@ -19,10 +19,13 @@
          profile
          profile/render-text)
 
-(define mouse-moving? #f)
-(define mouse-down? #f)
-(define mouse-down-x 0)
-(define mouse-down-y 0)
+(struct mouse-state
+  (moving? down? down-x down-y)
+  #:mutable)
+
+(define current-mouse-state
+  (mouse-state #f #f 0 0))
+
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
 
@@ -321,30 +324,30 @@
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
-             (unless mouse-moving?
+             (unless (mouse-state-moving? current-mouse-state)
                (and-let* ([planet (send planet-handler current)]
                           [tile (tile-at (send event get-x)
                                          (send event get-y))])
                          (begin
                            (update-tile-panel tile)))
                (repaint!))
-             (set! mouse-down? false)
-             (set! mouse-moving? #f))
-           (if mouse-down?
+             (set-mouse-state-down?! current-mouse-state #f)
+             (set-mouse-state-moving?! current-mouse-state #f))
+           (if (mouse-state-down? current-mouse-state)
                (begin
                  (let ([current-x (send event get-x)]
                        [current-y (send event get-y)])
                    (begin
-                     (when (or (not (= mouse-down-x current-x))
-                               (not (= mouse-down-y current-y)))
-                       (set! mouse-moving? true))))
+                     (when (not (and (= (mouse-state-down-x current-mouse-state) current-x)
+                                     (= (mouse-state-down-y current-mouse-state) current-y)))
+                       (set-mouse-state-moving?! current-mouse-state #t))))
                  (send control on-event event)
                  (repaint!))
                (if (send event button-down? 'left)
                    (begin
-                     (set! mouse-down-x (send event get-x))
-                     (set! mouse-down-y (send event get-y))
-                     (set! mouse-down? true)
+                     (set-mouse-state-down-x! current-mouse-state (send event get-x))
+                     (set-mouse-state-down-y! current-mouse-state (send event get-y))
+                     (set-mouse-state-down?! current-mouse-state #t)
                      (send control on-event event))
                    (void)))))
      (super-instantiate () (style '(gl))))
