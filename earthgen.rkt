@@ -4,10 +4,10 @@
          vraid/math
          vraid/flow
          vraid/opengl
+         "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
          "planet-color.rkt"
-         "sample-terrain.rkt"
          "gui/edit-panel.rkt"
          "interface/fixed-axis-control.rkt"
          "interface/grid-handler.rkt"
@@ -89,7 +89,6 @@
                             [max-elements 24]
                             [set-status set-status-message!]))
 (define grid-handler (new-grid-handler))
-(define default-grid-size 5)
 (define color-mode color-topography)
 
 (define (set-color-mode color-function)
@@ -104,22 +103,20 @@
         (thunk (send planet-renderer set-tile-colors color-mode)))
   (repaint!))
 
-(define (generate-terrain size method axis)
+(define (generate-terrain size axis)
   (let ([grids (send grid-handler get-grids size)])
     (send planet-handler
           terrain/scratch
-          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) (method grids) axis))))))
+          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis))))))
 
 (define (update/repaint mode)
   (set-color-mode mode)
   (send canvas with-gl-context (thunk (send planet-renderer update/planet color-mode)))
   (repaint!))
 
-(define (generate-terrain/repaint size method axis)
-  (generate-terrain size method axis)
+(define (generate-terrain/repaint size axis)
+  (generate-terrain size axis)
   (update/repaint color-topography))
-
-(generate-terrain default-grid-size sample-terrain default-axis)
 
 (define global-panel
   (let* ([panel (new vertical-panel%
@@ -136,7 +133,7 @@
                          (<= 0 size))
                 (thread
                  (thunk
-                  (generate-terrain/repaint size (load "terrain-gen.rkt") default-axis)))))))
+                  (generate-terrain/repaint size default-axis)))))))
     panel))
 
 (define tile-panel
@@ -252,7 +249,7 @@
      (define (generate-terrain!)
        (thread
         (thunk
-         (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) (load "terrain-gen.rkt") default-axis))))
+         (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) default-axis))))
      (define (zoom-in)
        (send control wheel-up)
        (repaint!))
@@ -365,4 +362,4 @@
         (thunk (new planet-renderer%
                     [planet (thunk (send planet-handler current))]))))
 
-(update/repaint color-topography)
+(generate-terrain/repaint 5 default-axis)
