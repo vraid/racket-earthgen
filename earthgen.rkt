@@ -9,6 +9,7 @@
          "planet/planet-generation.rkt"
          "planet-color.rkt"
          "gui/edit-panel.rkt"
+         "tile-data-panel.rkt"
          "interface/fixed-axis-control.rkt"
          "interface/grid-handler.rkt"
          "interface/planet-handler.rkt"
@@ -144,65 +145,7 @@
        [parent no-frame]
        [stretchable-height #f]))
 
-(define update-tile-panel
-  (let* ([height 30]
-         [label-width 100]
-         [general-panel (new vertical-panel%
-                             [parent tile-panel]
-                             [stretchable-height #f])]
-         [general (edit-panel general-panel height label-width)]
-         [terrain-panel (new vertical-panel%
-                             [parent tile-panel]
-                             [stretchable-height #f])]
-         [terrain (edit-panel terrain-panel height label-width)]
-         [climate-panel (new vertical-panel%
-                             [parent tile-panel]
-                             [stretchable-height #f])]
-         [climate (edit-panel climate-panel height label-width)]
-         [id-edit (general "tile id")]
-         [elevation-edit (terrain "elevation")]
-         [temperature-edit (climate "temperature")]
-         [absolute-humidity-edit (climate "absolute humidity")]
-         [relative-humidity-edit (climate "relative humidity")]
-         [precipitation-edit (climate "precipitation")]
-         [aridity-edit (climate "aridity")])
-    (lambda (tile)
-      (let* ([planet (send planet-handler current)]
-             [terrain (planet-terrain? planet)]
-             [climate (planet-climate? planet)])
-        (send general-panel show tile)
-        (send terrain-panel show (and tile terrain))
-        (send climate-panel show (and tile climate))
-        (when tile
-          (let ([link (lambda (panel get set) (send panel link get set))])
-            (link id-edit (thunk (number->string tile)) (thunk* #f))
-            (when terrain
-              (link elevation-edit
-                    (thunk (number->string (tile-elevation planet tile)))
-                    (lambda (n)
-                      (let ([num (exact->inexact (string->number n))])
-                        (when (real? num)
-                          (begin
-                            ((tile-terrain-data-elevation-set! (planet-terrain-tile planet)) tile num)
-                            (color-planet! color-mode)))))))
-            (when climate
-              (link temperature-edit
-                    (thunk (number->string (tile-temperature planet tile)))
-                    (thunk* #f))
-              (link absolute-humidity-edit
-                    (thunk (number->string (tile-humidity planet tile)))
-                    (thunk* #f))
-              (link relative-humidity-edit
-                    (thunk (number->string (relative-humidity (tile-temperature planet tile)
-                                                              (tile-humidity planet tile))))
-                    (thunk* #f))
-              (link precipitation-edit
-                    (thunk (number->string (tile-precipitation planet tile)))
-                    (thunk* #f))
-              (link aridity-edit
-                    (thunk (number->string (aridity (tile-temperature planet tile)
-                                                    (tile-humidity planet tile))))
-                    (thunk* #f)))))))))
+(define update-tile-panel (tile-data-panel tile-panel))
 
 (struct tab-choice
   (label panel))
@@ -329,7 +272,7 @@
                           [tile (tile-at (send event get-x)
                                          (send event get-y))])
                          (begin
-                           (update-tile-panel tile)))
+                           (update-tile-panel planet tile)))
                (repaint!))
              (set-mouse-state-down?! current-mouse-state #f)
              (set-mouse-state-moving?! current-mouse-state #f))
