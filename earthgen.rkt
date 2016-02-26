@@ -92,12 +92,15 @@
 (define planet-handler (new planet-handler%
                             [max-elements 24]
                             [set-status set-status-message!]))
+(define (current-planet)
+  (send planet-handler current))
+
 (define grid-handler (new-grid-handler))
 (define color-mode color-topography)
 
 (define (set-color-mode color-function)
   (set! color-mode
-        (if (planet-color-valid? color-function (send planet-handler current))
+        (if (planet-color-valid? color-function (current-planet))
             color-function
             color-topography)))
 
@@ -130,7 +133,7 @@
          [size-edit (p "grid size")])
     (send size-edit
           link
-          (thunk (number->string (grid-subdivision-level (send planet-handler current))))
+          (thunk (number->string (grid-subdivision-level (current-planet))))
           (lambda (size)
             (let ([size (string->number size)])
               (when (and (integer? size)
@@ -181,7 +184,7 @@
            (with-gl-context
             (thunk
              (send control set-projection)
-             (gl-rotate (send control rotation-list (send planet-handler current)))
+             (gl-rotate (send control rotation-list (current-planet)))
              (send planet-renderer render)
              (swap-gl-buffers)))
            (set! last-draw (current-inexact-milliseconds))))))
@@ -195,7 +198,7 @@
      (define (generate-terrain!)
        (thread
         (thunk
-         (generate-terrain/repaint (grid-subdivision-level (send planet-handler current)) default-axis))))
+         (generate-terrain/repaint (grid-subdivision-level (current-planet)) default-axis))))
      (define (zoom-in)
        (send control wheel-up)
        (repaint!))
@@ -222,7 +225,7 @@
                 (send planet-handler add/tick)
                 (update/repaint color-mode)))]
          [#\r (when (send planet-handler ready?)
-                (and-let ([planet (send planet-handler current)])
+                (and-let ([planet (current-planet)])
                          (thread
                           (thunk
                            (for ([n 15])
@@ -241,7 +244,7 @@
          [#\h (color-planet! color-humidity)]
          [#\j (color-planet! color-precipitation)]
          [#\l (color-planet! (color-area
-                              (let ([planet (send planet-handler current)])
+                              (let ([planet (current-planet)])
                                 (stream-fold (lambda (a n)
                                                (max a (tile-area planet n)))
                                              0.0
@@ -252,7 +255,7 @@
          ['wheel-down (zoom-out)]
          [_ (void)]))
      (define (tile-at x y)
-       (and-let* ([planet (send planet-handler current)]
+       (and-let* ([planet (current-planet)]
                   [v (send control get-coordinates planet x y)]
                   [distance (build-flvector (tile-count planet)
                                             (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
@@ -268,7 +271,7 @@
        (if (send event button-up? 'left)
            (begin
              (unless (mouse-state-moving? current-mouse-state)
-               (and-let* ([planet (send planet-handler current)]
+               (and-let* ([planet (current-planet)]
                           [tile (tile-at (send event get-x)
                                          (send event get-y))])
                          (begin
@@ -306,6 +309,6 @@
 (define planet-renderer
   (send canvas with-gl-context
         (thunk (new planet-renderer%
-                    [planet (thunk (send planet-handler current))]))))
+                    [planet current-planet]))))
 
 (generate-terrain/repaint 5 default-axis)
