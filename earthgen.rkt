@@ -254,29 +254,18 @@
          ['wheel-up (zoom-in)]
          ['wheel-down (zoom-out)]
          [_ (void)]))
-     (define (tile-at x y)
-       (and-let* ([planet (current-planet)]
-                  [v (send control get-coordinates planet x y)]
-                  [distance (build-flvector (tile-count planet)
-                                            (lambda (n) (flvector3-distance-squared v (tile-coordinates planet n))))])
-                 (foldl (lambda (n closest)
-                          (if (< (flvector-ref distance n)
-                                 (flvector-ref distance closest))
-                              n
-                              closest))
-                        0
-                        (range (tile-count planet)))))
      
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
              (unless (mouse-state-moving? current-mouse-state)
                (and-let* ([planet (current-planet)]
-                          [tile (tile-at (send event get-x)
-                                         (send event get-y))])
+                          [x (send event get-x)]
+                          [y (send event get-y)]
+                          [tile (grid-closest-tile planet (send control get-coordinates planet x y))])
                          (begin
-                           (update-tile-panel planet tile)))
-               (repaint!))
+                           (update-tile-panel planet tile)
+                           (repaint!))))
              (set-mouse-state-down?! current-mouse-state #f)
              (set-mouse-state-moving?! current-mouse-state #f))
            (if (mouse-state-down? current-mouse-state)

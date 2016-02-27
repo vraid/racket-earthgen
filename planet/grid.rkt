@@ -1,12 +1,9 @@
 #lang typed/racket
 
-(require "grid/grid-structs.rkt"
-         "grid/grid-functions.rkt"
-         "grid/grid-create.rkt"
-         "grid/grid-list.rkt")
+(require "require-provide.rkt")
 
-(provide (all-from-out
-          "grid/grid-structs.rkt"
-          "grid/grid-functions.rkt"
-          "grid/grid-create.rkt"
-          "grid/grid-list.rkt"))
+(require/provide "grid/grid-structs.rkt"
+                 "grid/grid-functions.rkt"
+                 "grid/grid-create.rkt"
+                 "grid/grid-list.rkt"
+                 "grid/grid-search.rkt")
