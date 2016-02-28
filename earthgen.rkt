@@ -4,6 +4,7 @@
          vraid/math
          vraid/flow
          vraid/opengl
+         "key-input.rkt"
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
@@ -199,62 +200,15 @@
        (thread
         (thunk
          (generate-terrain/repaint (grid-subdivision-level (current-planet)) default-axis))))
-     (define (zoom-in)
+     (define/public (zoom-in)
        (send control wheel-up)
        (repaint!))
-     (define (zoom-out)
+     (define/public (zoom-out)
        (send control wheel-down)
        (repaint!))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
-       (match key-code
-         ['escape (exit)]
-         [#\q (generate-terrain!)]
-         [#\w (and-let ([terrain (send planet-handler get-terrain)])
-                       (thread
-                        (thunk
-                         (let* ([climate-func (delay (static-climate (default-climate-parameters) terrain))]
-                                [initial (thunk ((force climate-func) #f))])
-                           (send planet-handler
-                                 reset/climate
-                                 (thunk (force climate-func))
-                                 initial))
-                         (update/repaint color-supported-vegetation))))]
-         [#\e (thread
-               (thunk
-                (send planet-handler add/tick)
-                (update/repaint color-mode)))]
-         [#\r (when (send planet-handler ready?)
-                (and-let ([planet (current-planet)])
-                         (thread
-                          (thunk
-                           (for ([n 15])
-                             (displayln n)
-                             (send planet-handler add/tick))
-                           (update/repaint color-mode)))))]
-         ['left (when (send planet-handler earlier)
-                  (update/repaint color-mode))]
-         ['right (when (send planet-handler later)
-                   (update/repaint color-mode))]
-         [#\a (color-planet! color-topography)]
-         [#\s (color-planet! color-supported-vegetation)]
-         [#\d (color-planet! color-temperature)]
-         [#\f (color-planet! color-insolation)]
-         [#\g (color-planet! color-aridity)]
-         [#\h (color-planet! color-humidity)]
-         [#\j (color-planet! color-precipitation)]
-         [#\l (color-planet! (color-area
-                              (let ([planet (current-planet)])
-                                (stream-fold (lambda (a n)
-                                               (max a (tile-area planet n)))
-                                             0.0
-                                             (in-range (tile-count planet))))))]
-         [#\z (zoom-in)]
-         [#\x (zoom-out)]
-         ['wheel-up (zoom-in)]
-         ['wheel-down (zoom-out)]
-         [_ (void)]))
-     
+       (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
      (define/override (on-event event)
        (if (send event button-up? 'left)
            (begin
