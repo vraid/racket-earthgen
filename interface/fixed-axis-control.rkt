@@ -8,6 +8,7 @@
          vraid/types
          math/flonum
          "control.rkt"
+         "../point.rkt"
          "../planet/planet.rkt"
          "../planet/math/projection.rkt")
 
@@ -17,14 +18,9 @@
 (define fixed-axis-control%
   (class planet-control%
     (super-new)
-    (inherit update-input
-             scale-by)
-    (inherit-field mouse-down?
-                   mouse-moving?
-                   wheel-delta
+    (inherit scale-by)
+    (inherit-field wheel-delta
                    mouse-down-position
-                   mouse-position
-                   last-mouse-position
                    viewport-width
                    viewport-height
                    scale)
@@ -56,8 +52,12 @@
         (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0)))
     (: get-coordinates (planet-geometry Integer Integer -> (maybe FlVector)))
     (define/public (get-coordinates planet x y)
-      (let ([mx (fl* 2.0 (fl* (fl* (fl/ 1.0 scale) (fl- (exact->inexact (/ x viewport-width)) 0.5)) (exact->inexact (/ viewport-width viewport-height))))]
-            [my (fl* -2.0 (fl/ (fl- (exact->inexact (/ y viewport-height)) 0.5) scale))])
+      (let ([mx (* 2.0
+                   (exact->inexact (/ viewport-width viewport-height))
+                   (fl/ 1.0 scale)
+                   (fl- (exact->inexact (/ x viewport-width)) 0.5))]
+            [my (fl/ (* -2.0 (- (exact->inexact (/ y viewport-height)) 0.5))
+                     scale)])
         (if (< 1.0 (fl+ (flexpt mx 2.0) (flexpt my 2.0)))
             #f
             (quaternion-vector-product (rotation planet)
@@ -68,21 +68,19 @@
     (: wheel-up (-> Void))
     (define/public (wheel-up)
       (scale-by 1.05))
-    (define/override (on-event event)
-      (update-input event)
-      (when (send event button-down? 'left)
-        (begin
-          (set! mouse-down-latitude latitude)
-          (set! mouse-down-longitude longitude)))
-      (when mouse-moving?
-        (let ([delta (point-subtract mouse-position mouse-down-position)])
-          (set! longitude
-                (fl+ mouse-down-longitude
-                     (fl* (fl (point-x delta))
-                          (fl/ pi (* scale -900.0)))))
-          (set! latitude
-                (max (fl/ pi -2.0)
-                     (min (fl/ pi 2.0)
-                          (fl+ mouse-down-latitude
-                               (fl* (fl (point-y delta))
-                                    (fl/ pi (* scale -740.0))))))))))))
+    (define/override (mouse-down position)
+      (set! mouse-down-position position)
+      (set! mouse-down-latitude latitude)
+      (set! mouse-down-longitude longitude))
+    (define/override (mouse-drag from to)
+      (let ([delta (point-subtract to mouse-down-position)])
+        (set! longitude
+              (fl+ mouse-down-longitude
+                   (fl* (fl (point-x delta))
+                        (fl/ pi (* scale -900.0)))))
+        (set! latitude
+              (max (fl/ pi -2.0)
+                   (min (fl/ pi 2.0)
+                        (fl+ mouse-down-latitude
+                             (fl* (fl (point-y delta))
+                                  (fl/ pi (* scale -740.0)))))))))))

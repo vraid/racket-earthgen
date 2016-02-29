@@ -5,7 +5,8 @@
          vraid/flow
          vraid/opengl
          "key-input.rkt"
-         "mouse-input.rkt"
+         "point.rkt"
+         "mouse-input-handler.rkt"
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
@@ -21,9 +22,6 @@
 (require plot
          profile
          profile/render-text)
-
-(define current-mouse-state
-  (mouse-state #f #f 0 0))
 
 (define milliseconds-between-frames 70.0)
 (define last-draw (current-inexact-milliseconds))
@@ -162,16 +160,31 @@
 (define (repaint!)
   (send canvas force-repaint))
 
+(define control (new fixed-axis-control%
+                     [viewport-width 800]
+                     [viewport-height 800]
+                     [scale 1.0]
+                     [scale-min 0.1]
+                     [scale-max 100.0]))
+
+(define mouse-input-handler
+  (new mouse-input-handler%
+       [on-down (lambda (position)
+                  (send control mouse-down position))]
+       [on-click (lambda (position)
+                   (and-let* ([planet (current-planet)]
+                              [tile (grid-closest-tile planet (send control get-coordinates planet (point-x position) (point-y position)))])
+                             (begin
+                               (update-tile-panel planet tile)
+                               (send canvas force-repaint))))]
+       [on-drag (lambda (from to)
+                  (send control mouse-drag from to)
+                  (repaint!))]))
+
 (define canvas
   (new
    (class* canvas% ()
      (inherit with-gl-context swap-gl-buffers)
-     (define control (new fixed-axis-control%
-                          [viewport-width 800]
-                          [viewport-height 800]
-                          [scale 1.0]
-                          [scale-min 0.1]
-                          [scale-max 100.0]))
      (define (paint)
        (thread
         (thunk
@@ -209,7 +222,7 @@
        (define key-code (send event get-key-code))
        (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
      (define/override (on-event event)
-       (mouse-input canvas control planet-handler update-tile-panel current-mouse-state event))
+       (send mouse-input-handler mouse-event event))
      (super-instantiate () (style '(gl))))
    [parent frame-panel]
    [min-width 400]

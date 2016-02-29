@@ -8,42 +8,24 @@
          vraid/types
          vraid/flow
          math/flonum
+         "../point.rkt"
          "../planet/planet.rkt")
-
-(struct: point
-  ([x : Integer]
-   [y : Integer])
-  #:transparent)
-
-(define origin
-  (point 0 0))
-
-(: point-equal? (point point -> Boolean))
-(define (point-equal? p q)
-  (and (equal? (point-x p) (point-x q))
-       (equal? (point-y p) (point-y q))))
-
-(: point-subtract (point point -> point))
-(define (point-subtract p q)
-  (point (- (point-x q) (point-x p))
-         (- (point-y q) (point-y p))))
 
 (define planet-control%
   (class object%
     (super-new)
-    (field [mouse-down? : Boolean #f]
-           [mouse-moving? : Boolean #f]
-           [wheel-delta : Real 0.0]
-           [mouse-down-position : point origin]
-           [mouse-position : point origin]
-           [last-mouse-position : point origin])
+    (field [wheel-delta : Real 0.0]
+           [mouse-down-position : point origin])
     (init-field [viewport-width : Integer]
                 [viewport-height : Integer]
                 [scale : Flonum]
                 [scale-max : (maybe Flonum) #f]
                 [scale-min : (maybe Flonum) #f])
-    (: on-event ((Instance Mouse-Event%) -> Any))
-    (define/public (on-event event)
+    (: mouse-down (point -> Void))
+    (define/public (mouse-down position)
+      (set! mouse-down-position position))
+    (: mouse-drag (point point -> Any))
+    (define/public (mouse-drag from to)
       #f)
     (: resize-viewport (Integer Integer -> Void))
     (define/public (resize-viewport width height)
@@ -58,22 +40,4 @@
       (list))
     (: set-projection (-> Any))
     (define/public (set-projection)
-      #f)
-    (: mouse-up (-> Any))
-    (define (mouse-up)
-      (set! mouse-down? #f)
-      (set! mouse-moving? #f))
-    (: update-input ((Instance Mouse-Event%) -> Void))
-    (define/public (update-input event)
-      (when (send event button-up? 'left)
-        (mouse-up))
-      (set! last-mouse-position mouse-position)
-      (set! mouse-position (point (send event get-x) (send event get-y)))
-      (when mouse-down?
-        (when (not (point-equal? last-mouse-position
-                                 mouse-position))
-          (set! mouse-moving? #t)))
-      (when (send event button-down? 'left)
-        (begin
-          (set! mouse-down-position mouse-position)
-          (set! mouse-down? #t))))))
+      #f)))
