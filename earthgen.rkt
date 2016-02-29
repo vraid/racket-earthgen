@@ -5,6 +5,7 @@
          vraid/flow
          vraid/opengl
          "key-input.rkt"
+         "mouse-input.rkt"
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
@@ -20,10 +21,6 @@
 (require plot
          profile
          profile/render-text)
-
-(struct mouse-state
-  (moving? down? down-x down-y)
-  #:mutable)
 
 (define current-mouse-state
   (mouse-state #f #f 0 0))
@@ -163,9 +160,7 @@
   (send info-panel set-tab 0))
 
 (define (repaint!)
-  (set! last-draw 0.0)
-  (send canvas on-paint)
-  (void))
+  (send canvas force-repaint))
 
 (define canvas
   (new
@@ -177,18 +172,22 @@
                           [scale 1.0]
                           [scale-min 0.1]
                           [scale-max 100.0]))
+     (define (paint)
+       (thread
+        (thunk
+         (with-gl-context
+          (thunk
+           (send control set-projection)
+           (gl-rotate (send control rotation-list (current-planet)))
+           (send planet-renderer render)
+           (swap-gl-buffers)))
+         (set! last-draw (current-inexact-milliseconds)))))
      (define/override (on-paint)
        (when (< milliseconds-between-frames
                 (- (current-inexact-milliseconds) last-draw))
-         (thread
-          (thunk
-           (with-gl-context
-            (thunk
-             (send control set-projection)
-             (gl-rotate (send control rotation-list (current-planet)))
-             (send planet-renderer render)
-             (swap-gl-buffers)))
-           (set! last-draw (current-inexact-milliseconds))))))
+         (paint)))
+     (define/public (force-repaint)
+       (paint))
      (define/override (on-size width height)
        (send control resize-viewport width height)
        (set! display-width width)
@@ -202,43 +201,15 @@
          (generate-terrain/repaint (grid-subdivision-level (current-planet)) default-axis))))
      (define/public (zoom-in)
        (send control wheel-up)
-       (repaint!))
+       (force-repaint))
      (define/public (zoom-out)
        (send control wheel-down)
-       (repaint!))
+       (force-repaint))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
        (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
      (define/override (on-event event)
-       (if (send event button-up? 'left)
-           (begin
-             (unless (mouse-state-moving? current-mouse-state)
-               (and-let* ([planet (current-planet)]
-                          [x (send event get-x)]
-                          [y (send event get-y)]
-                          [tile (grid-closest-tile planet (send control get-coordinates planet x y))])
-                         (begin
-                           (update-tile-panel planet tile)
-                           (repaint!))))
-             (set-mouse-state-down?! current-mouse-state #f)
-             (set-mouse-state-moving?! current-mouse-state #f))
-           (if (mouse-state-down? current-mouse-state)
-               (begin
-                 (let ([current-x (send event get-x)]
-                       [current-y (send event get-y)])
-                   (begin
-                     (when (not (and (= (mouse-state-down-x current-mouse-state) current-x)
-                                     (= (mouse-state-down-y current-mouse-state) current-y)))
-                       (set-mouse-state-moving?! current-mouse-state #t))))
-                 (send control on-event event)
-                 (repaint!))
-               (if (send event button-down? 'left)
-                   (begin
-                     (set-mouse-state-down-x! current-mouse-state (send event get-x))
-                     (set-mouse-state-down-y! current-mouse-state (send event get-y))
-                     (set-mouse-state-down?! current-mouse-state #t)
-                     (send control on-event event))
-                   (void)))))
+       (mouse-input canvas control planet-handler update-tile-panel current-mouse-state event))
      (super-instantiate () (style '(gl))))
    [parent frame-panel]
    [min-width 400]
