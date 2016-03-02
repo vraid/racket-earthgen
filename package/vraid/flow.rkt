@@ -2,6 +2,11 @@
 
 (provide (all-defined-out))
 
+(define-syntax (if-not stx)
+  (syntax-case stx ()
+    [(_ condition then else)
+     #'(if (not condition) else then)]))
+
 (define-syntax (if-let stx)
   (syntax-case stx ()
     [(_ ((binding value) ...) then else)
