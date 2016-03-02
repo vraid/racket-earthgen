@@ -87,7 +87,8 @@
   (class planet-stepper%
     (super-new)
     (init-field [max-elements : Integer 24]
-                [set-status : (String -> Void) (lambda (s) (void))])
+                [set-status : (String -> Void) (lambda (s) (void))]
+                [on-change : (grid -> Void) (lambda (a) (void))])
     (inherit earliest latest earlier later at-current-index element-count set-vec! get-vec index vector-from-index)
     (: terrain-func (-> planet-terrain))
     (define terrain-func (thunk empty-planet-water))
@@ -109,25 +110,29 @@
         (let ([p (f)])
           (set! terrain p)
           (set-vec! (vector))
+          (on-change p)
           p)))
     (: reset/climate ((-> (planet-climate -> planet-climate)) (-> full-planet) -> Void))
     (define/public (reset/climate f initial)
       (work "generating climate"
             (thunk
              (set! climate-func (f))
-             (set-vec! (vector (initial))))))
+             (let ([p (initial)])
+               (set-vec! (vector (initial)))
+               p))))
     (define/public (get-terrain)
       terrain)
     (define/public (ready?)
       (not working?))
-    (: work (String (-> Any) -> Void))
+    (: work (String (-> grid) -> Void))
     (define work
       (lambda ([status : String]
-               [f : (-> Any)])
+               [f : (-> grid)])
         (unless working?
           (set-status status)
           (set! working? #t)
-          (f)
+          (let ([p (f)])
+            (on-change p))
           (set! working? #f)
           (set-status "ready"))))
     (: terrain/scratch ((-> planet-terrain) -> Void))
@@ -146,7 +151,9 @@
         (when (planet-climate? climate)
           (work "turning world"
                 (thunk
-                 (set-vec!
-                  (vector-append
-                   (vector (climate-func climate))
-                   (vector-from-index))))))))))
+                 (let ([p (climate-func climate)])
+                   (set-vec!
+                    (vector-append
+                     (vector p)
+                     (vector-from-index)))
+                   p))))))))

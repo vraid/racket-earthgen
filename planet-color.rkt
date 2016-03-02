@@ -6,20 +6,6 @@
          vraid/color
          "planet/planet.rkt")
 
-(: planet-color-valid? (Any planet-geometry -> Boolean))
-(define (planet-color-valid? f planet)
-  (let ([validate (cond
-                    [(member f (list color-topography)) planet-terrain?]
-                    [(member f (list color-temperature
-                                     color-insolation
-                                     color-humidity
-                                     color-aridity
-                                     color-precipitation
-                                     color-supported-vegetation)) planet-climate?]
-                    [else (lambda ([p : Any])
-                            #f)])])
-    (validate planet)))
-
 (define color-undefined
   (flcolor3 0.7 0.7 0.7))
 

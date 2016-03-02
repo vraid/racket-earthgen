@@ -3,7 +3,7 @@
 (provide key-input)
 
 (require vraid/flow
-         "planet-color.rkt"
+         "map-modes.rkt"
          "planet/planet-generation.rkt")
 
 (define (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code)
@@ -21,7 +21,7 @@
                             reset/climate
                             (thunk (force climate-func))
                             initial))
-                    (update/repaint color-supported-vegetation))))]
+                    (update/repaint vegetation-map-mode))))]
     [#\e (thread
           (thunk
            (send planet-handler add/tick)
@@ -38,13 +38,13 @@
              (update/repaint color-mode))]
     ['right (when (send planet-handler later)
               (update/repaint color-mode))]
-    [#\a (color-planet! color-topography)]
-    [#\s (color-planet! color-supported-vegetation)]
-    [#\d (color-planet! color-temperature)]
-    [#\f (color-planet! color-insolation)]
-    [#\g (color-planet! color-aridity)]
-    [#\h (color-planet! color-humidity)]
-    [#\j (color-planet! color-precipitation)]
+    [#\a (color-planet! topography-map-mode)]
+    [#\s (color-planet! vegetation-map-mode)]
+    [#\d (color-planet! temperature-map-mode)]
+    [#\f (color-planet! insolation-map-mode)]
+    [#\g (color-planet! aridity-map-mode)]
+    [#\h (color-planet! humidity-map-mode)]
+    [#\j (color-planet! precipitation-map-mode)]
     [#\z (zoom-in)]
     [#\x (zoom-out)]
     ['wheel-up (zoom-in)]

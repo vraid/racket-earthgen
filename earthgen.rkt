@@ -1,7 +1,6 @@
 #lang racket
 
 (require racket/gui/base
-         vraid/math
          vraid/flow
          vraid/opengl
          "key-input.rkt"
@@ -10,14 +9,15 @@
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
-         "planet-color.rkt"
          "gui/edit-panel.rkt"
+         "map-mode.rkt"
+         "map-modes.rkt"
+         "gui/map-mode-panel.rkt"
          "tile-data-panel.rkt"
          "interface/fixed-axis-control.rkt"
          "interface/grid-handler.rkt"
          "interface/planet-handler.rkt"
-         "interface/planet-renderer.rkt"
-         math/flonum)
+         "interface/planet-renderer.rkt")
 
 (require plot
          profile
@@ -29,6 +29,49 @@
 (define-values
   (display-width display-height)
   (get-display-size))
+
+(define (set-status-message! str)
+  (send status-message set-label str))
+
+(define (on-planet-change planet)
+  (send map-mode-panel enable-modes planet))
+
+(define planet-handler (new planet-handler%
+                            [max-elements 24]
+                            [set-status set-status-message!]
+                            [on-change on-planet-change]))
+
+(define (current-planet)
+  (send planet-handler current))
+
+(define grid-handler (new-grid-handler))
+(define color-mode topography-map-mode)
+
+(define (generate-terrain size axis)
+  (let ([grids (send grid-handler get-grids size)])
+    (send planet-handler
+          terrain/scratch
+          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis))))))
+
+(define (update/repaint mode)
+  (set-color-mode mode)
+  (send canvas with-gl-context (thunk (send planet-renderer update/planet (map-mode-function color-mode))))
+  (repaint!))
+
+(define (generate-terrain/repaint size axis)
+  (generate-terrain size axis)
+  (update/repaint topography-map-mode))
+
+(define (set-color-mode mode)
+  (send map-mode-panel select-mode mode) 
+  (set! color-mode mode))
+
+(define (color-planet! mode)
+  (when ((map-mode-condition mode) (current-planet))
+    (set-color-mode mode)
+    (send canvas with-gl-context
+          (thunk (send planet-renderer set-tile-colors (map-mode-function color-mode))))
+    (repaint!)))
 
 (define-values
   (window-width window-height)
@@ -70,6 +113,17 @@
        [callback (lambda (panel event)
                    (send panel set-tab (send panel get-selection)))]))
 
+(define map-mode-panel
+  (new map-mode-panel%
+       [parent left-panel]
+       [min-height 60]
+       [stretchable-height #f]
+       [on-select color-planet!]
+       [modes (list->vector
+               (append
+                terrain-map-modes
+                climate-map-modes))]))
+
 (define status-panel
   (new panel%
        [parent left-panel]
@@ -81,45 +135,6 @@
        [parent status-panel]
        [label "ready"]
        [auto-resize #t]))
-
-(define (set-status-message! str)
-  (send status-message set-label str))
-
-(define planet-handler (new planet-handler%
-                            [max-elements 24]
-                            [set-status set-status-message!]))
-(define (current-planet)
-  (send planet-handler current))
-
-(define grid-handler (new-grid-handler))
-(define color-mode color-topography)
-
-(define (set-color-mode color-function)
-  (set! color-mode
-        (if (planet-color-valid? color-function (current-planet))
-            color-function
-            color-topography)))
-
-(define (color-planet! color-function)
-  (set-color-mode color-function)
-  (send canvas with-gl-context
-        (thunk (send planet-renderer set-tile-colors color-mode)))
-  (repaint!))
-
-(define (generate-terrain size axis)
-  (let ([grids (send grid-handler get-grids size)])
-    (send planet-handler
-          terrain/scratch
-          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis))))))
-
-(define (update/repaint mode)
-  (set-color-mode mode)
-  (send canvas with-gl-context (thunk (send planet-renderer update/planet color-mode)))
-  (repaint!))
-
-(define (generate-terrain/repaint size axis)
-  (generate-terrain size axis)
-  (update/repaint color-topography))
 
 (define global-panel
   (let* ([panel (new vertical-panel%
