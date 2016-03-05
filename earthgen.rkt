@@ -173,14 +173,16 @@
   (send info-panel set-tab 0))
 
 (define (repaint!)
-  (send canvas force-repaint))
+  (send canvas force-repaint)
+  (void))
 
 (define control (new fixed-axis-control%
                      [viewport-width 800]
                      [viewport-height 800]
                      [scale 1.0]
                      [scale-min 0.1]
-                     [scale-max 100.0]))
+                     [scale-max 100.0]
+                     [on-update repaint!]))
 
 (define mouse-input-handler
   (new mouse-input-handler%
@@ -227,15 +229,9 @@
        (thread
         (thunk
          (generate-terrain/repaint (grid-subdivision-level (current-planet)) default-axis))))
-     (define/public (zoom-in)
-       (send control wheel-up)
-       (force-repaint))
-     (define/public (zoom-out)
-       (send control wheel-down)
-       (force-repaint))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
-       (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
+       (key-input control planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
      (define/override (on-event event)
        (send mouse-input-handler mouse-event event))
      (super-instantiate () (style '(gl))))

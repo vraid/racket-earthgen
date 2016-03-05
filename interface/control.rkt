@@ -16,7 +16,8 @@
     (super-new)
     (field [wheel-delta : Real 0.0]
            [mouse-down-position : point origin])
-    (init-field [viewport-width : Integer]
+    (init-field [on-update : (-> Void)]
+                [viewport-width : Integer]
                 [viewport-height : Integer]
                 [scale : Flonum]
                 [scale-max : (maybe Flonum) #f]
@@ -34,7 +35,8 @@
       (set! viewport-height height))
     (: scale-by (Flonum -> Void))
     (define/public (scale-by n)
-      (set! scale (fl ((within-interval scale-min scale-max) (* scale n)))))
+      (set! scale (fl ((within-interval scale-min scale-max) (* scale n))))
+      (on-update))
     (: rotation-list (planet-geometry -> (Listof Real)))
     (define/public (rotation-list planet)
       (list))

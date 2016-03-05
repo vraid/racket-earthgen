@@ -23,7 +23,8 @@
                    mouse-down-position
                    viewport-width
                    viewport-height
-                   scale)
+                   scale
+                   on-update)
     (field [mouse-down-latitude : Flonum 0.0]
            [mouse-down-longitude : Flonum 0.0])
     (init-field [latitude : Flonum 0.0]
@@ -62,12 +63,6 @@
             #f
             (quaternion-vector-product (rotation planet)
                                        (orthographic->spherical mx my)))))
-    (: wheel-down (-> Void))
-    (define/public (wheel-down)
-      (scale-by (/ 1 1.05)))
-    (: wheel-up (-> Void))
-    (define/public (wheel-up)
-      (scale-by 1.05))
     (define/override (mouse-down position)
       (set! mouse-down-position position)
       (set! mouse-down-latitude latitude)

@@ -6,9 +6,9 @@
          "map-modes.rkt"
          "planet/planet-generation.rkt")
 
-(define (key-input canvas planet-handler update/repaint generate-terrain! color-planet! color-mode key-code)
-  (define (zoom-out) (send canvas zoom-out))
-  (define (zoom-in) (send canvas zoom-in))
+(define (key-input control planet-handler update/repaint generate-terrain! color-planet! color-mode key-code)
+  (define (zoom-out) (send control scale-by (/ 1.0 1.05)))
+  (define (zoom-in) (send control scale-by 1.05))
   (match key-code
     ['escape (exit)]
     [#\q (generate-terrain!)]
