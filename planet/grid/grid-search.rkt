@@ -21,7 +21,7 @@
         start
         (grid-step-to-closest grid v closest))))
 
-(: grid-closest-tile (grid FlVector -> Integer))
+(: grid-closest-tile (grid (Option FlVector) -> (Option Integer)))
 (define (grid-closest-tile grid v)
-  (let ([closest-pentagon (grid-closest-tile-of grid v (range 12))])
-    (grid-step-to-closest grid v closest-pentagon)))
+  (and v (let ([closest-pentagon (grid-closest-tile-of grid v (range 12))])
+           (grid-step-to-closest grid v closest-pentagon))))
