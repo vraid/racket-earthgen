@@ -9,11 +9,11 @@
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
-         "gui/edit-panel.rkt"
          "map-mode.rkt"
          "map-modes.rkt"
          "gui/map-mode-panel.rkt"
-         "tile-data-panel.rkt"
+         "gui/generation-parameters-panel.rkt"
+         "gui/tile-data-panel.rkt"
          "interface/fixed-axis-control.rkt"
          "interface/grid-handler.rkt"
          "interface/planet-handler.rkt"
@@ -34,10 +34,12 @@
   (send status-message set-label str))
 
 (define (on-planet-change planet)
-  (send map-mode-panel enable-modes planet))
+  (send map-mode-panel enable-modes planet)
+  (recolor/repaint)
+  (send global-panel update/planet planet)
+  (send tile-panel update/planet planet))
 
 (define planet-handler (new planet-handler%
-                            [max-elements 24]
                             [set-status set-status-message!]
                             [on-change on-planet-change]))
 
@@ -50,27 +52,24 @@
 (define (generate-terrain size axis)
   (let ([grids (send grid-handler get-grids size)])
     (send planet-handler
-          terrain/scratch
-          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis))))))
-
-(define (update/repaint mode)
-  (set-color-mode mode)
-  (send canvas with-gl-context (thunk (send planet-renderer update/planet (map-mode-function color-mode))))
-  (repaint!))
-
-(define (generate-terrain/repaint size axis)
-  (generate-terrain size axis)
-  (update/repaint topography-map-mode))
+          generate
+          "generating terrain"
+          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis)))
+          (thunk* (set-color-mode topography-map-mode)))))
 
 (define (set-color-mode mode)
-  (send map-mode-panel select-mode mode) 
   (set! color-mode mode))
 
-(define (color-planet! mode)
+(define (set-color-mode/repaint mode)
   (when ((map-mode-condition mode) (current-planet))
     (set-color-mode mode)
+    (recolor/repaint)))
+
+(define (recolor/repaint)
+  (when ((map-mode-condition color-mode) (current-planet))
+    (send map-mode-panel select-mode color-mode) 
     (send canvas with-gl-context
-          (thunk (send planet-renderer set-tile-colors (map-mode-function color-mode))))
+          (thunk (send planet-renderer update/planet (map-mode-function color-mode))))
     (repaint!)))
 
 (define-values
@@ -118,7 +117,7 @@
        [parent left-panel]
        [min-height 60]
        [stretchable-height #f]
-       [on-select color-planet!]
+       [on-select set-color-mode/repaint]
        [modes (list->vector
                (append
                 terrain-map-modes
@@ -137,29 +136,18 @@
        [auto-resize #t]))
 
 (define global-panel
-  (let* ([panel (new vertical-panel%
-                     [parent no-frame]
-                     [stretchable-height #f])]
-         [p (edit-panel panel 30 100)]
-         [size-edit (p "grid size")])
-    (send size-edit
-          link
-          (thunk (number->string (grid-subdivision-level (current-planet))))
-          (lambda (size)
-            (let ([size (string->number size)])
-              (when (and (integer? size)
-                         (<= 0 size))
-                (thread
-                 (thunk
-                  (generate-terrain/repaint size default-axis)))))))
-    panel))
+  (new generation-parameters-panel%
+       [parent no-frame]
+       [stretchable-height #f]
+       [current-planet current-planet]))
 
 (define tile-panel
-  (new vertical-panel%
-       [parent no-frame]
-       [stretchable-height #f]))
-
-(define update-tile-panel (tile-data-panel tile-panel))
+  (let ([p (new tile-data-panel%
+                [parent no-frame]
+                [stretchable-height #f]
+                [current-planet current-planet])])
+    (send p update/planet (current-planet))
+    p))
 
 (struct tab-choice
   (label panel))
@@ -192,11 +180,23 @@
                    (and-let* ([planet (current-planet)]
                               [tile (grid-closest-tile planet (send control get-coordinates planet (point-x position) (point-y position)))])
                              (begin
-                               (update-tile-panel planet tile)
+                               (send tile-panel update/tile tile)
                                (send canvas force-repaint))))]
        [on-drag (lambda (from to)
                   (send control mouse-drag from to)
                   (repaint!))]))
+
+(define (generate-climate)
+  (and-let* ([terrain (send planet-handler current)]
+             [_ (planet-terrain? terrain)])
+            (thread
+             (thunk
+              (let* ([climate-func (thunk ((static-climate (default-climate-parameters) terrain) #f))])
+                (send planet-handler
+                      generate
+                      "generating climate"
+                      climate-func
+                      (thunk* (set-color-mode vegetation-map-mode))))))))
 
 (define canvas
   (new
@@ -226,12 +226,11 @@
         (thunk
          (set-gl-viewport 0 0 width height))))
      (define (generate-terrain!)
-       (thread
-        (thunk
-         (generate-terrain/repaint (grid-subdivision-level (current-planet)) default-axis))))
+       (generate-terrain (grid-subdivision-level (current-planet))
+                         default-axis))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
-       (key-input control planet-handler update/repaint generate-terrain! color-planet! color-mode key-code))
+       (key-input control set-color-mode/repaint recolor/repaint generate-terrain! generate-climate key-code))
      (define/override (on-event event)
        (send mouse-input-handler mouse-event event))
      (super-instantiate () (style '(gl))))
@@ -249,4 +248,4 @@
         (thunk (new planet-renderer%
                     [planet current-planet]))))
 
-(generate-terrain/repaint 5 default-axis)
+(generate-terrain 5 default-axis)

@@ -23,8 +23,6 @@
       (when (planet-climate? (planet))
         (send river-renderer resize-buffer)
         (send river-renderer remake-buffer)))
-    (define/public (set-tile-colors color-function)
-      (send tile-renderer set-tile-colors color-function))
     (define/public (render)
       (gl-clear (list 0.0 0.0 0.0 0.0))
       (send tile-renderer render)

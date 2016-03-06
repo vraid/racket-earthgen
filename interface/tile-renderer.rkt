@@ -31,9 +31,6 @@
                         buffer
                         (curry color-function (planet)))
       ((gl-buffer-bind buffer)))
-    (: set-tile-colors ((grid Integer -> flcolor) -> Void))
-    (define/public (set-tile-colors color-function)
-      (remake-buffer color-function))
     (define/public (render)
       (gl-cull-face 'back)
       ((gl-buffer-draw buffer)))))
