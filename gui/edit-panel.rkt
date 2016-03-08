@@ -8,7 +8,7 @@
          "edit-field.rkt")
 
 (define ((read-only-panel parent height label-width) label value->string get-value)
-  (base-panel parent height label-width label #t value->string (thunk* #f) get-value (thunk* #f)))
+  (base-panel parent height label-width label #t value->string (thunk* #f) get-value #f))
 
 (define ((edit-panel parent height label-width) label value->string string->value get-value on-enter)
   (base-panel parent height label-width label #f value->string string->value get-value on-enter))
@@ -16,6 +16,10 @@
 (define (base-panel parent height label-width label read-only? value->string string->value get-value on-enter)
   (letrec ([panel (new (class horizontal-panel%
                          (super-new)
+                         (define/public (get-string)
+                           (send edit get-value))
+                         (define/public (get-value)
+                           (string->value (get-string)))
                          (define/public (update)
                            (send edit update)))
                        [parent parent]

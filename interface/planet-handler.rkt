@@ -18,6 +18,7 @@
   (class object%
     (super-new)
     (init-field [set-status : (String -> Void) (lambda (s) (void))]
+                [on-start : (-> Any) (thunk #f)]
                 [on-change : (grid -> Void) (lambda (a) (void))])
     (: planet grid)
     (define planet empty-planet-geometry)
@@ -33,6 +34,7 @@
       (unless working?
         (set-status status)
         (set! working? #t)
+        (on-start)
         (let ([p (f)])
           (set! planet p)
           (on-finish p)

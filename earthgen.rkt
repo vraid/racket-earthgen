@@ -36,11 +36,16 @@
 (define (on-planet-change planet)
   (send map-mode-panel enable-modes planet)
   (recolor/repaint)
-  (send global-panel update/planet planet)
+  (send generation-panel update/planet planet)
+  (send generation-panel enable-buttons #t)
   (send tile-panel update/planet planet))
+
+(define (on-generation-start)
+  (send generation-panel enable-buttons #f))
 
 (define planet-handler (new planet-handler%
                             [set-status set-status-message!]
+                            [on-start on-generation-start]
                             [on-change on-planet-change]))
 
 (define (current-planet)
@@ -49,13 +54,31 @@
 (define grid-handler (new-grid-handler))
 (define color-mode topography-map-mode)
 
-(define (generate-terrain size axis)
-  (let ([grids (send grid-handler get-grids size)])
+(define (generate-terrain/current-parameters)
+  (generate-terrain (send generation-panel terrain-parameters)))
+
+(define (generate-terrain parameters)
+  (let* ([size (terrain-generation-parameters-grid-size parameters)]
+         [sea-level (terrain-generation-parameters-sea-level parameters)]
+         [axis (terrain-generation-parameters-axis parameters)]
+         [grids (send grid-handler get-grids size)])
     (send planet-handler
           generate
           "generating terrain"
-          (thunk (planet/sea-level 0.0 ((heightmap->planet (first grids)) ((load-terrain) grids) axis)))
+          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((load-terrain) grids) axis)))
           (thunk* (set-color-mode topography-map-mode)))))
+
+(define (generate-climate)
+  (and-let* ([terrain (send planet-handler current)]
+             [_ (planet-terrain? terrain)])
+            (thread
+             (thunk
+              (let* ([climate-func (thunk ((static-climate (default-climate-parameters) terrain) #f))])
+                (send planet-handler
+                      generate
+                      "generating climate"
+                      climate-func
+                      (thunk* (set-color-mode vegetation-map-mode))))))))
 
 (define (set-color-mode mode)
   (set! color-mode mode))
@@ -135,11 +158,15 @@
        [label "ready"]
        [auto-resize #t]))
 
-(define global-panel
+(define generation-panel
   (new generation-parameters-panel%
        [parent no-frame]
        [stretchable-height #f]
-       [current-planet current-planet]))
+       [current-planet current-planet]
+       [generate-terrain (lambda (b e)
+                           (generate-terrain/current-parameters))]
+       [generate-climate (lambda (b e)
+                           (generate-climate))]))
 
 (define tile-panel
   (let ([p (new tile-data-panel%
@@ -153,7 +180,7 @@
   (label panel))
 
 (define info-panel-tabs
-  (vector (tab-choice "global" global-panel)
+  (vector (tab-choice "global" generation-panel)
           (tab-choice "tile" tile-panel)))
 
 (define (init-info-panel)
@@ -186,18 +213,6 @@
                   (send control mouse-drag from to)
                   (repaint!))]))
 
-(define (generate-climate)
-  (and-let* ([terrain (send planet-handler current)]
-             [_ (planet-terrain? terrain)])
-            (thread
-             (thunk
-              (let* ([climate-func (thunk ((static-climate (default-climate-parameters) terrain) #f))])
-                (send planet-handler
-                      generate
-                      "generating climate"
-                      climate-func
-                      (thunk* (set-color-mode vegetation-map-mode))))))))
-
 (define canvas
   (new
    (class* canvas% ()
@@ -225,12 +240,9 @@
        (with-gl-context
         (thunk
          (set-gl-viewport 0 0 width height))))
-     (define (generate-terrain!)
-       (generate-terrain (grid-subdivision-level (current-planet))
-                         default-axis))
      (define/override (on-char event)
        (define key-code (send event get-key-code))
-       (key-input control set-color-mode/repaint recolor/repaint generate-terrain! generate-climate key-code))
+       (key-input control set-color-mode/repaint recolor/repaint generate-terrain/current-parameters generate-climate key-code))
      (define/override (on-event event)
        (send mouse-input-handler mouse-event event))
      (super-instantiate () (style '(gl))))
@@ -248,4 +260,4 @@
         (thunk (new planet-renderer%
                     [planet current-planet]))))
 
-(generate-terrain 5 default-axis)
+(generate-terrain (terrain-generation-parameters 5 0.0 default-axis))
