@@ -44,3 +44,8 @@
   (syntax-case stx ()
     [(_ (bindings ...) expression)
      #'(if-let* (bindings ...) expression (void))]))
+
+(define-syntax (call-when stx)
+  (syntax-case stx ()
+    [(_ f args ...)
+     #'(if-let ([f f]) (f args ...) #f)]))
