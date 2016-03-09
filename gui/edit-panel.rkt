@@ -4,11 +4,11 @@
          read-only-panel)
 
 (require racket/gui/base
-         "undo-button.rkt"
+         "canvas-button.rkt"
          "edit-field.rkt")
 
 (define ((read-only-panel parent height label-width) label value->string get-value)
-  (base-panel parent height label-width label #t value->string (thunk* #f) get-value #f))
+  (base-panel parent height label-width label #t value->string (lambda (s) #f) get-value #f))
 
 (define ((edit-panel parent height label-width) label value->string string->value get-value on-enter)
   (base-panel parent height label-width label #f value->string string->value get-value on-enter))
@@ -45,5 +45,12 @@
                       [on-change (lambda (v)
                                    (send undo enable-button (not (equal? v (get-value)))))])]
            [undo (let ([height (send edit get-height)])
-                   ((undo-button panel) height height (thunk (send edit update))))])
+                   (new canvas-button%
+                        [label "↺"]
+                        [parent panel]
+                        [min-width height]
+                        [min-height height]
+                        [stretchable-width #f]
+                        [stretchable-height #f]
+                        [on-click (thunk (send edit update))]))])
     panel))
