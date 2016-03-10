@@ -30,6 +30,13 @@
 (define (quaternion-identity)
   (flvector 1.0 0.0 0.0 0.0))
 
+(: quaternion-to-from (flvector3 flvector3 -> quaternion))
+(define (quaternion-to-from u v)
+  (let ([u (flvector3-normal u)]
+        [v (flvector3-normal v)])
+    (axis-angle->quaternion (flvector3-cross-product u v)
+                            (flvector3-angle u v))))
+
 (: fl->vector->quaternion (Flonum flvector3 -> quaternion))
 (define (fl->vector->quaternion f v)
   (list->flvector 
@@ -45,7 +52,7 @@
 (define (axis-angle->quaternion v a)
   (fl->vector->quaternion 
    (flcos (fl* 0.5 a))
-   (flvector3-scale (flsin (fl* 0.5 a)) v)))
+   (flvector3-scale (flsin (fl* 0.5 a)) (flvector3-normal v))))
 
 (: quaternion-conjugate (quaternion -> quaternion))
 (define (quaternion-conjugate q)
@@ -99,8 +106,9 @@
 
 (: quaternion-product (quaternion * -> quaternion))
 (define (quaternion-product . quats)
-  (foldl quaternion-single-product
-         (quaternion-identity) quats))
+  (quaternion-normal
+   (foldl quaternion-single-product
+          (quaternion-identity) quats)))
 
 (: quaternion-vector-product (quaternion flvector3 -> flvector3))
 (define (quaternion-vector-product q v)
