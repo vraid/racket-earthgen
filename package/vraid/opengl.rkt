@@ -93,9 +93,12 @@
     (glBufferData GL_ELEMENT_ARRAY_BUFFER (* uint-size (cvector-length indices)) (cvector-ptr indices) GL_DYNAMIC_DRAW)
     (glBindBuffer GL_ELEMENT_ARRAY_BUFFER 0)))
 
+(define (gl-load-identity)
+  (glLoadIdentity))
+
 (define (set-gl-ortho-projection left right bottom top near far)
   (glMatrixMode GL_PROJECTION)
-  (glLoadIdentity)
+  (gl-load-identity)
   (glOrtho left right bottom top near far))
 
 (define (set-gl-viewport left top width height)
