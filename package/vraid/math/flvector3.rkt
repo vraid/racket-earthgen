@@ -31,12 +31,12 @@
    (flvector3-length-squared v)))
 
 (: flvector3-distance-squared (flvector3 flvector3 -> Flonum))
-(define (flvector3-distance-squared v u)
-  (flvector3-length-squared (flvector3-subtract v u)))
+(define (flvector3-distance-squared u v)
+  (flvector3-length-squared (flvector3-subtract u v)))
 
 (: flvector3-distance (flvector3 flvector3 -> Flonum))
-(define (flvector3-distance v u)
-  (flvector3-length (flvector3-subtract v u)))
+(define (flvector3-distance u v)
+  (flvector3-length (flvector3-subtract u v)))
 
 (: flvector3-scale (Flonum flvector3 -> flvector3))
 (define (flvector3-scale a v)
@@ -71,16 +71,16 @@
          (flvector 1.0 1.0 1.0) vecs))
 
 (: flvector3-dot-product (flvector3 flvector3 -> Flonum))
-(define (flvector3-dot-product v u)
+(define (flvector3-dot-product u v)
   (flvector-sum
-   (flvector-map mult v u)))
+   (flvector-map mult u v)))
 
 (: flvector3-cross-product (flvector3 flvector3 -> flvector3))
-(define (flvector3-cross-product v u)
+(define (flvector3-cross-product u v)
   (let* ([m (vector 1 2 0)]
          [n (vector 2 0 1)])
-    (flvector3-subtract (col v m u n)
-                        (col v n u m))))
+    (flvector3-subtract (col u n v m)
+                        (col u m v n))))
 
 (: flvector3-angle (flvector3 flvector3 -> Flonum))
 (define (flvector3-angle a b)
