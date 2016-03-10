@@ -87,7 +87,7 @@
     (planet-terrain/kw
      #:planet-geometry (planet-geometry/kw
                         #:grid grid
-                        #:axis axis
+                        #:axis (flvector3-normal axis)
                         #:radius radius
                         #:tile (tile-geometry-data
                                 (build-flvector-ref (tile-count grid)
