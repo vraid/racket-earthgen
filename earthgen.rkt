@@ -205,8 +205,10 @@
                   (send control mouse-down position))]
        [on-click (lambda (position)
                    (and-let* ([planet (current-planet)]
-                              [tile (grid-closest-tile planet (send control get-coordinates planet (point-x position) (point-y position)))])
+                              [coordinates (send control get-coordinates planet (point-x position) (point-y position))]
+                              [tile (grid-closest-tile planet coordinates)])
                              (begin
+                               (send generation-panel select-axis coordinates)
                                (send tile-panel update/tile tile)
                                (send canvas force-repaint))))]
        [on-drag (lambda (from to)

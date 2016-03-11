@@ -16,10 +16,10 @@
 (define (base-panel parent height label-width label read-only? value->string string->value get-value on-enter)
   (letrec ([panel (new (class horizontal-panel%
                          (super-new)
-                         (define/public (get-string)
-                           (send edit get-value))
                          (define/public (get-value)
-                           (string->value (get-string)))
+                           (send edit current-value))
+                         (define/public (update/value v)
+                           (send edit update/value v))
                          (define/public (update)
                            (send edit update)))
                        [parent parent]
@@ -43,7 +43,7 @@
                       [string->value string->value]
                       [on-enter on-enter]
                       [on-change (lambda (v)
-                                   (send undo enable-button (not (equal? v (get-value)))))])]
+                                   (send undo show (not (equal? v (get-value)))))])]
            [undo (let ([height (send edit get-height)])
                    (new canvas-button%
                         [label "↺"]
@@ -53,4 +53,5 @@
                         [stretchable-width #f]
                         [stretchable-height #f]
                         [on-click (thunk (send edit update))]))])
+    (send undo show #f)
     panel))

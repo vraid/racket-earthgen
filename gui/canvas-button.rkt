@@ -22,15 +22,10 @@
              get-dc
              set-canvas-background)
     (set-canvas-background default-color)
-    (define/public (enable-button enable?)
-      (enable enable?)
-      (show enable?)
-      (unless enable? (set-canvas-background default-color))
-      (refresh-now))
     (define/override (on-event event)
       (case (send event get-event-type)
         [(leave) (set-canvas-background default-color)]
-        [(left-down) (call-when on-click)]
+        [(left-down) (and-call on-click)]
         [(enter left-up) (set-canvas-background hover-color)]
         [else (void)])
       (refresh-now))
