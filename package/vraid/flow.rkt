@@ -45,7 +45,8 @@
     [(_ (bindings ...) expression)
      #'(if-let* (bindings ...) expression (void))]))
 
-(define-syntax (call-when stx)
+(define-syntax (and-call stx)
   (syntax-case stx ()
     [(_ f args ...)
-     #'(if-let ([f f]) (f args ...) #f)]))
+     ; let is used in case f is a mutable variable
+     #'(let ([f f]) (and f (f args ...)))]))
