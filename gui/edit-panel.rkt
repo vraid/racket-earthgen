@@ -53,5 +53,4 @@
                         [stretchable-width #f]
                         [stretchable-height #f]
                         [on-click (thunk (send edit update))]))])
-    (send undo show #f)
     panel))

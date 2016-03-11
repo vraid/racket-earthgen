@@ -49,7 +49,9 @@
                                          [label "generate climate"]
                                          [callback generate-climate]))
     (define controls (list grid-size-edit
-                           sea-level-edit))
+                           sea-level-edit
+                           axis-edit
+                           selected-axis-edit))
     (define/public (select-axis v)
       (set! selected-axis v)
       (send selected-axis-edit update)
