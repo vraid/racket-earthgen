@@ -31,7 +31,7 @@
       (let ([a (quaternion->axis-angle (rotation planet))])
         (cons (radians->degrees (axis-angle-angle a))
               (flvector->list (axis-angle-axis a)))))
-    (: rotation (planet-geometry -> FlVector))
+    (: rotation (planet-geometry -> quaternion))
     (define rotation
       (lambda ([planet : planet-geometry])
         (let ([q axis-angle->quaternion])
