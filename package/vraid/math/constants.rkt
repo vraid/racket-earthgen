@@ -2,7 +2,5 @@
 
 (provide (all-defined-out))
 
-(require racket/flonum)
-
-(: tau Flonum)
+(: tau Float)
 (define tau (* 2.0 pi))
