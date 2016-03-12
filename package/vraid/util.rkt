@@ -1,8 +1,6 @@
 #lang racket
 
-(require "util/vector-util.rkt"
-         "util/flvector-util.rkt")
+(require "util/vector-util.rkt")
 
 (provide (all-from-out
-          "util/vector-util.rkt"
-          "util/flvector-util.rkt"))
+          "util/vector-util.rkt"))
