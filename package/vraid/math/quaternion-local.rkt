@@ -5,14 +5,12 @@
 (require "flvector3.rkt"
          math/flonum)
 
-(define-type quaternion FlVector)
-
 (define el 
   flvector-ref)
 
-(: remap-to-vector (quaternion (Vectorof Integer) -> flvector3))
+(: remap-to-vector (FlVector (Vectorof Integer) -> FlVector))
 (define (remap-to-vector q m)
-  (let ([elm (lambda: ([q : quaternion]
+  (let ([elm (lambda: ([q : FlVector]
                        [m : (Vectorof Integer)]
                        [i : Integer])
                (el q (vector-ref m i)))])
@@ -20,7 +18,7 @@
               (elm q m 1) 
               (elm q m 2))))
 
-(: col (quaternion (Vectorof Integer) quaternion (Vectorof Integer) -> flvector3))
+(: col (FlVector (Vectorof Integer) FlVector (Vectorof Integer) -> FlVector))
 (define (col q m r n)
   (flvector3-map-mult (remap-to-vector q m) 
                       (remap-to-vector r n)))

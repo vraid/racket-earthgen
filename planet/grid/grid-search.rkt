@@ -6,7 +6,7 @@
          "grid-structs.rkt"
          "grid-functions.rkt")
 
-(: grid-tile-distance (grid FlVector -> (Integer -> Flonum)))
+(: grid-tile-distance (grid FlVector -> (Integer -> Float)))
 (define ((grid-tile-distance grid v) n)
   (flvector3-distance-squared v (tile-coordinates grid n)))
 

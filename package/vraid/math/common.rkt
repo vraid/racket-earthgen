@@ -2,10 +2,9 @@
 
 (provide (all-defined-out))
 
-(require "constants.rkt"
-         "../types.rkt")
+(require "constants.rkt")
 
-(: negative (case-> (Flonum -> Flonum)
+(: negative (case-> (Float -> Float)
                     (Integer -> Integer)
                     (Number -> Number)))
 (define (negative a)
@@ -15,7 +14,7 @@
 (define (nonzero? a)
   (not (zero? a)))
 
-(: relative-difference (Flonum Flonum -> Flonum))
+(: relative-difference (Float Float -> Float))
 (define (relative-difference a b)
   (cond
     [(= a b) 0.0]
@@ -25,14 +24,14 @@
                         (/ a b)
                         (/ b a)))]))
 
-(: divide (case-> (Flonum Flonum -> Flonum)
+(: divide (case-> (Float Float -> Float)
                   (Number Zero -> Zero)
                   (Integer Integer -> Exact-Rational)
                   (Number Number -> Number)))
 (define (divide a b)
   (/ b a))
 
-(: subtract (case-> (Flonum Flonum -> Flonum)
+(: subtract (case-> (Float Float -> Float)
                     (Integer Integer -> Integer)
                     (Number Number -> Number)))
 (define (subtract a b)
@@ -42,7 +41,7 @@
 
 (define product *)
 
-(define-type maybe-minmax ((maybe Real) -> (Real -> Real)))
+(define-type maybe-minmax ((Option Real) -> (Real -> Real)))
 (: maybe-max maybe-minmax)
 (define ((maybe-max low) num)
   (if low
@@ -55,12 +54,12 @@
       (min high num)
       num))
 
-(: within-interval ((maybe Real) (maybe Real) -> (Real -> Real)))
+(: within-interval ((Option Real) (Option Real) -> (Real -> Real)))
 (define ((within-interval low high) num)
   ((maybe-min high)
    ((maybe-max low) num)))
 
-(: ratio-within (Flonum Flonum -> (Flonum -> Flonum)))
+(: ratio-within (Float Float -> (Float -> Float)))
 (define ((ratio-within low high) num)
   (define closest ((within-interval low high) num))
   (/ (- closest low)
@@ -70,7 +69,7 @@
 (define ((index-within-range? low high) i)
   (and (>= i low) (< i high)))
 
-(: angle-distance (Flonum Flonum -> Flonum))
+(: angle-distance (Float Float -> Float))
 (define (angle-distance a b)
   (abs
    (- (abs (- a b))

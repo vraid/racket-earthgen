@@ -5,24 +5,20 @@
          sorted-tree-take-first!
          sorted-tree-add!)
 
-(require vraid/types
-         vraid/flow)
-
-(define-type (maybe-tree a)
-  (U False (tree a)))
+(require vraid/flow)
 
 (define-type (sortf a)
   (a a -> Boolean))
 
 (struct: (a) tree
   ([value : a]
-   [left : (maybe-tree a)]
-   [right : (maybe-tree a)])
+   [left : (Option (tree a))]
+   [right : (Option (tree a))])
   #:mutable)
 
 (struct: (a) sorted-tree
   ([sort : (sortf a)]
-   [tree : (maybe-tree a)])
+   [tree : (Option (tree a))])
   #:mutable)
 
 (: traverse-right (All (a) ((tree a) -> (tree a))))
@@ -63,7 +59,7 @@
       (set-sorted-tree-tree! tree (tree-right t)))
     (void)))
 
-(: sorted-tree-take-first! (All (a) ((sorted-tree a) -> (maybe a))))
+(: sorted-tree-take-first! (All (a) ((sorted-tree a) -> (Option a))))
 (define (sorted-tree-take-first! tree)
   (and-let ([t (sorted-tree-tree tree)])
     (let ([value (tree-value t)])
@@ -75,7 +71,7 @@
 (define (make-sorted-tree sort)
   (sorted-tree sort #f))
 
-(: sorted-tree-first (All (a) ((sorted-tree a) -> (maybe a))))
+(: sorted-tree-first (All (a) ((sorted-tree a) -> (Option a))))
 (define (sorted-tree-first tree)
   (and-let ([t (sorted-tree-tree tree)])
     (tree-value t)))

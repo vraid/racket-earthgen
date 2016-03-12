@@ -7,37 +7,33 @@
          default-wind)
 
 (require math/flonum
-         vraid/types
-         vraid/flow
-         vraid/math
          vraid/typed-array
          "../grid.rkt"
          "../geometry.rkt"
-         "../terrain.rkt"
          "../water.rkt"
          "../climate.rkt"
          "../terrain-generation/planet-create.rkt"
          "climate-create-base.rkt"
          "../terrain-generation/river-generation.rkt")
 
-(: static-climate (climate-parameters planet-water -> ((maybe planet-climate) -> planet-climate)))
+(: static-climate (climate-parameters planet-water -> ((Option planet-climate) -> planet-climate)))
 (define (static-climate param planet)
   (let* ([planet/rivers (planet/rivers planet)]
          [season-count (climate-parameters-seasons-per-cycle param)]
          [initial ((climate/closed-season param planet/rivers) 0)]
          [v (build-vector season-count
-                          (lambda ([n : integer])
+                          (lambda ([n : Integer])
                             (delay (let ([p ((climate/closed-season param planet/rivers) n)])
                                      (generate-climate! param initial p)
                                      p))))])
-    (lambda ([planet : (maybe planet-climate)])
+    (lambda ([planet : (Option planet-climate)])
       (let ([season (if planet
                         (modulo (+ 1 (planet-climate-season planet))
                                 season-count)
                         0)])
         (force (vector-ref v season))))))
 
-(: climate/closed-season (climate-parameters planet-water -> (integer -> planet-climate)))
+(: climate/closed-season (climate-parameters planet-water -> (Integer -> planet-climate)))
 (define ((climate/closed-season par planet) season)
   (let ([p (planet-climate/kw
             #:planet-water planet
@@ -48,7 +44,7 @@
             #:edge (make-edge-climate-data (edge-count planet)))])
     (let ([init-tile-array (tile-init p)])
       (init-tile-array (tile-climate-data-sunlight-set! (planet-climate-tile p))
-                       (lambda ([n : integer])
+                       (lambda ([n : Integer])
                          (sunlight
                           (planet-solar-equator p)
                           (tile-latitude p n))))
@@ -75,7 +71,7 @@
 (: generate-climate! (climate-parameters planet-climate planet-climate -> Void))
 (define (generate-climate! par prev p)
   (let* ([tile-water? (let ([v (build-vector (tile-count p)
-                                             (lambda ([n : integer])
+                                             (lambda ([n : Integer])
                                                (tile-water? p n)))])
                         (lambda ([p : planet-climate]
                                  [n : Integer])
@@ -84,48 +80,48 @@
                               [n : Integer])
                        (not (tile-water? p n)))]
          [edge-lengths (build-flvector (edge-count p) (curry edge-length p))]
-         [edge-length (lambda ([n : integer])
+         [edge-length (lambda ([n : Integer])
                         (flvector-ref edge-lengths n))]
          [edge-tile-distances (build-flvector (edge-count p) (curry edge-tile-distance p))]
          [tile-tile-distance (lambda ([p : planet-climate]
-                                      [n : integer]
-                                      [i : integer])
+                                      [n : Integer]
+                                      [i : Integer])
                                (flvector-ref edge-tile-distances (tile-edge p n i)))])
     (define (climate-iterate!)
       (let* ([edge-wind (let ([winds (build-vector
                                       (edge-count p)
-                                      (lambda ([n : integer])
+                                      (lambda ([n : Integer])
                                         (let ([scale (* ((edge-climate-data-air-flow (planet-climate-edge p)) n)
                                                         (edge-length n))])
                                           (wind
                                            (edge-tile p n (if (> 0.0 scale) 0 1))
                                            (abs scale)))))])
-                          (lambda ([n : integer])
+                          (lambda ([n : Integer])
                             (vector-ref winds n)))]
-             [wind-list/filter (lambda ([f : (integer integer -> Boolean)])
+             [wind-list/filter (lambda ([f : (Integer Integer -> Boolean)])
                                  (let ([v (build-vector
                                            (tile-count p)
-                                           (lambda ([n : integer])
+                                           (lambda ([n : Integer])
                                              (map edge-wind
                                                   (filter (curry f n)
                                                           (grid-tile-edge-list p n)))))])
-                                   (lambda ([n : integer])
+                                   (lambda ([n : Integer])
                                      (vector-ref v n))))]
-             [incoming-winds (wind-list/filter (lambda ([n : integer]
-                                                        [e : integer])
+             [incoming-winds (wind-list/filter (lambda ([n : Integer]
+                                                        [e : Integer])
                                                  (not (= n (wind-origin (edge-wind e))))))]
-             [outgoing-winds (wind-list/filter (lambda ([n : integer]
-                                                        [e : integer])
+             [outgoing-winds (wind-list/filter (lambda ([n : Integer]
+                                                        [e : Integer])
                                                  (= n (wind-origin (edge-wind e)))))]
              [total-wind (lambda ([ls : (Listof wind)])
                            (foldl + 0.0 (map wind-scale ls)))]
-             [total-incoming-wind (lambda ([n : integer])
+             [total-incoming-wind (lambda ([n : Integer])
                                     (total-wind (incoming-winds n)))]
-             [total-outgoing-wind (lambda ([n : integer])
+             [total-outgoing-wind (lambda ([n : Integer])
                                     (total-wind (outgoing-winds n)))]
-             [absolute-incoming-humidity (lambda ([tile-humidity : (integer -> flonum)]
-                                                  [n : integer])
-                                           (for/fold: ([humidity : Flonum 0.0])
+             [absolute-incoming-humidity (lambda ([tile-humidity : (Integer -> Float)]
+                                                  [n : Integer])
+                                           (for/fold: ([humidity : Float 0.0])
                                                       ([w (incoming-winds n)])
                                              (+ humidity
                                                 (* (tile-humidity (wind-origin w))
@@ -134,10 +130,10 @@
         (define (iterate! to from delta)
           (if (< delta (climate-parameters-acceptable-delta par))
               from
-              (let* ([set-tile-humidity! (lambda ([n : integer]
-                                                  [a : Flonum])
+              (let* ([set-tile-humidity! (lambda ([n : Integer]
+                                                  [a : Float])
                                            (flvector-set! (climate-data-tile-humidity to) n a))]
-                     [tile-humidity (lambda ([n : integer])
+                     [tile-humidity (lambda ([n : Integer])
                                       (flvector-ref (climate-data-tile-humidity from) n))])
                 (for ([n (tile-count p)])
                   (set-tile-humidity! n (let ([saturation-humidity (saturation-humidity (tile-temperature p n))])
@@ -194,7 +190,7 @@
          [init-tile-array (init-array (tile-count p))]
          [tile (planet-climate-tile p)])
     (init-tile-array (tile-climate-data-sunlight-set! tile)
-                     (lambda ([n : integer])
+                     (lambda ([n : Integer])
                        (sunlight
                         (planet-solar-equator p)
                         (tile-latitude p n))))

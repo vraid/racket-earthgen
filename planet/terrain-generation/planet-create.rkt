@@ -3,8 +3,7 @@
 
 (provide (all-defined-out))
 
-(require vraid/types
-         vraid/math
+(require vraid/math
          vraid/typed-array
          vraid/util
          "../grid.rkt"
@@ -26,20 +25,20 @@
   (lambda ([grid : grid])
     (init-array (edge-count grid))))
 
-(: planet/sea-level (flonum planet-terrain -> planet-water))
+(: planet/sea-level (Float planet-terrain -> planet-water))
 (define (planet/sea-level sea-level p)
-  (let* ([void-fl-set! (lambda ([n : integer]
-                                [v : flonum])
+  (let* ([void-fl-set! (lambda ([n : Integer]
+                                [v : Float])
                          (void))]
-         [void-int-set! (lambda ([n : integer]
-                                 [v : integer])
+         [void-int-set! (lambda ([n : Integer]
+                                 [v : Integer])
                           (void))])
     (planet-water/kw
      #:planet-terrain p
      #:sea-level sea-level
-     #:tile (tile-water-data (lambda ([n : integer]) sea-level)
+     #:tile (tile-water-data (lambda ([n : Integer]) sea-level)
                              void-fl-set!)
-     #:corner (corner-water-data (lambda ([n : integer]) -1)
+     #:corner (corner-water-data (lambda ([n : Integer]) -1)
                                  void-int-set!)
      #:rivers '())))
 
@@ -58,23 +57,23 @@
 
 (: heightmap->planet (grid -> (heightmap FlVector -> planet-terrain)))
 (define (heightmap->planet grid)
-  (define empty-hash (lambda ([n : integer])
+  (define empty-hash (lambda ([n : Integer])
                        (lambda ([key :  Symbol])
                          #f)))
   (lambda ([h : heightmap]
            [axis : FlVector])
     (define sea-level 0.0)
     (define radius 6371000.0)
-    (define zero (lambda ([n : integer]) 0.0))
-    (define void-set (lambda ([n : integer]
-                              [f : Flonum])
+    (define zero (lambda ([n : Integer]) 0.0))
+    (define void-set (lambda ([n : Integer]
+                              [f : Float])
                        (void)))
     (define tile (let ([v (flvector-copy (heightmap-tiles h))])
                    (tile-terrain-data
-                    (lambda ([n : integer])
+                    (lambda ([n : Integer])
                       (flvector-ref v n))
-                    (lambda ([n : integer]
-                             [value : flonum])
+                    (lambda ([n : Integer]
+                             [value : Float])
                       (flvector-set! v n value)))))
     
     (define corner (let* ([corner-count (corner-count grid)]
@@ -91,7 +90,7 @@
                         #:radius radius
                         #:tile (tile-geometry-data
                                 (build-flvector-ref (tile-count grid)
-                                                    (lambda ([n : integer])
+                                                    (lambda ([n : Integer])
                                                       (n-gon-area radius grid n)))))
      #:tile tile
      #:corner corner)))

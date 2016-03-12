@@ -4,10 +4,10 @@
 
 (require/typed/provide "terrain-data.rkt"
                        [#:struct tile-terrain-data
-                                 ([elevation : flonum-get]
-                                  [elevation-set! : flonum-set!])]
+                                 ([elevation : float-get]
+                                  [elevation-set! : float-set!])]
                        [#:struct corner-terrain-data
-                                 ([elevation : flonum-get]
-                                  [elevation-set! : flonum-set!])]
+                                 ([elevation : float-get]
+                                  [elevation-set! : float-set!])]
                        [make-tile-terrain-data (Integer -> tile-terrain-data)]
                        [make-corner-terrain-data (Integer -> corner-terrain-data)])

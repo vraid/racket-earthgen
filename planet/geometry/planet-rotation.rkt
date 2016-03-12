@@ -7,15 +7,15 @@
          vraid/math
          math/flonum)
 
-(: planet-angular-velocity (planet-geometry -> Flonum))
+(: planet-angular-velocity (planet-geometry -> Float))
 (define (planet-angular-velocity p)
   (/ tau (planet-rotation-period p)))
 
-(: planet-equatorial-speed (planet-geometry -> Flonum))
+(: planet-equatorial-speed (planet-geometry -> Float))
 (define (planet-equatorial-speed p)
   (* (planet-radius p)
      (planet-angular-velocity p)))
 
-(: planet-rotation-period (planet-geometry -> Flonum))
+(: planet-rotation-period (planet-geometry -> Float))
 (define (planet-rotation-period p)
   (fl seconds-per-day))

@@ -3,17 +3,15 @@
 (provide fixed-axis-control%)
 
 (require typed/racket/class
-         typed/racket/gui
          vraid/math
-         vraid/types
          math/flonum
          "control.rkt"
          "../point.rkt"
-         "../planet/planet.rkt"
+         "../planet/geometry.rkt"
          "../planet/math/projection.rkt")
 
 (require/typed vraid/opengl
-               [set-gl-ortho-projection (Flonum Flonum Flonum Flonum Flonum Flonum -> Void)])
+               [set-gl-ortho-projection (Float Float Float Float Float Float -> Void)])
 
 (define fixed-axis-control%
   (class planet-control%
@@ -25,10 +23,10 @@
                    viewport-height
                    scale
                    on-update)
-    (field [mouse-down-latitude : Flonum 0.0]
-           [mouse-down-longitude : Flonum 0.0])
-    (init-field [latitude : Flonum 0.0]
-                [longitude : Flonum 0.0])
+    (field [mouse-down-latitude : Float 0.0]
+           [mouse-down-longitude : Float 0.0])
+    (init-field [latitude : Float 0.0]
+                [longitude : Float 0.0])
     (define/override (rotation-list planet)
       (let ([a (quaternion->axis-angle (rotation planet))])
         (cons (radians->degrees (axis-angle-angle a))
@@ -51,7 +49,7 @@
       (let ([mx (fl* (fl/ 1.0 scale) (exact->inexact (/ viewport-width viewport-height)))]
             [my (fl/ 1.0 scale)])
         (set-gl-ortho-projection (- mx) mx (- my) my -2.0 2.0)))
-    (: get-coordinates (planet-geometry Integer Integer -> (maybe FlVector)))
+    (: get-coordinates (planet-geometry Integer Integer -> (Option FlVector)))
     (define/public (get-coordinates planet x y)
       (let ([mx (* 2.0
                    (exact->inexact (/ viewport-width viewport-height))

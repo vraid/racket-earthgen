@@ -1,18 +1,13 @@
 #lang typed/racket
 
-(require "../grid/grid-list.rkt"
+(provide (all-defined-out))
+
+(require "../grid.rkt"
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
          math/flonum)
 
-(provide heightmap-map
-         heightmap-map*
-         heightmap-lower
-         heightmap-raise
-         heightmap-add
-         heightmap-combine)
-
-(: heightmap-map ((Flonum -> Flonum) heightmap-function -> heightmap-function))
+(: heightmap-map ((Float -> Float) heightmap-function -> heightmap-function))
 (define (heightmap-map f h)
   (lambda: ([grids : grid-list])
     (let ([hmap (h grids)])
@@ -20,7 +15,7 @@
        (flvector-map f (heightmap-tiles hmap))
        (flvector-map f (heightmap-corners hmap))))))
 
-(: heightmap-map* ((Flonum Flonum Flonum * -> Flonum) heightmap-function heightmap-function heightmap-function * -> heightmap-function))
+(: heightmap-map* ((Float Float Float * -> Float) heightmap-function heightmap-function heightmap-function * -> heightmap-function))
 (define (heightmap-map* f h g . hs)
   (lambda: ([grids : grid-list])
     (let ([hmap (h grids)]
@@ -39,7 +34,7 @@
               (map (lambda: ([h : heightmap])
                      (heightmap-corners h)) hmaps))))))
 
-(: heightmap-raise (Flonum heightmap-function -> heightmap-function))
+(: heightmap-raise (Float heightmap-function -> heightmap-function))
 (define (heightmap-raise n h)
   (lambda: ([grids : grid-list])
     ((heightmap-map
@@ -47,7 +42,7 @@
       h)
      grids)))
 
-(: heightmap-lower (Flonum heightmap-function -> heightmap-function))
+(: heightmap-lower (Float heightmap-function -> heightmap-function))
 (define (heightmap-lower n h)
   (lambda: ([grids : grid-list])
     ((heightmap-raise (- n) h) grids)))

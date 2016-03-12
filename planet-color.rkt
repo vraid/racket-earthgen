@@ -2,8 +2,7 @@
 
 (provide (all-defined-out))
 
-(require vraid/types
-         vraid/color
+(require vraid/color
          "planet/planet.rkt")
 
 (define color-undefined
@@ -14,9 +13,9 @@
 
 (define-type flcolor-list (Listof flcolor))
 
-(: find-color (Flonum (Listof Flonum) flcolor-list -> flcolor))
+(: find-color (Float (Listof Float) flcolor-list -> flcolor))
 (define (find-color tile-value intervals colors)
-  (: rec-find ((Listof Flonum) flcolor-list (U Flonum Boolean) flcolor -> flcolor))
+  (: rec-find ((Listof Float) flcolor-list (U Float Boolean) flcolor -> flcolor))
   (define (rec-find intervals colors last-interval last-color)
     (cond [(empty? intervals) color-undefined]
           [(< tile-value (first intervals))
@@ -37,7 +36,7 @@
                 #f
                 color-undefined)))
 
-(: filter-intervals ((Listof Any) -> (Listof Flonum)))
+(: filter-intervals ((Listof Any) -> (Listof Float)))
 (define (filter-intervals ls)
   (filter flonum? ls))
 
@@ -62,7 +61,7 @@
   (filter-colors
    topography-intervals/colors))
 
-(: color-topography (planet-water integer -> flcolor))
+(: color-topography (planet-water Integer -> flcolor))
 (define (color-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -104,7 +103,7 @@
   (filter-colors
    vegetation-topography-intervals/colors))
 
-(: color-vegetation-topography (planet-climate integer -> flcolor))
+(: color-vegetation-topography (planet-climate Integer -> flcolor))
 (define (color-vegetation-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))
@@ -112,7 +111,7 @@
               vegetation-topography-intervals
               vegetation-topography-colors))
 
-(: color-supported-vegetation (planet-climate integer -> flcolor))
+(: color-supported-vegetation (planet-climate Integer -> flcolor))
 (define (color-supported-vegetation p n)
   (if (< 0.0 (tile-snow p n))
       snow-color
@@ -136,7 +135,7 @@
         50.0 (flcolor3 0.5 0.0 0.0)
         70.0 (flcolor3 0.0 0.0 0.0)))
 
-(: temperature-intervals (Listof Flonum))
+(: temperature-intervals (Listof Float))
 (define temperature-intervals
   (map (curry + freezing-temperature)
        (filter-intervals
@@ -146,7 +145,7 @@
   (filter-colors
    temperature-intervals/colors))
 
-(: color-temperature (planet-climate integer -> flcolor))
+(: color-temperature (planet-climate Integer -> flcolor))
 (define (color-temperature p n)
   (find-color (tile-temperature p n)
               temperature-intervals
@@ -156,7 +155,7 @@
 (define humidity-max (flcolor3 0.0 1.0 0.0))
 (define humidity-water (flcolor3 0.0 0.0 0.5))
 
-(: color-humidity (planet-climate integer -> flcolor))
+(: color-humidity (planet-climate Integer -> flcolor))
 (define (color-humidity p n)
   (if (tile-water? p n)
       humidity-water
@@ -169,7 +168,7 @@
 
 (define 3-meters-per-year (/ 3.0 seconds-per-year))
 
-(: color-precipitation (planet-climate integer -> flcolor))
+(: color-precipitation (planet-climate Integer -> flcolor))
 (define (color-precipitation p n)
   (if (tile-water? p n)
       humidity-water
@@ -183,7 +182,7 @@
 (define aridity-max (flcolor3 1.0 0.0 0.0))
 (define aridity-water humidity-water)
 
-(: color-aridity (planet-climate integer -> flcolor))
+(: color-aridity (planet-climate Integer -> flcolor))
 (define (color-aridity p n)
   (if (tile-water? p n)
       aridity-water
@@ -206,7 +205,7 @@
 (define insolation-max color-red)
 (define insolation-water humidity-water)
 
-(: color-insolation (planet-climate integer -> flcolor))
+(: color-insolation (planet-climate Integer -> flcolor))
 (define (color-insolation p n)
   (if (tile-water? p n)
       insolation-water
@@ -224,7 +223,7 @@
 (define area-min (flcolor3 0.0 0.0 0.0))
 (define area-max (flcolor3 1.0 1.0 1.0))
 
-(: color-area (Flonum -> (planet-geometry integer -> flcolor)))
+(: color-area (Float -> (planet-geometry Integer -> flcolor)))
 (define ((color-area largest-area) p n)
   (flcolor-interpolate area-min
                        area-max

@@ -3,7 +3,8 @@
 (provide planet-handler%)
 
 (require typed/racket/class
-         "../planet/planet.rkt")
+         "../planet/grid.rkt"
+         "../planet/geometry.rkt")
 
 (define empty-planet-geometry
   (planet-geometry/kw

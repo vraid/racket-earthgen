@@ -10,7 +10,7 @@
                 (remap v m)
                 (remap u n)))
 
-(: mult (Flonum Flonum * -> Flonum))
+(: mult (Float Float * -> Float))
 (define (mult a . n)
   (foldl * a n))
 

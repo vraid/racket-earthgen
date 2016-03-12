@@ -3,13 +3,10 @@
 (provide (all-defined-out))
 
 (require typed/racket/class
-         typed/racket/gui
          vraid/math
-         vraid/types
-         vraid/flow
          math/flonum
          "../point.rkt"
-         "../planet/planet.rkt")
+         "../planet/geometry.rkt")
 
 (define planet-control%
   (class object%
@@ -19,9 +16,9 @@
     (init-field [on-update : (-> Void)]
                 [viewport-width : Integer]
                 [viewport-height : Integer]
-                [scale : Flonum]
-                [scale-max : (maybe Flonum) #f]
-                [scale-min : (maybe Flonum) #f])
+                [scale : Float]
+                [scale-max : (Option Float) #f]
+                [scale-min : (Option Float) #f])
     (: mouse-down (point -> Void))
     (define/public (mouse-down position)
       (set! mouse-down-position position))
@@ -33,7 +30,7 @@
       (set! scale (* scale (fl (/ viewport-width width))))
       (set! viewport-width width)
       (set! viewport-height height))
-    (: scale-by (Flonum -> Void))
+    (: scale-by (Float -> Void))
     (define/public (scale-by n)
       (set! scale (fl ((within-interval scale-min scale-max) (* scale n))))
       (on-update))

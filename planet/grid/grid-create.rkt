@@ -1,10 +1,8 @@
 #lang typed/racket
 
-(require racket/fixnum
-         racket/flonum
+(require racket/flonum
          vraid/types
          vraid/typed-array
-         vraid/util
          vraid/math
          "grid-structs.rkt"
          "grid-functions.rkt")
@@ -12,7 +10,7 @@
 (provide n-grid
          subdivided-grid)
 
-(define-type set-grid-index (integer integer integer -> Void))
+(define-type set-grid-index (Integer Integer Integer -> Void))
 
 (struct: mutable-grid
   ([tile-tile-set! : set-grid-index]
@@ -116,7 +114,7 @@
        (edge-set! edge-corner-set!)
        (grid
         subdivision-level
-        (lambda: ([n : integer]) (vector-ref tile-coordinates n))
+        (lambda: ([n : Integer]) (vector-ref tile-coordinates n))
         empty-coordinates
         (tile-get tile-tile)
         (tile-get tile-corner)
@@ -131,10 +129,10 @@
 (define (make-corner-coordinates grid)
   (build-vector
    (grid-corner-count grid)
-   (lambda: ([n : integer])
+   (lambda: ([n : Integer])
      (flvector3-normal
       (apply flvector3-sum
-             (map (lambda: ([i : integer])
+             (map (lambda: ([i : Integer])
                     ((grid-tile-coordinates grid) i))
                   (grid-corner-tile-list grid n)))))))
 
@@ -144,7 +142,7 @@
     (grid
      (grid-subdivision-level g)
      (grid-tile-coordinates g)
-     (lambda: ([n : integer])
+     (lambda: ([n : Integer])
        (vector-ref corners n))
      (grid-tile-tile g)
      (grid-tile-corner g)
@@ -158,9 +156,9 @@
 (: complete-grid (mutable-grid -> grid))
 (define (complete-grid mgrid)
   (let ([grid (mutable-grid-grid mgrid)])
-    (: make-corners! (integer integer integer -> Void))
+    (: make-corners! (Integer Integer Integer -> Void))
     (define (make-corners! tile i corner)
-      (: empty-corner? (integer integer -> Boolean))
+      (: empty-corner? (Integer Integer -> Boolean))
       (define (empty-corner? tile i)
         (= -1 ((grid-tile-corner grid) tile i)))
       (define (make-corner!)
@@ -183,9 +181,9 @@
                     (make-corner!)
                     (make-corners! tile (+ 1 i) (+ 1 corner)))
                   (make-corners! tile (+ 1 i) corner)))))
-    (: make-edges! (integer integer integer -> Void))
+    (: make-edges! (Integer Integer Integer -> Void))
     (define (make-edges! tile i edge)
-      (: empty-edge? (integer integer -> Boolean))
+      (: empty-edge? (Integer Integer -> Boolean))
       (define (empty-edge? tile i)
         (= -1 ((grid-tile-edge grid) tile i)))
       (define tile-edge-set! (mutable-grid-tile-edge-set! mgrid))
@@ -193,11 +191,10 @@
       (define edge-corner-set! (mutable-grid-edge-corner-set! mgrid))
       (define corner-edge-set! (mutable-grid-corner-edge-set! mgrid))
       (define corner-corner-set! (mutable-grid-corner-corner-set! mgrid))
-      (: make-edge! (integer -> Void))
+      (: make-edge! (Integer -> Void))
       (define (make-edge! i)
-        (let* (
-               [tiles (vector tile ((grid-tile-tile grid) tile i))]
-               [corners (build-vector 2 (lambda: ([n : integer])
+        (let* ([tiles (vector tile ((grid-tile-tile grid) tile i))]
+               [corners (build-vector 2 (lambda: ([n : Integer])
                                           ((grid-tile-corner grid) tile (+ i n))))])
           (for ([n 2])
             (let* ([tile (vector-ref tiles n)]
@@ -241,7 +238,7 @@
          [corner-count (grid-corner-count grid)]
          [total (+ tile-count corner-count)])
     (build-vector total
-                  (lambda: ([n : integer])
+                  (lambda: ([n : Integer])
                     (if (< n tile-count)
                         ((grid-tile-coordinates grid) n)
                         ((grid-corner-coordinates grid) (- n tile-count)))))))

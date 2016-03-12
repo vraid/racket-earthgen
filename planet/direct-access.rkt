@@ -18,6 +18,6 @@
        
        #'(begin
            (provide function ...)
-           (: function (id integer -> type)) ...
+           (: function (id Integer -> type)) ...
            (define (function a i)
              ((struct-function (id-alias a)) i)) ...))]))

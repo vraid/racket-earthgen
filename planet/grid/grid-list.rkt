@@ -1,8 +1,6 @@
 #lang typed/racket
 
-(require vraid/types
-         "grid-structs.rkt"
-         "grid-functions.rkt"
+(require "grid-structs.rkt"
          "grid-create.rkt")
 
 (provide grid-list
@@ -10,7 +8,7 @@
 
 (define-type grid-list (Listof grid))
 
-(: n-grid-list (grid-list integer -> grid-list))
+(: n-grid-list (grid-list Integer -> grid-list))
 (define (n-grid-list grids n)
   (cond [(zero? n)
          (list (n-grid 0))]

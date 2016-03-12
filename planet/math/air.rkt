@@ -2,12 +2,9 @@
 
 (provide air-density)
 
-(require vraid/types
-         plot/typed)
-
 (struct: gas
-  ([constant : flonum]
-   [molar-mass : flonum]))
+  ([constant : Float]
+   [molar-mass : Float]))
 
 (define universal-gas-constant 8.314)
 
@@ -17,7 +14,7 @@
 (define water-vapor
   (gas 461.495 0.018016))
 
-(: gas-density (gas -> (flonum flonum -> flonum)))
+(: gas-density (gas -> (Float Float -> Float)))
 (define ((gas-density gas) pressure temperature)
   (/ pressure (* temperature (gas-constant gas))))
 

@@ -2,13 +2,15 @@
 
 (provide river-renderer%)
 
-(require vraid/flow
-         vraid/math
+(require vraid/math
          vraid/typed-gl
          vraid/color
          vraid/util
          math/flonum
-         "../planet/planet.rkt")
+         "../planet/grid.rkt"
+         "../planet/geometry.rkt"
+         "../planet/water.rkt"
+         "../planet/climate.rkt")
 
 (define river-color
   (flcolor3 0.06862745098039216 0.17450980392156862 0.37058823529411766))
@@ -76,17 +78,17 @@
                         (tile-coordinates planet 0)
                         (corner-coordinates planet ((grid-tile-corner planet) 0 0)))
                        2)]
-         [flow->scale (lambda ([flow : Flonum])
+         [flow->scale (lambda ([flow : Float])
                         (min max-scale
                              (fl/ (* 60000.0 (flsqrt (fl/ flow 140000.0)))
                                   (planet-radius planet))))]
          [set-coord (gl-buffer-set-vertex-coord! buffer)])
     (for ([tile (grid-tile-count planet)])
       (let* ([edge-count (tile-edge-count tile)]
-             [scale (lambda ([flow : (Integer -> Flonum)])
-                            (build-flvector-ref edge-count
-                                                (lambda ([n : Integer])
-                                                  (flow->scale (flow n)))))]
+             [scale (lambda ([flow : (Integer -> Float)])
+                      (build-flvector-ref edge-count
+                                          (lambda ([n : Integer])
+                                            (flow->scale (flow n)))))]
              [corner-scale (scale (lambda ([n : Integer])
                                     (corner-river-flow planet (tile-corner planet tile n))))]
              [edge-scale (scale (lambda ([n : Integer])
@@ -116,9 +118,9 @@
                                  (edge-scale edge))
                              0.0)]
                  [tile-coord (tile-coordinates planet tile)]
-                 [scale-coord (lambda ([scale : Flonum]
-                                       [v : flvector3]
-                                       [u : flvector3])
+                 [scale-coord (lambda ([scale : Float]
+                                       [v : FlVector]
+                                       [u : FlVector])
                                 (flvector3-sum v (flvector3-scale-to
                                                   scale
                                                   (flvector3-subtract v u))))]

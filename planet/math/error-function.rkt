@@ -16,7 +16,7 @@
             -0.82215223
             0.17087277))
 
-(: error-function (Flonum -> Flonum))
+(: error-function (Float -> Float))
 (define (error-function x)
   (let* ([t (/ 1.0 (+ 1.0 (* 0.5 (abs x))))]
          [tau (* t (exp (- (flvector-sum

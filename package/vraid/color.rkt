@@ -12,24 +12,24 @@
   #:transparent)
 
 (struct: flcolor
-  ([red : Flonum]
-   [green : Flonum]
-   [blue : Flonum]
-   [alpha : Flonum])
+  ([red : Float]
+   [green : Float]
+   [blue : Float]
+   [alpha : Float])
   #:transparent)
 
-(: flcolor3 (Flonum Flonum Flonum -> flcolor))
+(: flcolor3 (Float Float Float -> flcolor))
 (define (flcolor3 red green blue)
   (flcolor red green blue 1.0))
 
-(: flcolor->list (flcolor -> (Listof Flonum)))
+(: flcolor->list (flcolor -> (Listof Float)))
 (define (flcolor->list color)
   (list (flcolor-red color)
         (flcolor-green color)
         (flcolor-blue color)
         (flcolor-alpha color)))
 
-(: flcolor->byte (Flonum -> Byte))
+(: flcolor->byte (Float -> Byte))
 (define (flcolor->byte c)
   (let ([b (max 0
                 (min 255
@@ -50,9 +50,9 @@
 (define flcolor-interpolate
   (lambda: ([col-one : flcolor]
             [col-two : flcolor]
-            [d : Flonum])
+            [d : Float])
     (let* ([1-d (fl- 1.0 d)]
-           [f (lambda: ([f : (flcolor -> Flonum)])
+           [f (lambda: ([f : (flcolor -> Float)])
                 (fl+ (fl* 1-d (f col-one))
                      (fl* d (f col-two))))])
       (flcolor (f flcolor-red)

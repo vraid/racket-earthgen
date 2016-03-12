@@ -2,8 +2,7 @@
 
 (provide (all-defined-out))
 
-(require vraid/types
-         vraid/flow
+(require vraid/flow
          vraid/math
          vraid/typed-array
          math/flonum
@@ -13,7 +12,7 @@
          "../water.rkt"
          "../climate.rkt")
 
-(: default-temperature (planet-climate integer -> Flonum))
+(: default-temperature (planet-climate Integer -> Float))
 (define (default-temperature p n)
   (-
    (+ 220.0
@@ -24,7 +23,7 @@
    (max 0.0
         (temperature-lapse (tile-elevation p n)))))
 
-(: default-snow-cover (planet-climate integer -> Flonum))
+(: default-snow-cover (planet-climate Integer -> Float))
 (define (default-snow-cover p n)
   (let ([temperature (tile-temperature p n)])
     (if (tile-water? p n)
@@ -33,7 +32,7 @@
             1.0
             0.0))))
 
-(: default-pressure-gradient-force (Flonum Flonum -> flvector3))
+(: default-pressure-gradient-force (Float Float -> FlVector))
 (define (default-pressure-gradient-force tropical-equator latitude)
   (let* ([c (fl/ (fl* 3.0 pi)
                  (fl+ (fl/ pi 2.0) (if (> tropical-equator latitude)
@@ -49,7 +48,7 @@
                                      1.0))])
     (flvector 0.0 0.0 pressure-derivate)))
 
-(: default-wind (Flonum planet-climate integer -> flvector3))
+(: default-wind (Float planet-climate Integer -> FlVector))
 (define (default-wind tropical-equator p n)
   (prevailing-wind p
                    (tile-coordinates p n)
@@ -57,25 +56,25 @@
                    (tile-surface-friction p n)))
 
 (struct: wind
-  ([origin : integer]
-   [scale : flonum]))
+  ([origin : Integer]
+   [scale : Float]))
 
 (: set-wind! (planet-climate -> Void))
 (define (set-wind! p)
   (let* ([tropical-equator (* 0.5 (planet-solar-equator p))]
          [edge-wind (make-flvector (edge-count p) 0.0)]
          [init-edge-array (init-array (edge-count p))]
-         [add (lambda ([n : integer]
-                       [a : Flonum])
+         [add (lambda ([n : Integer]
+                       [a : Float])
                 (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))]
          [tile-edge-sign (let ([v (build-vector (* 6 (tile-count p))
-                                                (lambda ([n : integer])
+                                                (lambda ([n : Integer])
                                                   (let ([i (modulo n 6)]
                                                         [n (inexact->exact (floor (/ n 6)))])
                                                     (edge-tile-sign p (tile-edge p n i) n))))])
                            (lambda ([p : planet-climate]
-                                    [n : integer]
-                                    [i : integer])
+                                    [n : Integer]
+                                    [i : Integer])
                              (vector-ref v (+ i (* 6 n)))))])
     (for ([n (tile-count p)])
       (let* ([wind-vector (default-wind tropical-equator p n)]
@@ -96,24 +95,24 @@
                       (tile-edge-sign p n i)
                       (flvector-ref tile-wind i)))))))
     (init-edge-array (edge-climate-data-air-flow-set! (planet-climate-edge p))
-                     (lambda ([n : integer]) (flvector-ref edge-wind n)))))
+                     (lambda ([n : Integer]) (flvector-ref edge-wind n)))))
 
 (: set-river-flow! (planet-climate -> Void))
 (define (set-river-flow! planet)
-  (: river-outflow (integer -> flonum))
+  (: river-outflow (Integer -> Float))
   (define river-outflow
     (let ([v (build-flvector (tile-count planet)
-                             (lambda ([n : integer])
+                             (lambda ([n : Integer])
                                (/ (* (tile-area planet n)
                                      (tile-precipitation planet n))
                                   (tile-edge-count n))))])
-      (lambda ([n : integer])
+      (lambda ([n : Integer])
         (flvector-ref v n))))
   (define river-flow-vec (make-flvector (corner-count planet) 0.0))
-  (: river-flow (integer -> flonum))
+  (: river-flow (Integer -> Float))
   (define (river-flow n)
     (flvector-ref river-flow-vec n))
-  (: set-corner-flow (integer flonum -> Void))
+  (: set-corner-flow (Integer Float -> Void))
   (define (set-corner-flow corner flow)
     ((corner-climate-data-river-flow-set! (planet-climate-corner planet)) corner flow))
   (: visit-river (river -> Void))
@@ -123,10 +122,10 @@
     (let ([n (river-location r)])
       (flvector-set! river-flow-vec
                      n
-                     (+ (for/fold: ([sum : flonum 0.0])
+                     (+ (for/fold: ([sum : Float 0.0])
                                    ([i 3])
                           (+ sum (river-outflow (corner-tile planet n i))))
-                        (for/fold: ([sum : flonum 0.0])
+                        (for/fold: ([sum : Float 0.0])
                                    ([i (river-sources r)])
                           (+ sum (river-flow (river-location i)))))))
     (when-let* ([n (river-location r)]

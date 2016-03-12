@@ -1,8 +1,8 @@
 #lang typed/racket
 
-(require math/flonum)
-
 (provide (struct-out heightmap))
+
+(require math/flonum)
 
 (struct: heightmap
   ([tiles : FlVector]

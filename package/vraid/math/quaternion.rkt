@@ -5,12 +5,11 @@
 (require "quaternion-local.rkt"
          math/flonum
          "flvector3.rkt"
-         "matrix3.rkt"
-         "../types.rkt")
+         "matrix3.rkt")
 
 (struct: axis-angle
   ([axis : FlVector]
-   [angle : Flonum])
+   [angle : Float])
   #:transparent)
 
 (: quaternion->axis-angle (FlVector -> axis-angle))
@@ -26,72 +25,72 @@
                              (scale 3)))])
     (axis-angle axis angle)))
 
-(: quaternion-identity (-> quaternion))
+(: quaternion-identity (-> FlVector))
 (define (quaternion-identity)
   (flvector 1.0 0.0 0.0 0.0))
 
-(: quaternion-to-from (flvector3 flvector3 -> quaternion))
+(: quaternion-to-from (FlVector FlVector -> FlVector))
 (define (quaternion-to-from u v)
   (let ([u (flvector3-normal u)]
         [v (flvector3-normal v)])
     (axis-angle->quaternion (flvector3-cross-product u v)
                             (flvector3-angle u v))))
 
-(: fl->vector->quaternion (Flonum flvector3 -> quaternion))
+(: fl->vector->quaternion (Float FlVector -> FlVector))
 (define (fl->vector->quaternion f v)
   (list->flvector 
    (cons f (flvector->list v))))
 
-(: quaternion-vector (quaternion -> flvector3))
+(: quaternion-vector (FlVector -> FlVector))
 (define (quaternion-vector q)
   (flvector (el q 1)
             (el q 2)
             (el q 3)))
 
-(: axis-angle->quaternion (flvector3 Flonum -> quaternion))
+(: axis-angle->quaternion (FlVector Float -> FlVector))
 (define (axis-angle->quaternion v a)
   (fl->vector->quaternion 
    (flcos (fl* 0.5 a))
    (flvector3-scale (flsin (fl* 0.5 a)) (flvector3-normal v))))
 
-(: quaternion-conjugate (quaternion -> quaternion))
+(: quaternion-conjugate (FlVector -> FlVector))
 (define (quaternion-conjugate q)
   (fl->vector->quaternion (el q 0)
                           (flvector3-negative (quaternion-vector q))))
 
-(: quaternion-length-square (quaternion -> Flonum))
+(: quaternion-length-square (FlVector -> Float))
 (define (quaternion-length-square q)
   (flvector-sum (flvector-sqr q)))
 
-(: quaternion-length (quaternion -> Flonum))
+(: quaternion-length (FlVector -> Float))
 (define (quaternion-length q)
   (flsqrt (quaternion-length-square q)))
 
-(: quaternion-inverse (quaternion -> quaternion))
+(: quaternion-inverse (FlVector -> FlVector))
 (define (quaternion-inverse q)
   (flvector-scale (quaternion-conjugate q) 
                   (/ (quaternion-length-square q))))
 
-(: quaternion-normal (quaternion -> quaternion))
+(: quaternion-normal (FlVector -> FlVector))
 (define (quaternion-normal q)
   (if (zero? (quaternion-length q))
       q
       (flvector-scale q (/ (quaternion-length q)))))
 
-(: vector->quaternion (flvector3 -> quaternion))
+(: vector->quaternion (FlVector -> FlVector))
 (define (vector->quaternion v)
   (fl->vector->quaternion 0.0 v))
 
-(: quaternion-row-sum (quaternion quaternion -> Flonum))
+(: quaternion-row-sum (FlVector FlVector -> Float))
 (define (quaternion-row-sum q r)
-  (: m (Flonum Flonum * -> Flonum))
+  (: m (Float Float * -> Float))
   (define (m a . n) (foldl * a n))
   (flvector-sum
    (quaternion-conjugate
     (flvector-map m
                   q r))))
 
-(: quaternion-single-product (quaternion quaternion -> quaternion))
+(: quaternion-single-product (FlVector FlVector -> FlVector))
 (define (quaternion-single-product q r)
   (let ([a (vector 0 0 0)] 
         [b (vector 1 2 3)]
@@ -104,28 +103,28 @@
                     (col q b r a)
                     (flvector3-negative (col q d r c))))))
 
-(: quaternion-product (quaternion * -> quaternion))
+(: quaternion-product (FlVector * -> FlVector))
 (define (quaternion-product . quats)
   (quaternion-normal
    (foldl quaternion-single-product
           (quaternion-identity) quats)))
 
-(: quaternion-vector-product (quaternion flvector3 -> flvector3))
+(: quaternion-vector-product (FlVector FlVector -> FlVector))
 (define (quaternion-vector-product q v)
   (quaternion-vector
    (quaternion-product q (vector->quaternion v) (quaternion-conjugate q))))
 
-(: quaternion->matrix3 (quaternion -> matrix3))
+(: quaternion->matrix3 (FlVector -> FlVector))
 (define (quaternion->matrix3 q)
   (let* ([a (el q 0)]
          [b (el q 1)]
          [c (el q 2)]
          [d (el q 3)]
-         [*2 (lambda: ([a : Flonum]
-                       [b : Flonum])
+         [*2 (lambda: ([a : Float]
+                       [b : Float])
                (* 2.0 (* a b)))]
-         [*-2 (lambda: ([a : Flonum]
-                        [b : Flonum])
+         [*-2 (lambda: ([a : Float]
+                        [b : Float])
                 (- (*2 a b)))])
     (matrix3+
      (matrix3-identity)

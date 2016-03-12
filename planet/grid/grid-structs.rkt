@@ -2,16 +2,11 @@
 
 (provide (all-defined-out))
 
-(require racket/fixnum
-         racket/vector
-         vraid/types
-         vraid/math)
-
-(define-type get-grid-flvector3 (integer -> flvector3))
+(define-type get-grid-flvector3 (Integer -> FlVector))
 (define-type get-grid-integer (Integer Integer -> Integer))
 
 (struct: grid
-  ([subdivision-level : natural]
+  ([subdivision-level : Natural]
    [tile-coordinates : get-grid-flvector3]
    [corner-coordinates : get-grid-flvector3]
    [tile-tile : get-grid-integer]

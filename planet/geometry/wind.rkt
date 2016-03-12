@@ -5,17 +5,16 @@
 (require "geometry-structs.rkt"
          "planet-rotation.rkt"
          "planet-geometry.rkt"
-         vraid/types
          vraid/math
          math/flonum)
 
 (define wind-speed-constant 1.0)
 
-(: coriolis-coefficient (Flonum Flonum -> Flonum))
+(: coriolis-coefficient (Float Float -> Float))
 (define (coriolis-coefficient angular-velocity latitude)
   (* 2.0 angular-velocity latitude))
 
-(: prevailing-wind (planet-geometry flvector3 flvector3 flonum -> flvector3))
+(: prevailing-wind (planet-geometry FlVector FlVector Float -> FlVector))
 (define (prevailing-wind p
                          normal
                          pressure-gradient-force

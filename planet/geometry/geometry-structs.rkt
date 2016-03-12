@@ -8,11 +8,11 @@
          "../grid/grid-structs.rkt")
 
 (struct: tile-geometry-data
-  ([area : (integer -> flonum)]))
+  ([area : float-get]))
 
 (struct/kw: planet-geometry grid
             ([axis : FlVector]
-             [radius : flonum]
+             [radius : Float]
              [tile : tile-geometry-data]))
 
 (define planet-axis planet-geometry-axis)
@@ -20,4 +20,4 @@
 (define planet-radius planet-geometry-radius)
 
 (direct-access planet-geometry tile tile-geometry-data
-               ([area flonum]))
+               ([area Float]))

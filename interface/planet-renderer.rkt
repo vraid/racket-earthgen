@@ -5,7 +5,7 @@
 (require "tile-renderer.rkt"
          "river-renderer.rkt"
          vraid/opengl
-         "../planet/planet.rkt")
+         "../planet/climate.rkt")
 
 (define planet-renderer%
   (class object%

@@ -2,23 +2,22 @@
 
 (provide (all-defined-out))
 
-(require vraid/types
-         "water-structs.rkt"
+(require "water-structs.rkt"
          "tile-water.rkt"
          "rivers.rkt"
          "../grid.rkt")
 
-(: edge-coast? (planet-water integer -> Boolean))
+(: edge-coast? (planet-water Integer -> Boolean))
 (define (edge-coast? planet n)
   (let ([tiles (grid-edge-tile-list planet n)])
     (= 1 (count (curry tile-land? planet) tiles))))
 
-(: edge-land? (planet-water integer -> Boolean))
+(: edge-land? (planet-water Integer -> Boolean))
 (define (edge-land? planet n)
   (andmap (curry tile-land? planet)
           (grid-edge-tile-list planet n)))
 
-(: edge-has-river? (planet-water integer -> Boolean))
+(: edge-has-river? (planet-water Integer -> Boolean))
 (define (edge-has-river? planet n)
   (and (edge-land? planet n)
        (let ([a ((grid-edge-corner planet) n 0)]

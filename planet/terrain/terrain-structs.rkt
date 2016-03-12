@@ -14,7 +14,7 @@
              [corner : corner-terrain-data]))
 
 (direct-access planet-terrain tile tile-terrain-data
-               ([elevation flonum]))
+               ([elevation Float]))
 
 (direct-access planet-terrain corner corner-terrain-data
-               ([elevation flonum]))
+               ([elevation Float]))

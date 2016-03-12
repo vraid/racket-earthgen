@@ -1,61 +1,59 @@
 #lang typed/racket
 
 (require vraid/types
-         vraid/math
-         vraid/util
          math/flonum
          "grid-structs.rkt")
 
 (provide (all-defined-out))
 
-(: subdivision-level-tile-count (natural -> integer))
+(: subdivision-level-tile-count (Natural -> Integer))
 (define (subdivision-level-tile-count n)
   (+ 2 (* 10 (expt 3 n))))
 
-(: subdivision-level-corner-count (natural -> integer))
+(: subdivision-level-corner-count (Natural -> Integer))
 (define (subdivision-level-corner-count n)
   (* 20 (expt 3 n)))
 
-(: subdivision-level-edge-count (natural -> integer))
+(: subdivision-level-edge-count (Natural -> Integer))
 (define (subdivision-level-edge-count n)
   (* 30 (expt 3 n)))
 
-(: grid-tile-count (grid -> integer))
+(: grid-tile-count (grid -> Integer))
 (define (grid-tile-count grid)
   (subdivision-level-tile-count (grid-subdivision-level grid)))
 
-(: grid-corner-count (grid -> integer))
+(: grid-corner-count (grid -> Integer))
 (define (grid-corner-count grid)
   (subdivision-level-corner-count (grid-subdivision-level grid)))
 
-(: grid-edge-count (grid -> integer))
+(: grid-edge-count (grid -> Integer))
 (define (grid-edge-count grid)
   (subdivision-level-edge-count (grid-subdivision-level grid)))
 
-(: tile-edge-count (integer -> integer))
+(: tile-edge-count (Integer -> Integer))
 (define (tile-edge-count t)
   (if (> 12 t) 5 6))
 
-(: corner-edge-count natural)
+(: corner-edge-count Natural)
 (define corner-edge-count 3)
 
-(: grid-edge-tile-sign (grid integer integer -> (U 0 1 -1)))
+(: grid-edge-tile-sign (grid Integer Integer -> (U 0 1 -1)))
 (define (grid-edge-tile-sign g e t)
   (cond [(eq? t ((grid-edge-tile g) e 0)) 1]
         [(eq? t ((grid-edge-tile g) e 1)) -1]
         [else 0]))
 
-(: grid-edge-corner-sign (grid integer integer -> (U 0 1 -1)))
+(: grid-edge-corner-sign (grid Integer Integer -> (U 0 1 -1)))
 (define (grid-edge-corner-sign g e c)
   (cond [(eq? c ((grid-edge-corner g) e 0)) 1]
         [(eq? c ((grid-edge-corner g) e 1)) -1]
         [else 0]))
 
-(: grid-access-position ((grid -> get-grid-integer) (integer -> integer) grid integer integer -> Integer))
+(: grid-access-position ((grid -> get-grid-integer) (Integer -> Integer) grid Integer Integer -> Integer))
 (define (grid-access-position f count g n i)
   (let ([n-count (count n)]
         [f-g (f g)])
-    (: iterate (integer -> Integer))
+    (: iterate (Integer -> Integer))
     (define (iterate k)
       (if (= k n-count)
           -1
@@ -64,15 +62,15 @@
               (iterate (+ 1 k)))))
     (iterate 0)))
 
-(: grid-access-list ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-list))
+(: grid-access-list ((grid -> get-grid-integer) (Integer -> Integer) grid Integer -> integer-list))
 (define (grid-access-list f count g n)
   (map (curry (f g) n) (range (count n))))
 
-(: grid-access-set ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-set))
+(: grid-access-set ((grid -> get-grid-integer) (Integer -> Integer) grid Integer -> integer-set))
 (define (grid-access-set f count g n)
   (list->set (grid-access-list f count g n)))
 
-(: grid-access-vector ((grid -> get-grid-integer) (integer -> integer) grid integer -> integer-vector))
+(: grid-access-vector ((grid -> get-grid-integer) (Integer -> Integer) grid Integer -> integer-vector))
 (define (grid-access-vector f count g n)
   (build-vector (count n) (curry (f g) n)))
 
@@ -93,26 +91,26 @@
                      [(access-vector ...) (map (access-type "~a-vector") fields)]
                      [(access-position ...) (map (access-type "~a-position") fields)])
          #'(begin
-             (: access-list (grid integer -> integer-list)) ...
+             (: access-list (grid Integer -> integer-list)) ...
              (define (access-list g n)
                (grid-access-list access count g n)) ...
-             (: access-set (grid integer -> integer-set)) ...
+             (: access-set (grid Integer -> integer-set)) ...
              (define (access-set g n)
                (grid-access-set access count g n)) ...
-             (: access-vector (grid integer -> integer-vector)) ...
+             (: access-vector (grid Integer -> integer-vector)) ...
              (define (access-vector g n)
                (grid-access-vector access count g n)) ...
-             (: access-position (grid integer integer -> Integer)) ...
+             (: access-position (grid Integer Integer -> Integer)) ...
              (define (access-position g n i)
                (grid-access-position access count g n i)) ...)))]))
 
 (grid-access tile tile-edge-count
              ([tile] [corner] [edge]))
 
-(grid-access corner (lambda: ([n : integer]) corner-edge-count)
+(grid-access corner (lambda: ([n : Integer]) corner-edge-count)
              ([tile] [corner] [edge]))
 
-(grid-access edge (lambda: ([n : integer]) 2)
+(grid-access edge (lambda: ([n : Integer]) 2)
              ([tile] [corner]))
 
 (require (for-syntax racket/syntax))
@@ -128,7 +126,7 @@
                                                (syntax->list #'(field ...)))])
        #'(begin
            (provide function ...)
-           (: function (grid integer integer -> integer)) ...
+           (: function (grid Integer Integer -> Integer)) ...
            (define (function p n i)
              ((struct-function p) n i)) ...))]))
 
@@ -150,18 +148,18 @@
 (define corner-count grid-corner-count)
 (define edge-count grid-edge-count)
 
-(: edge-tile-sign (grid integer integer -> flonum))
+(: edge-tile-sign (grid Integer Integer -> Float))
 (define (edge-tile-sign p e t)
   (fl (grid-edge-tile-sign p e t)))
 
-(: edge-corner-sign (grid integer integer -> flonum))
+(: edge-corner-sign (grid Integer Integer -> Float))
 (define (edge-corner-sign p e c)
   (fl (grid-edge-corner-sign p e c)))
 
-(: tile-coordinates (grid integer -> flvector3))
+(: tile-coordinates (grid Integer -> FlVector))
 (define (tile-coordinates p n)
   ((grid-tile-coordinates p) n))
 
-(: corner-coordinates (grid integer -> flvector3))
+(: corner-coordinates (grid Integer -> FlVector))
 (define (corner-coordinates p n)
   ((grid-corner-coordinates p) n))
