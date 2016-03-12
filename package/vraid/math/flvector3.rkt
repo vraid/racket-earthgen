@@ -65,13 +65,13 @@
 (define (flvector3-map-mult . vecs)
   (foldl (lambda: ([v : FlVector]
                    [u : FlVector])
-           (flvector-map mult v u))
+           (flvector-map * v u))
          (flvector 1.0 1.0 1.0) vecs))
 
 (: flvector3-dot-product (FlVector FlVector -> Float))
 (define (flvector3-dot-product u v)
   (flvector-sum
-   (flvector-map mult u v)))
+   (flvector-map * u v)))
 
 (: flvector3-cross-product (FlVector FlVector -> FlVector))
 (define (flvector3-cross-product u v)

@@ -6,13 +6,9 @@
 
 (: col (FlVector (Vectorof Integer) FlVector (Vectorof Integer) -> FlVector))
 (define (col v m u n)
-  (flvector-map mult
+  (flvector-map *
                 (remap v m)
                 (remap u n)))
-
-(: mult (Float Float * -> Float))
-(define (mult a . n)
-  (foldl * a n))
 
 (: remap (FlVector (Vectorof Integer) -> FlVector))
 (define (remap v m)
