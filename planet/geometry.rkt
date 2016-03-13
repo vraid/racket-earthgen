@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(require "require-provide.rkt")
+(require vraid/require)
 
 (require/provide "geometry/geometry-structs.rkt"
                  "geometry/planet-geometry.rkt"

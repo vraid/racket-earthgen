@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(require "require-provide.rkt")
+(require vraid/require)
 
 (require/provide "climate/climate-structs.rkt"
                  "climate/tile-climate.rkt"

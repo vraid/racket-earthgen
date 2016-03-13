@@ -1,5 +1,5 @@
 #lang typed/racket
 
-(require "require-provide.rkt")
+(require vraid/require)
 
 (require/provide "vegetation/vegetation.rkt")
