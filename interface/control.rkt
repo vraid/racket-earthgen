@@ -6,7 +6,7 @@
          vraid/math
          math/flonum
          "../point.rkt"
-         "../planet/geometry.rkt")
+         "../planet/geometry-base.rkt")
 
 (define planet-control%
   (class object%

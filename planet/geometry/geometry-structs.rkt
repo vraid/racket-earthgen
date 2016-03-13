@@ -4,8 +4,9 @@
 
 (require vraid/struct
          vraid/types
+         math/flonum
          "../direct-access.rkt"
-         "../grid/grid-structs.rkt")
+         "../grid.rkt")
 
 (struct: tile-geometry-data
   ([area : float-get]))
@@ -14,6 +15,17 @@
             ([axis : FlVector]
              [radius : Float]
              [tile : tile-geometry-data]))
+
+(define default-axis (flvector 0.0 0.0 1.0))
+
+(define empty-planet-geometry
+  (planet-geometry/kw
+   #:grid (n-grid 0)
+   #:axis default-axis
+   #:radius 0.0
+   #:tile (tile-geometry-data
+           (lambda ([n : Integer])
+             0.0))))
 
 (define planet-axis planet-geometry-axis)
 

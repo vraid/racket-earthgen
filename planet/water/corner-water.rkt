@@ -4,7 +4,7 @@
 
 (require "water-structs.rkt"
          "tile-water.rkt"
-         "../grid.rkt")
+         "../grid-base.rkt")
 
 (: corner-land? (planet-water Integer -> Boolean))
 (define (corner-land? planet n)

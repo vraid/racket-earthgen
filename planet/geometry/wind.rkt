@@ -5,8 +5,7 @@
 (require "geometry-structs.rkt"
          "planet-rotation.rkt"
          "planet-geometry.rkt"
-         vraid/math
-         math/flonum)
+         vraid/math)
 
 (define wind-speed-constant 1.0)
 

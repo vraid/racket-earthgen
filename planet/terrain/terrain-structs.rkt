@@ -1,13 +1,13 @@
 #lang typed/racket
 
-(provide (all-defined-out)
-         (all-from-out "terrain-data-structs.rkt"))
+(require vraid/struct
+         vraid/require
+         "../direct-access.rkt"
+         "../geometry/geometry-structs.rkt")
 
-(require vraid/types
-         vraid/struct
-         "../geometry/geometry-structs.rkt"
-         "terrain-data-structs.rkt"
-         "../direct-access.rkt")
+(require/provide "terrain-data-structs.rkt")
+
+(provide (all-defined-out))
 
 (struct/kw: planet-terrain planet-geometry
             ([tile : tile-terrain-data]

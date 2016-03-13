@@ -2,4 +2,4 @@
 
 (require vraid/require)
 
-(require/provide "terrain-base.rkt")
+(require/provide "water/water-structs.rkt")

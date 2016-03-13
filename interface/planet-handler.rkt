@@ -3,17 +3,8 @@
 (provide planet-handler%)
 
 (require typed/racket/class
-         "../planet/grid.rkt"
-         "../planet/geometry.rkt")
-
-(define empty-planet-geometry
-  (planet-geometry/kw
-   #:grid (n-grid 0)
-   #:axis default-axis
-   #:radius 0.0
-   #:tile (tile-geometry-data
-           (lambda ([n : Integer])
-             0.0))))
+         "../planet/grid-base.rkt"
+         "../planet/geometry-base.rkt")
 
 (define planet-handler%
   (class object%

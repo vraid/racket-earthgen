@@ -1,12 +1,13 @@
 #lang typed/racket
 
-(provide (all-defined-out)
-         (all-from-out "water-data-structs.rkt"))
-
 (require vraid/struct
+         vraid/require
          "../direct-access.rkt"
-         "water-data-structs.rkt"
-         "../terrain.rkt")
+         "../terrain/terrain-structs.rkt")
+
+(require/provide "water-data-structs.rkt")
+
+(provide (all-defined-out))
 
 (struct/kw: river
             ([location : Integer]

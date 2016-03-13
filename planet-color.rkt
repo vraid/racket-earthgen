@@ -3,10 +3,8 @@
 (provide (all-defined-out))
 
 (require vraid/color
+         "color-base.rkt"
          "planet/planet.rkt")
-
-(define color-undefined
-  (flcolor3 0.7 0.7 0.7))
 
 (define color-neutral
   (flcolor3 0.95 0.95 0.85))

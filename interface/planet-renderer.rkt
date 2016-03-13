@@ -2,10 +2,10 @@
 
 (provide planet-renderer%)
 
-(require "tile-renderer.rkt"
+(require vraid/opengl
+         "tile-renderer.rkt"
          "river-renderer.rkt"
-         vraid/opengl
-         "../planet/climate.rkt")
+         "../planet/climate-base.rkt")
 
 (define planet-renderer%
   (class object%

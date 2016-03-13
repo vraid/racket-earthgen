@@ -6,7 +6,9 @@
          vraid/flow
          "edit-panel.rkt"
          "data-format.rkt"
-         "../planet/planet.rkt")
+         "../planet/grid-base.rkt"
+         "../planet/geometry-base.rkt"
+         "../planet/water-base.rkt")
 
 (struct terrain-generation-parameters
   (grid-size sea-level axis))

@@ -4,7 +4,7 @@
 
 (require vraid/typed-gl
          vraid/color
-         "../planet/grid.rkt")
+         "../planet/grid-base.rkt")
 
 (define tile-renderer%
   (class object%

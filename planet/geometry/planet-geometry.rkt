@@ -3,11 +3,9 @@
 (provide (all-defined-out))
 
 (require "geometry-structs.rkt"
-         "../grid.rkt"
+         "../grid-base.rkt"
          vraid/math
          math/flonum)
-
-(define default-axis (flvector 0.0 0.0 1.0))
 
 (: coordinate-latitude (FlVector FlVector -> Float))
 (define (coordinate-latitude axis v)

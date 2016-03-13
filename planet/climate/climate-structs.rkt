@@ -1,14 +1,15 @@
 #lang typed/racket
 
-(provide (all-defined-out)
-         (all-from-out "climate-data-structs.rkt"))
-
 (require vraid/struct
          vraid/math
          math/flonum
-         "../water.rkt"
-         "climate-data-structs.rkt"
+         vraid/require
+         "../water/water-structs.rkt"
          "../direct-access.rkt")
+
+(require/provide "climate-data-structs.rkt")
+
+(provide (all-defined-out))
 
 (struct/kw: climate-parameters
             ([axial-tilt : Float]

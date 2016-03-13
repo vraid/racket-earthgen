@@ -7,10 +7,10 @@
          vraid/color
          vraid/util
          math/flonum
-         "../planet/grid.rkt"
-         "../planet/geometry.rkt"
+         "../planet/grid-base.rkt"
+         "../planet/geometry-base.rkt"
          "../planet/water.rkt"
-         "../planet/climate.rkt")
+         "../planet/climate-base.rkt")
 
 (define river-color
   (flcolor3 0.06862745098039216 0.17450980392156862 0.37058823529411766))

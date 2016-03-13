@@ -1,20 +1,16 @@
 #lang typed/racket
 
-(provide (struct-out map-mode)
-         define-map-modes)
+(provide (all-defined-out))
 
 (require vraid/color
-         vraid/flow
-         "planet/grid.rkt")
+         "color-base.rkt"
+         "planet/grid-base.rkt")
 
 (struct map-mode
   ([name : Symbol]
    [condition : (grid -> Boolean)]
    [function : (grid Integer -> flcolor)])
   #:transparent)
-
-(define color-undefined
-  (flcolor3 0.7 0.7 0.7))
 
 (require (for-syntax racket/syntax))
 

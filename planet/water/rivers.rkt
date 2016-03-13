@@ -5,7 +5,7 @@
 (require vraid/types
          vraid/flow
          "water-structs.rkt"
-         "../grid.rkt")
+         "../grid-base.rkt")
 
 (: corner-river-direction (planet-water Integer -> (Option Integer)))
 (define (corner-river-direction planet n)

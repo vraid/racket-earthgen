@@ -2,7 +2,7 @@
 
 (require vraid/require)
 
-(require/provide "water/water-structs.rkt"
+(require/provide "water-base.rkt"
                  "water/tile-water.rkt"
                  "water/corner-water.rkt"
                  "water/edge-water.rkt"

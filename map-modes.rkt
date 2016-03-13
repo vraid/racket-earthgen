@@ -3,8 +3,9 @@
 (provide (all-defined-out))
 
 (require "map-mode.rkt"
-         "planet/planet.rkt"
-         "planet-color.rkt")
+         "planet-color.rkt"
+         "planet/water-base.rkt"
+         "planet/climate-base.rkt")
 
 (define-map-modes terrain planet-water?
   (topography color-topography))

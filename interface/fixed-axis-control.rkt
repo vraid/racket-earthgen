@@ -7,7 +7,7 @@
          math/flonum
          "control.rkt"
          "../point.rkt"
-         "../planet/geometry.rkt"
+         "../planet/geometry-base.rkt"
          "../planet/math/projection.rkt")
 
 (require/typed vraid/opengl

@@ -2,7 +2,7 @@
 
 (require vraid/require)
 
-(require/provide "geometry/geometry-structs.rkt"
+(require/provide "geometry-base.rkt"
                  "geometry/planet-geometry.rkt"
                  "geometry/planet-rotation.rkt"
                  "geometry/time.rkt"
