@@ -4,6 +4,7 @@
          vraid/math
          math/flonum
          vraid/require
+         "../geometry/time.rkt"
          "../water/water-structs.rkt"
          "../direct-access.rkt")
 
@@ -14,7 +15,8 @@
 (struct/kw: climate-parameters
             ([axial-tilt : Float]
              [seasons-per-cycle : Positive-Integer]
-             [acceptable-delta : Float])
+             [acceptable-delta : Float]
+             [humidity-half-life-days : Float])
             #:transparent)
 
 (: default-climate-parameters (-> climate-parameters))
@@ -22,7 +24,8 @@
   (climate-parameters/kw
    #:acceptable-delta 0.01
    #:axial-tilt (/ pi 8.0)
-   #:seasons-per-cycle 16))
+   #:seasons-per-cycle 16
+   #:humidity-half-life-days 5.0))
 
 (: planet-time-of-year (planet-climate -> Float))
 (define (planet-time-of-year planet)

@@ -164,7 +164,7 @@
 (define precipitation-min (flcolor3 1.0 1.0 1.0))
 (define precipitation-max (flcolor3 0.0 1.0 0.0))
 
-(define 3-meters-per-year (/ 3.0 seconds-per-year))
+(define millimeters-per-day (/ 0.001 seconds-per-day))
 
 (: color-precipitation (planet-climate Integer -> flcolor))
 (define (color-precipitation p n)
@@ -173,7 +173,7 @@
       (flcolor-interpolate precipitation-min
                            precipitation-max
                            (/ (tile-precipitation p n)
-                              3-meters-per-year))))
+                              (* 3.0 millimeters-per-day)))))
 
 (define aridity-min color-neutral)
 (define aridity-medium (flcolor3 1.0 1.0 0.0))

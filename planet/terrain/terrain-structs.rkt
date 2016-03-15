@@ -9,6 +9,11 @@
 
 (provide (all-defined-out))
 
+(struct/kw: terrain-parameters
+            ([grid-size : Integer]
+             [sea-level : Float]
+             [axis : FlVector]))
+
 (struct/kw: planet-terrain planet-geometry
             ([tile : tile-terrain-data]
              [corner : corner-terrain-data]))

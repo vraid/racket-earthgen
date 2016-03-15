@@ -70,7 +70,9 @@
 
 (: generate-climate! (climate-parameters planet-climate planet-climate -> Void))
 (define (generate-climate! par prev p)
-  (let* ([tile-water? (let ([v (build-vector (tile-count p)
+  (let* ([acceptable-delta (climate-parameters-acceptable-delta par)]
+         [humidity-half-life (climate-parameters-humidity-half-life-days par)]
+         [tile-water? (let ([v (build-vector (tile-count p)
                                              (lambda ([n : Integer])
                                                (tile-water? p n)))])
                         (lambda ([p : planet-climate]
@@ -128,7 +130,7 @@
                                                    (wind-scale w)))))])
         (: iterate! (climate-data climate-data Real -> climate-data))
         (define (iterate! to from delta)
-          (if (< delta (climate-parameters-acceptable-delta par))
+          (if (< delta acceptable-delta)
               from
               (let* ([set-tile-humidity! (lambda ([n : Integer]
                                                   [a : Float])
