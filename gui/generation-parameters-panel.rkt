@@ -38,11 +38,28 @@
     (define (read-only parent caption converter get-value)
       ((read-only-panel parent control-height label-width) caption (convert-to-string converter) get-value))
     (define terrain-panel (new-panel))
-    (define grid-size-edit (edit terrain-panel "grid size" format-integer (thunk (grid-subdivision-level (current-planet)))))
-    (define sea-level-edit (edit terrain-panel "sea level" format-positional (thunk (and-let* ([planet (current-terrain)])
-                                                                                              (planet-water-sea-level (current-planet))))))
-    (define axis-edit (read-only terrain-panel "axis" format-flvector (thunk (planet-geometry-axis (current-planet)))))
-    (define selected-axis-edit (read-only terrain-panel "selected axis" format-flvector (thunk selected-axis)))
+    (define grid-size-edit (edit terrain-panel
+                                 "grid size"
+                                 format-integer
+                                 (thunk (grid-subdivision-level (current-planet)))))
+    (define radius-edit (edit terrain-panel
+                              "radius"
+                              format-positional
+                              (thunk (and-let* ([planet (current-terrain)])
+                                       (planet-radius planet)))))
+    (define sea-level-edit (edit terrain-panel
+                                 "sea level"
+                                 format-positional
+                                 (thunk (and-let* ([planet (current-terrain)])
+                                          (planet-water-sea-level planet)))))
+    (define axis-edit (read-only terrain-panel
+                                 "axis"
+                                 format-flvector
+                                 (thunk (planet-geometry-axis (current-planet)))))
+    (define selected-axis-edit (read-only terrain-panel
+                                          "selected axis"
+                                          format-flvector
+                                          (thunk selected-axis)))
     (define change-axis-button (new button%
                                     [parent terrain-panel]
                                     [label "change axis"]
@@ -57,8 +74,12 @@
                              "acceptable delta"
                              format-positional
                              (thunk (climate-parameters-acceptable-delta climate-param))))
+    (define precipitation-factor-edit (edit climate-panel
+                                            "precipitation factor"
+                                            format-positional
+                                            (thunk (climate-parameters-precipitation-factor climate-param))))
     (define humidity-half-life-edit (edit climate-panel
-                                          "humidity half life (days)"
+                                          "humidity half life"
                                           format-positional
                                           (thunk (climate-parameters-humidity-half-life-days climate-param))))
     (define generate-climate-button (new button%
@@ -66,10 +87,12 @@
                                          [label "generate climate"]
                                          [callback generate-climate]))
     (define controls (list grid-size-edit
+                           radius-edit
                            sea-level-edit
                            axis-edit
                            selected-axis-edit
                            delta-edit
+                           precipitation-factor-edit
                            humidity-half-life-edit))
     (define/public (select-axis v)
       (set! selected-axis v)
@@ -85,6 +108,10 @@
                      (if (and (integer? size) (<= 0 size))
                          (inexact->exact size)
                          0))
+       #:radius (let ([radius (send radius-edit get-value)])
+                  (if (and (real? radius) (positive? radius))
+                      (exact->inexact radius)
+                      default-radius))
        #:sea-level (let ([sea-level (send sea-level-edit get-value)])
                      (if (real? sea-level) (exact->inexact sea-level) 0.0))
        #:axis (or (send axis-edit get-value) default-axis)))
@@ -96,6 +123,10 @@
                                   (if (and (real? delta) (< 0 delta))
                                       delta
                                       0.05))
+             #:precipitation-factor (let ([factor (send precipitation-factor-edit get-value)])
+                                      (if (and (real? factor) (<= 0 factor))
+                                          factor
+                                          1.0))
              #:humidity-half-life-days (let ([days (send humidity-half-life-edit get-value)])
                                          (if (and (real? days) (< 0 days))
                                              days

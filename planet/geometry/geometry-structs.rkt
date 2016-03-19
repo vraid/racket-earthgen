@@ -16,6 +16,7 @@
              [radius : Float]
              [tile : tile-geometry-data]))
 
+(define default-radius 6371000.0)
 (define default-axis (flvector 0.0 0.0 1.0))
 
 (define empty-planet-geometry

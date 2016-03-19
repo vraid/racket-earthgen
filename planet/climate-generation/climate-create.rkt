@@ -1,6 +1,7 @@
 #lang typed/racket
 
 (provide static-climate
+         singular-climate
          climate-next
          climate-parameters/kw
          default-climate-parameters
@@ -8,6 +9,7 @@
 
 (require math/flonum
          vraid/typed-array
+         vraid/util
          "../grid.rkt"
          "../geometry.rkt"
          "../water.rkt"
@@ -16,15 +18,23 @@
          "climate-create-base.rkt"
          "../terrain-generation/river-generation.rkt")
 
-(: static-climate (climate-parameters planet-water -> ((Option planet-climate) -> planet-climate)))
-(define (static-climate param planet)
+(: singular-climate (climate-parameters planet-water (String -> Any) -> planet-climate))
+(define (singular-climate param planet feedback)
+  (let* ([planet/rivers (planet/rivers planet)]
+         [initial ((climate/closed-season param planet/rivers feedback) 0)]
+         [p ((climate/closed-season param planet/rivers feedback) 0)])
+    (generate-climate! param initial p feedback)
+    p))
+
+(: static-climate (climate-parameters planet-water (String -> Any) -> ((Option planet-climate) -> planet-climate)))
+(define (static-climate param planet feedback)
   (let* ([planet/rivers (planet/rivers planet)]
          [season-count (climate-parameters-seasons-per-cycle param)]
-         [initial ((climate/closed-season param planet/rivers) 0)]
+         [initial ((climate/closed-season param planet/rivers feedback) 0)]
          [v (build-vector season-count
                           (lambda ([n : Integer])
-                            (delay (let ([p ((climate/closed-season param planet/rivers) n)])
-                                     (generate-climate! param initial p)
+                            (delay (let ([p ((climate/closed-season param planet/rivers feedback) n)])
+                                     (generate-climate! param initial p feedback)
                                      p))))])
     (lambda ([planet : (Option planet-climate)])
       (let ([season (if planet
@@ -33,8 +43,8 @@
                         0)])
         (force (vector-ref v season))))))
 
-(: climate/closed-season (climate-parameters planet-water -> (Integer -> planet-climate)))
-(define ((climate/closed-season par planet) season)
+(: climate/closed-season (climate-parameters planet-water (String -> Any) -> (Integer -> planet-climate)))
+(define ((climate/closed-season par planet feedback) season)
   (let ([p (planet-climate/kw
             #:planet-water planet
             #:parameters par
@@ -54,24 +64,29 @@
                        (curry default-snow-cover p)))
     p))
 
-(: climate-next (climate-parameters planet-climate -> planet-climate))
-(define (climate-next par prev)
+(: climate-next (climate-parameters planet-climate (String -> Any) -> planet-climate))
+(define (climate-next par prev feedback)
   (let ([p (initial-values par prev)])
-    (generate-climate! par prev p)
+    (generate-climate! par prev p feedback)
     p))
 
 (struct: climate-data
-  ([tile-humidity : FlVector]))
+  ([tile-humidity : FlVector]
+   [tile-precipitation : FlVector]))
 
 (: make-climate-data (planet-climate -> climate-data))
 (define (make-climate-data p)
   (climate-data
+   (make-flvector (tile-count p) 0.0)
    (make-flvector (tile-count p) 0.0)))
 
-(: generate-climate! (climate-parameters planet-climate planet-climate -> Void))
-(define (generate-climate! par prev p)
+(: generate-climate! (climate-parameters planet-climate planet-climate (String -> Any) -> Void))
+(define (generate-climate! par prev p feedback)
   (let* ([acceptable-delta (climate-parameters-acceptable-delta par)]
-         [humidity-half-life (climate-parameters-humidity-half-life-days par)]
+         [precipitation-factor (climate-parameters-precipitation-factor par)]
+         [humidity-half-life-days (climate-parameters-humidity-half-life-days par)]
+         [humidity-half-life (* humidity-half-life-days seconds-per-day)]
+         [humidity->precipitation-rate (/ (log 0.5) humidity-half-life)]
          [tile-water? (let ([v (build-vector (tile-count p)
                                              (lambda ([n : Integer])
                                                (tile-water? p n)))])
@@ -81,34 +96,28 @@
          [tile-land? (lambda ([p : planet-climate]
                               [n : Integer])
                        (not (tile-water? p n)))]
-         [edge-lengths (build-flvector (edge-count p) (curry edge-length p))]
-         [edge-length (lambda ([n : Integer])
-                        (flvector-ref edge-lengths n))]
+         [edge-length (build-flvector-ref (edge-count p) (curry edge-length p))]
          [edge-tile-distances (build-flvector (edge-count p) (curry edge-tile-distance p))]
          [tile-tile-distance (lambda ([p : planet-climate]
                                       [n : Integer]
                                       [i : Integer])
                                (flvector-ref edge-tile-distances (tile-edge p n i)))])
     (define (climate-iterate!)
-      (let* ([edge-wind (let ([winds (build-vector
-                                      (edge-count p)
-                                      (lambda ([n : Integer])
-                                        (let ([scale (* ((edge-climate-data-air-flow (planet-climate-edge p)) n)
-                                                        (edge-length n))])
-                                          (wind
-                                           (edge-tile p n (if (> 0.0 scale) 0 1))
-                                           (abs scale)))))])
-                          (lambda ([n : Integer])
-                            (vector-ref winds n)))]
+      (let* ([edge-wind (build-vector-ref
+                         (edge-count p)
+                         (lambda ([n : Integer])
+                           (let ([scale (* ((edge-climate-data-air-flow (planet-climate-edge p)) n)
+                                           (edge-length n))])
+                             (wind
+                              (edge-tile p n (if (> 0.0 scale) 0 1))
+                              (abs scale)))))]
              [wind-list/filter (lambda ([f : (Integer Integer -> Boolean)])
-                                 (let ([v (build-vector
-                                           (tile-count p)
-                                           (lambda ([n : Integer])
-                                             (map edge-wind
-                                                  (filter (curry f n)
-                                                          (grid-tile-edge-list p n)))))])
-                                   (lambda ([n : Integer])
-                                     (vector-ref v n))))]
+                                 (build-vector-ref
+                                  (tile-count p)
+                                  (lambda ([n : Integer])
+                                    (map edge-wind
+                                         (filter (curry f n)
+                                                 (grid-tile-edge-list p n))))))]
              [incoming-winds (wind-list/filter (lambda ([n : Integer]
                                                         [e : Integer])
                                                  (not (= n (wind-origin (edge-wind e))))))]
@@ -121,6 +130,15 @@
                                     (total-wind (incoming-winds n)))]
              [total-outgoing-wind (lambda ([n : Integer])
                                     (total-wind (outgoing-winds n)))]
+             [tile-precipitation-rate (build-flvector-ref (tile-count p)
+                                                          (lambda ([n : Integer])
+                                                            (let* ([outgoing-wind (total-outgoing-wind n)]
+                                                                   [traversal-time (if (zero? outgoing-wind)
+                                                                                       seconds-per-day
+                                                                                       (/ (tile-area p n)
+                                                                                          outgoing-wind))])
+                                                              (- 1.0 (exp (* traversal-time
+                                                                             humidity->precipitation-rate))))))]
              [absolute-incoming-humidity (lambda ([tile-humidity : (Integer -> Float)]
                                                   [n : Integer])
                                            (for/fold: ([humidity : Float 0.0])
@@ -130,23 +148,53 @@
                                                    (wind-scale w)))))])
         (: iterate! (climate-data climate-data Real -> climate-data))
         (define (iterate! to from delta)
+          (feedback (string-append "delta " (number->string delta)))
           (if (< delta acceptable-delta)
               from
-              (let* ([set-tile-humidity! (lambda ([n : Integer]
+              (let* ([set-humidity! (lambda ([n : Integer]
+                                             [a : Float])
+                                      (flvector-set! (climate-data-tile-humidity to) n a))]
+                     [set-precipitation! (lambda ([n : Integer]
                                                   [a : Float])
-                                           (flvector-set! (climate-data-tile-humidity to) n a))]
+                                           (flvector-set! (climate-data-tile-precipitation to) n a))]
                      [tile-humidity (lambda ([n : Integer])
                                       (flvector-ref (climate-data-tile-humidity from) n))])
                 (for ([n (tile-count p)])
-                  (set-tile-humidity! n (let ([saturation-humidity (saturation-humidity (tile-temperature p n))])
-                                          (if (tile-water? p n)
-                                              saturation-humidity
-                                              (min saturation-humidity
-                                                   (let ([outgoing (total-outgoing-wind n)])
-                                                     (if (zero? outgoing)
-                                                         saturation-humidity
-                                                         (/ (absolute-incoming-humidity tile-humidity n)
-                                                            outgoing))))))))
+                  (let* ([water? (tile-water? p n)]
+                         [outgoing-wind (total-outgoing-wind n)]
+                         [incoming-wind (total-incoming-wind n)]
+                         [max-wind (max outgoing-wind incoming-wind)]
+                         [traversal-time (if (zero? max-wind)
+                                             seconds-per-day
+                                             (/ (tile-area p n)
+                                                max-wind))]
+                         [saturation-humidity (saturation-humidity (tile-temperature p n))]
+                         [incoming-humidity (absolute-incoming-humidity tile-humidity n)]
+                         [preliminary-humidity (if water?
+                                                   saturation-humidity
+                                                   (if (zero? outgoing-wind)
+                                                       saturation-humidity
+                                                       (/ incoming-humidity
+                                                          outgoing-wind)))]
+                         [traversal-precipitation (* preliminary-humidity
+                                                     (tile-precipitation-rate n))]
+                         [saturation-precipitation (max 0.0 (- preliminary-humidity saturation-humidity))]
+                         [humidity->precipitation (if water?
+                                                      0.0
+                                                      (max traversal-precipitation
+                                                           saturation-precipitation))]
+                         [precipitation (/ (* precipitation-factor 0.2 humidity->precipitation outgoing-wind)
+                                           (tile-area p n))]
+                         [humidity (- preliminary-humidity humidity->precipitation)]
+                         #;[humidity (if water?
+                                         saturation-humidity
+                                         (if (zero? outgoing-wind)
+                                             saturation-humidity
+                                             (min saturation-humidity
+                                                  (/ incoming-humidity
+                                                     outgoing-wind))))])
+                    (set-humidity! n humidity)
+                    (set-precipitation! n precipitation)))
                 (iterate! from to (apply max (map (lambda ([n : Integer])
                                                     (let ([current (flvector-ref (climate-data-tile-humidity to) n)]
                                                           [previous (flvector-ref (climate-data-tile-humidity from) n)])
@@ -167,16 +215,13 @@
           (let ([climate-values (iterate! (make-climate-data p)
                                           from
                                           1.0)])
-            (for ([n (tile-count p)])
-              ((tile-climate-data-humidity-set! (planet-climate-tile p)) n
-                                                                         (flvector-ref (climate-data-tile-humidity climate-values) n)))
-            (for ([n (tile-count p)])
-              ((tile-climate-data-precipitation-set! (planet-climate-tile p)) n
-                                                                              (let ([outgoing (* (tile-humidity p n)
-                                                                                                 (total-outgoing-wind n))]
-                                                                                    [incoming (absolute-incoming-humidity (curry tile-humidity p) n)])
-                                                                                (max 0.0 (/ (* 200.0 (- incoming outgoing))
-                                                                                            (tile-area p n))))))))))
+            (let ([set-humidity (tile-climate-data-humidity-set! (planet-climate-tile p))]
+                  [humidity-data (climate-data-tile-humidity climate-values)]
+                  [set-precipitation (tile-climate-data-precipitation-set! (planet-climate-tile p))]
+                  [precipitation-data (climate-data-tile-precipitation climate-values)])
+              (for ([n (tile-count p)])
+                (set-humidity n (flvector-ref humidity-data n))
+                (set-precipitation n (flvector-ref precipitation-data n))))))))
     (set-wind! p)
     (climate-iterate!)
     (set-river-flow! p)

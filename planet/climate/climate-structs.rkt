@@ -16,6 +16,7 @@
             ([axial-tilt : Float]
              [seasons-per-cycle : Positive-Integer]
              [acceptable-delta : Float]
+             [precipitation-factor : Float]
              [humidity-half-life-days : Float])
             #:transparent)
 
@@ -25,6 +26,7 @@
    #:acceptable-delta 0.01
    #:axial-tilt (/ pi 8.0)
    #:seasons-per-cycle 16
+   #:precipitation-factor 1.0
    #:humidity-half-life-days 5.0))
 
 (: planet-time-of-year (planet-climate -> Float))

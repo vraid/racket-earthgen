@@ -4,6 +4,7 @@
 
 (require vraid/flow
          vraid/math
+         vraid/util
          vraid/typed-array
          math/flonum
          "../grid.rkt"
@@ -55,7 +56,7 @@
                    (default-pressure-gradient-force tropical-equator (tile-latitude p n))
                    (tile-surface-friction p n)))
 
-(struct: wind
+(struct wind
   ([origin : Integer]
    [scale : Float]))
 
@@ -80,34 +81,32 @@
       (let* ([wind-vector (default-wind tropical-equator p n)]
              [tile-vector (tile-coordinates p n)]
              [negative-wind-vector (flvector3-negative wind-vector)]
-             [tile-wind (build-flvector (tile-edge-count n)
-                                        (lambda (i)
-                                          (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
-                                                                                                         (tile-coordinates p (tile-tile p n i))))])
-                                            (* (if (< (flvector3-distance-squared neighbour-vector wind-vector)
-                                                      (flvector3-distance-squared neighbour-vector negative-wind-vector))
-                                                   1.0
-                                                   -1.0)
-                                               (flvector3-length (flvector3-projection neighbour-vector wind-vector))))))])
+             [tile-wind (build-flvector-ref (tile-edge-count n)
+                                            (lambda (i)
+                                              (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
+                                                                                                             (tile-coordinates p (tile-tile p n i))))])
+                                                (* (flvector3-length (flvector3-projection neighbour-vector wind-vector))
+                                                   (if (< (flvector3-distance-squared neighbour-vector wind-vector)
+                                                          (flvector3-distance-squared neighbour-vector negative-wind-vector))
+                                                       1.0
+                                                       -1.0)))))])
         (for ([i (tile-edge-count n)])
           (let ([e (tile-edge p n i)])
             (add e (* 0.5
                       (tile-edge-sign p n i)
-                      (flvector-ref tile-wind i)))))))
+                      (tile-wind i)))))))
     (init-edge-array (edge-climate-data-air-flow-set! (planet-climate-edge p))
-                     (lambda ([n : Integer]) (flvector-ref edge-wind n)))))
+                     (lambda ([n : Integer])
+                       (flvector-ref edge-wind n)))))
 
 (: set-river-flow! (planet-climate -> Void))
 (define (set-river-flow! planet)
   (: river-outflow (Integer -> Float))
-  (define river-outflow
-    (let ([v (build-flvector (tile-count planet)
-                             (lambda ([n : Integer])
-                               (/ (* (tile-area planet n)
-                                     (tile-precipitation planet n))
-                                  (tile-edge-count n))))])
-      (lambda ([n : Integer])
-        (flvector-ref v n))))
+  (define river-outflow (build-flvector-ref (tile-count planet)
+                                            (lambda ([n : Integer])
+                                              (/ (* (tile-area planet n)
+                                                    (tile-precipitation planet n))
+                                                 (tile-edge-count n)))))
   (define river-flow-vec (make-flvector (corner-count planet) 0.0))
   (: river-flow (Integer -> Float))
   (define (river-flow n)

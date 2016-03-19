@@ -59,13 +59,14 @@
 
 (define (generate-terrain parameters)
   (let* ([size (terrain-parameters-grid-size parameters)]
+         [radius (terrain-parameters-radius parameters)]
          [sea-level (terrain-parameters-sea-level parameters)]
          [axis (terrain-parameters-axis parameters)]
          [grids (send grid-handler get-grids size)])
     (send planet-handler
           generate
           "generating terrain"
-          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((load-terrain) grids) axis)))
+          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((load-terrain) grids) radius axis)))
           (thunk* (set-color-mode topography-map-mode)))))
 
 (define (generate-climate)
@@ -73,7 +74,7 @@
              [_ (planet-terrain? terrain)])
             (thread
              (thunk
-              (let* ([climate-func (thunk ((static-climate (send generation-panel climate-parameters) terrain) #f))])
+              (let* ([climate-func (thunk (singular-climate (send generation-panel climate-parameters) terrain set-status-message!))])
                 (send planet-handler
                       generate
                       "generating climate"
@@ -264,5 +265,6 @@
 
 (generate-terrain (terrain-parameters/kw
                    #:grid-size 5
+                   #:radius default-radius
                    #:sea-level 0.0
                    #:axis default-axis))

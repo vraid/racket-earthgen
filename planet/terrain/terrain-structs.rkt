@@ -11,6 +11,7 @@
 
 (struct/kw: terrain-parameters
             ([grid-size : Integer]
+             [radius : Float]
              [sea-level : Float]
              [axis : FlVector]))
 

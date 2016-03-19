@@ -55,15 +55,14 @@
      #:tile tiles
      #:corner corners)))
 
-(: heightmap->planet (grid -> (heightmap FlVector -> planet-terrain)))
+(: heightmap->planet (grid -> (heightmap Float FlVector -> planet-terrain)))
 (define (heightmap->planet grid)
   (define empty-hash (lambda ([n : Integer])
                        (lambda ([key :  Symbol])
                          #f)))
   (lambda ([h : heightmap]
+           [radius : Float]
            [axis : FlVector])
-    (define sea-level 0.0)
-    (define radius 6371000.0)
     (define zero (lambda ([n : Integer]) 0.0))
     (define void-set (lambda ([n : Integer]
                               [f : Float])
@@ -95,10 +94,11 @@
      #:tile tile
      #:corner corner)))
 
-(: empty-planet planet-terrain)
-(define empty-planet
-  ((heightmap->planet (n-grid 0))
+(: empty-planet (grid -> planet-terrain))
+(define (empty-planet grid)
+  ((heightmap->planet grid)
    (heightmap
-    (make-flvector 12 0.0)
-    (make-flvector 20 0.0))
+    (make-flvector (grid-tile-count grid) 0.0)
+    (make-flvector (grid-corner-count grid) 0.0))
+   default-radius
    default-axis))
