@@ -3,9 +3,10 @@
 (require racket/gui/base
          vraid/flow
          vraid/opengl
-         "key-input.rkt"
-         "point.rkt"
+         "key-input-handler.rkt"
          "mouse-input-handler.rkt"
+         "planet-canvas.rkt"
+         "point.rkt"
          "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
@@ -22,13 +23,6 @@
 (require plot
          profile
          profile/render-text)
-
-(define milliseconds-between-frames 70.0)
-(define last-draw (current-inexact-milliseconds))
-
-(define-values
-  (display-width display-height)
-  (get-display-size))
 
 (define (set-status-message! str)
   (send status-message set-label str))
@@ -216,42 +210,31 @@
                   (send control mouse-drag from to)
                   (repaint!))]))
 
+(define key-input-handler
+  (let ([scale 1.05])
+    (new key-input-handler%
+         [set-color set-color-mode/repaint]
+         [generate-terrain generate-terrain/current-parameters]
+         [generate-climate generate-climate]
+         [zoom-in (thunk (send control scale-by scale))] 
+         [zoom-out (thunk (send control scale-by (/ scale)))])))
+
 (define canvas
-  (new
-   (class* canvas% ()
-     (inherit with-gl-context swap-gl-buffers)
-     (define (paint)
-       (thread
-        (thunk
-         (with-gl-context
-          (thunk
-           (send control set-projection)
-           (gl-rotate (send control rotation-list (current-planet)))
-           (send planet-renderer render)
-           (swap-gl-buffers)))
-         (set! last-draw (current-inexact-milliseconds)))))
-     (define/override (on-paint)
-       (when (< milliseconds-between-frames
-                (- (current-inexact-milliseconds) last-draw))
-         (paint)))
-     (define/public (force-repaint)
-       (paint))
-     (define/override (on-size width height)
-       (send control resize-viewport width height)
-       (set! display-width width)
-       (set! display-height height)
-       (with-gl-context
-        (thunk
-         (set-gl-viewport 0 0 width height))))
-     (define/override (on-char event)
-       (define key-code (send event get-key-code))
-       (key-input control set-color-mode/repaint recolor/repaint generate-terrain/current-parameters generate-climate key-code))
-     (define/override (on-event event)
-       (send mouse-input-handler mouse-event event))
-     (super-instantiate () (style '(gl))))
-   [parent frame-panel]
-   [min-width 400]
-   [min-height 400]))
+  (new planet-canvas%
+       [parent frame-panel]
+       [min-width 400]
+       [min-height 400]
+       [milliseconds-between-frames 70.0]
+       [on-key-event (lambda (key)
+                       (send key-input-handler on-key key))]
+       [on-mouse-event (lambda (event)
+                         (send mouse-input-handler mouse-event event))]
+       [resize-viewport (lambda (width height)
+                          (send control resize-viewport width height))]
+       [paint (thunk
+               (send control set-projection)
+               (gl-rotate (send control rotation-list (current-planet)))
+               (send planet-renderer render))]))
 
 (init-info-panel)
 (send frame maximize #t)
