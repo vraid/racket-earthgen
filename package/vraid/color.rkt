@@ -47,15 +47,17 @@
    (flcolor->byte (flcolor-blue c))
    (flcolor->byte (flcolor-alpha c))))
 
-(define flcolor-interpolate
-  (lambda: ([col-one : flcolor]
-            [col-two : flcolor]
-            [d : Float])
-    (let* ([1-d (fl- 1.0 d)]
-           [f (lambda: ([f : (flcolor -> Float)])
-                (fl+ (fl* 1-d (f col-one))
-                     (fl* d (f col-two))))])
-      (flcolor (f flcolor-red)
-               (f flcolor-green)
-               (f flcolor-blue)
-               (f flcolor-alpha)))))
+(: flcolor-interpolate (flcolor flcolor Float -> flcolor))
+(define (flcolor-interpolate col-one col-two value)
+  (let* ([1-value (fl- 1.0 value)]
+         [f (lambda: ([f : (flcolor -> Float)])
+              (fl+ (fl* 1-value (f col-one))
+                   (fl* value (f col-two))))])
+    (flcolor (f flcolor-red)
+             (f flcolor-green)
+             (f flcolor-blue)
+             (f flcolor-alpha))))
+
+(: flcolor-interpolate/limit (flcolor flcolor Float -> flcolor))
+(define (flcolor-interpolate/limit one two value)
+  (flcolor-interpolate one two (min 1.0 value)))
