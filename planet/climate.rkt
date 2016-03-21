@@ -6,4 +6,5 @@
                  "climate/tile-climate.rkt"
                  "climate/temperature.rkt"
                  "climate/humidity.rkt"
-                 "climate/sunlight.rkt")
+                 "climate/sunlight.rkt"
+                 "climate/vegetation.rkt")

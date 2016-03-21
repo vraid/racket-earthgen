@@ -11,7 +11,8 @@
   (topography color-topography))
 
 (define-map-modes climate planet-climate?
-  (vegetation color-supported-vegetation)
+  (landscape color-landscape)
+  (vegetation color-leaf-area-index)
   (temperature color-temperature)
   (insolation color-insolation)
   (aridity color-aridity)

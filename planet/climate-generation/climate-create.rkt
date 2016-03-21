@@ -185,14 +185,7 @@
                                                            saturation-precipitation))]
                          [precipitation (/ (* precipitation-factor 0.2 humidity->precipitation outgoing-wind)
                                            (tile-area p n))]
-                         [humidity (- preliminary-humidity humidity->precipitation)]
-                         #;[humidity (if water?
-                                         saturation-humidity
-                                         (if (zero? outgoing-wind)
-                                             saturation-humidity
-                                             (min saturation-humidity
-                                                  (/ incoming-humidity
-                                                     outgoing-wind))))])
+                         [humidity (- preliminary-humidity humidity->precipitation)])
                     (set-humidity! n humidity)
                     (set-precipitation! n precipitation)))
                 (iterate! from to (apply max (map (lambda ([n : Integer])
@@ -218,10 +211,14 @@
             (let ([set-humidity (tile-climate-data-humidity-set! (planet-climate-tile p))]
                   [humidity-data (climate-data-tile-humidity climate-values)]
                   [set-precipitation (tile-climate-data-precipitation-set! (planet-climate-tile p))]
-                  [precipitation-data (climate-data-tile-precipitation climate-values)])
+                  [precipitation-data (climate-data-tile-precipitation climate-values)]
+                  [set-leaf-area-index (tile-climate-data-leaf-area-index-set! (planet-climate-tile p))])
               (for ([n (tile-count p)])
                 (set-humidity n (flvector-ref humidity-data n))
-                (set-precipitation n (flvector-ref precipitation-data n))))))))
+                (set-precipitation n (flvector-ref precipitation-data n))
+                (set-leaf-area-index n (supported-leaf-area-index (tile-insolation p n)
+                                                                  (tile-temperature p n)
+                                                                  (tile-precipitation p n)))))))))
     (set-wind! p)
     (climate-iterate!)
     (set-river-flow! p)

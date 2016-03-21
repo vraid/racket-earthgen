@@ -73,7 +73,7 @@
                       generate
                       "generating climate"
                       climate-func
-                      (thunk* (set-color-mode vegetation-map-mode))))))))
+                      (thunk* (set-color-mode landscape-map-mode))))))))
 
 (define (set-color-mode mode)
   (set! color-mode mode))

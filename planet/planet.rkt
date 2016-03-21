@@ -6,5 +6,4 @@
                  "geometry.rkt"
                  "terrain.rkt"
                  "water.rkt"
-                 "climate.rkt"
-                 "vegetation.rkt")
+                 "climate.rkt")

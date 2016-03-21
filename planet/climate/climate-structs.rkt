@@ -51,7 +51,8 @@
                 [sunlight Float]
                 [temperature Float]
                 [humidity Float]
-                [precipitation Float]))
+                [precipitation Float]
+                [leaf-area-index Float]))
 
 (direct-access planet-climate corner corner-climate-data
                ([river-flow Float]))

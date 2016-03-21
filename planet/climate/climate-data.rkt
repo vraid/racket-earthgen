@@ -10,7 +10,8 @@
                [sunlight _float]
                [temperature _float]
                [humidity _float]
-               [precipitation _float]))
+               [precipitation _float]
+               [leaf-area-index _float]))
 
 (struct-array corner-climate-data
               ([river-flow _float]))

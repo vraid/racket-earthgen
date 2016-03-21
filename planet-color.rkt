@@ -9,6 +9,9 @@
 (define color-neutral
   (flcolor3 0.95 0.95 0.85))
 
+(define color-neutral-water
+  (flcolor3 0.0 0.0 0.5))
+
 (define-type flcolor-list (Listof flcolor))
 
 (: find-color (Float (Listof Float) flcolor-list -> flcolor))
@@ -67,7 +70,6 @@
               topography-intervals
               topography-colors))
 
-(define vegetation-color (flcolor3 0.09411764705882353 0.1568627450980392 0.03137254901960784))
 (define snow-color (flcolor3 0.9 0.9 0.9))
 
 (define water-surface
@@ -101,26 +103,41 @@
   (filter-colors
    vegetation-topography-intervals/colors))
 
-(: color-vegetation-topography (planet-climate Integer -> flcolor))
-(define (color-vegetation-topography p n)
-  (find-color (if (tile-land? p n)
-                  (- (tile-elevation p n) (planet-sea-level p))
-                  (- (tile-water-depth p n)))
-              vegetation-topography-intervals
-              vegetation-topography-colors))
+(define dense-vegetation (flcolor3 0.09411764705882353 0.1568627450980392 0.03137254901960784))
+(define medium-vegetation (flcolor3 0.13 0.22 0.045))
 
-(: color-supported-vegetation (planet-climate Integer -> flcolor))
-(define (color-supported-vegetation p n)
-  (if (< 0.0 (tile-snow p n))
-      snow-color
-      (flcolor-interpolate (color-vegetation-topography p n)
-                           vegetation-color
-                           (if (tile-water? p n)
-                               0.0
-                               (vegetation-cover (supported-vegetation
-                                                  (tile-sunlight p n)
-                                                  (tile-temperature p n)
-                                                  (tile-humidity p n)))))))
+(: color-landscape (planet-climate Integer -> flcolor))
+(define (color-landscape p n)
+  (let ([topography (find-color (if (tile-land? p n)
+                                    (- (tile-elevation p n) (planet-sea-level p))
+                                    (- (tile-water-depth p n)))
+                                vegetation-topography-intervals
+                                vegetation-topography-colors)])
+    (if (tile-water? p n)
+        topography
+        (if (below-freezing-temperature? (tile-temperature p n))
+            snow-color
+            (let ([leaf-area (tile-leaf-area-index p n)])
+              (if (< 1.0 leaf-area)
+                  (flcolor-interpolate/limit medium-vegetation
+                                             dense-vegetation
+                                             (/ (- leaf-area 1.0)
+                                                6.0))
+                  (flcolor-interpolate/limit topography
+                                             medium-vegetation
+                                             leaf-area)))))))
+
+(define vegetation-min (flcolor3 1.0 1.0 1.0))
+(define vegetation-max (flcolor3 0.0 0.3 0.0))
+
+(: color-leaf-area-index (planet-climate Integer -> flcolor))
+(define (color-leaf-area-index p n)
+  (if (tile-water? p n)
+      color-neutral-water
+      (flcolor-interpolate/limit vegetation-min
+                                 vegetation-max
+                                 (/ (tile-leaf-area-index p n)
+                                    7.0))))
 
 (define temperature-intervals/colors
   (list (- freezing-temperature) (flcolor3 1.0 1.0 1.0)
@@ -170,10 +187,10 @@
 (define (color-precipitation p n)
   (if (tile-water? p n)
       humidity-water
-      (flcolor-interpolate precipitation-min
-                           precipitation-max
-                           (/ (tile-precipitation p n)
-                              (* 3.0 millimeters-per-day)))))
+      (flcolor-interpolate/limit precipitation-min
+                                 precipitation-max
+                                 (/ (tile-precipitation p n)
+                                    (* 3.0 millimeters-per-day)))))
 
 (define aridity-min color-neutral)
 (define aridity-medium (flcolor3 1.0 1.0 0.0))
@@ -189,11 +206,10 @@
             (flcolor-interpolate aridity-min
                                  aridity-medium
                                  (/ aridity 1.0))
-            (flcolor-interpolate aridity-medium
-                                 aridity-max
-                                 (/ (- (min 2.0 aridity)
-                                       1.0)
-                                    1.0))))))
+            (flcolor-interpolate/limit aridity-medium
+                                       aridity-max
+                                       (/ (- aridity 1.0)
+                                          1.0))))))
 
 (define color-yellow (flcolor3 1.0 1.0 0.0))
 (define color-red (flcolor3 1.0 0.0 0.0))
