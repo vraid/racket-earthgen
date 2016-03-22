@@ -19,22 +19,22 @@
   (cond
     [(= a b) 0.0]
     [(or (zero? a) (zero? b)) +inf.0]
-    [else (subtract 1.0
-                    (if (> a b)
-                        (/ a b)
-                        (/ b a)))]))
+    [else (subtract-by 1.0
+                       (if (> a b)
+                           (/ a b)
+                           (/ b a)))]))
 
-(: divide (case-> (Float Float -> Float)
-                  (Number Zero -> Zero)
-                  (Integer Integer -> Exact-Rational)
-                  (Number Number -> Number)))
-(define (divide a b)
+(: divide-by (case-> (Float Float -> Float)
+                     (Number Zero -> Zero)
+                     (Integer Integer -> Exact-Rational)
+                     (Number Number -> Number)))
+(define (divide-by a b)
   (/ b a))
 
-(: subtract (case-> (Float Float -> Float)
-                    (Integer Integer -> Integer)
-                    (Number Number -> Number)))
-(define (subtract a b)
+(: subtract-by (case-> (Float Float -> Float)
+                       (Integer Integer -> Integer)
+                       (Number Number -> Number)))
+(define (subtract-by a b)
   (- b a))
 
 (define sum +)

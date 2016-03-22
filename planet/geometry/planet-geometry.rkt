@@ -88,9 +88,9 @@
 
 (: spherical-triangle-excess (FlVector FlVector FlVector -> Float))
 (define (spherical-triangle-excess a b c)
-  (subtract pi (+ (triangle-corner-angle a b c)
-                  (triangle-corner-angle b c a)
-                  (triangle-corner-angle c a b))))
+  (subtract-by pi (+ (triangle-corner-angle a b c)
+                     (triangle-corner-angle b c a)
+                     (triangle-corner-angle c a b))))
 
 (define spherical-triangle-area spherical-triangle-excess)
 
@@ -145,4 +145,4 @@
 
 (: tile-east (planet-geometry Integer -> Float))
 (define (tile-east p n)
-  (subtract (* 0.5 pi) (tile-north p n)))
+  (subtract-by (* 0.5 pi) (tile-north p n)))

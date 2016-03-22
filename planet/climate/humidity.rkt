@@ -19,8 +19,8 @@
 
 (: potential-evapotranspiration (Float Float -> Float))
 (define (potential-evapotranspiration temperature humidity)
-  (subtract humidity
-            (saturation-humidity temperature)))
+  (subtract-by humidity
+               (saturation-humidity temperature)))
 
 (define aridity-reference (potential-evapotranspiration
                            (+ freezing-temperature

@@ -23,5 +23,5 @@
         (flvector3-scale (product wind-speed-constant
                                   (flvector3-length pressure-gradient-force))
                          (flvector3-sum (flvector3-normal pressure-gradient-force)
-                                        (flvector3-scale (divide friction-coefficient coriolis-coefficient)
+                                        (flvector3-scale (divide-by friction-coefficient coriolis-coefficient)
                                                          perpendicular-component))))))
