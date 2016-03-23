@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require vraid/color
+         math/flonum
          "color-base.rkt"
          "planet/planet.rkt")
 
@@ -103,8 +104,14 @@
   (filter-colors
    vegetation-topography-intervals/colors))
 
+(: scale/log (Float -> Float))
+(define (scale/log n)
+  (fllog2 (+ 1.0 n)))
+
 (define dense-vegetation (flcolor3 0.09411764705882353 0.1568627450980392 0.03137254901960784))
 (define medium-vegetation (flcolor3 0.13 0.22 0.045))
+(define max-vegetation-scale (scale/log 7.0))
+(define medium-vegetation-cutoff 2.0)
 
 (: color-landscape (planet-climate Integer -> flcolor))
 (define (color-landscape p n)
@@ -117,15 +124,15 @@
         topography
         (if (below-freezing-temperature? (tile-temperature p n))
             snow-color
-            (let ([leaf-area (tile-leaf-area-index p n)])
-              (if (< 1.0 leaf-area)
+            (let ([leaf-area (scale/log (tile-leaf-area-index p n))])
+              (if (< medium-vegetation-cutoff leaf-area)
                   (flcolor-interpolate/limit medium-vegetation
                                              dense-vegetation
-                                             (/ (- leaf-area 1.0)
-                                                6.0))
+                                             (/ (- leaf-area medium-vegetation-cutoff)
+                                                (- max-vegetation-scale medium-vegetation-cutoff)))
                   (flcolor-interpolate/limit topography
                                              medium-vegetation
-                                             leaf-area)))))))
+                                             (/ leaf-area medium-vegetation-cutoff))))))))
 
 (define vegetation-min (flcolor3 1.0 1.0 1.0))
 (define vegetation-max (flcolor3 0.0 0.3 0.0))
@@ -136,8 +143,8 @@
       color-neutral-water
       (flcolor-interpolate/limit vegetation-min
                                  vegetation-max
-                                 (/ (tile-leaf-area-index p n)
-                                    7.0))))
+                                 (/ (scale/log (tile-leaf-area-index p n))
+                                    max-vegetation-scale))))
 
 (define temperature-intervals/colors
   (list (- freezing-temperature) (flcolor3 1.0 1.0 1.0)
@@ -152,7 +159,8 @@
 
 (: temperature-intervals (Listof Float))
 (define temperature-intervals
-  (map (curry + freezing-temperature)
+  (map (lambda ([a : Float])
+         (+ a freezing-temperature))
        (filter-intervals
         temperature-intervals/colors)))
 
@@ -182,6 +190,7 @@
 (define precipitation-max (flcolor3 0.0 1.0 0.0))
 
 (define millimeters-per-day (/ 0.001 seconds-per-day))
+(define max-precipitation-scale (scale/log (* 3.0 millimeters-per-day)))
 
 (: color-precipitation (planet-climate Integer -> flcolor))
 (define (color-precipitation p n)
@@ -189,8 +198,8 @@
       humidity-water
       (flcolor-interpolate/limit precipitation-min
                                  precipitation-max
-                                 (/ (tile-precipitation p n)
-                                    (* 3.0 millimeters-per-day)))))
+                                 (/ (scale/log (tile-precipitation p n))
+                                    max-precipitation-scale))))
 
 (define aridity-min color-neutral)
 (define aridity-medium (flcolor3 1.0 1.0 0.0))
