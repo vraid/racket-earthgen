@@ -5,19 +5,19 @@
          "../direct-access.rkt"
          "../geometry/geometry-structs.rkt")
 
-(require/provide "terrain-data-structs.rkt")
+(require/provide "terrain-data.rkt")
 
 (provide (all-defined-out))
 
-(struct/kw: terrain-parameters
-            ([grid-size : Integer]
-             [radius : Float]
-             [sea-level : Float]
-             [axis : FlVector]))
+(struct/kw terrain-parameters
+           ([grid-size : Integer]
+            [radius : Float]
+            [sea-level : Float]
+            [axis : FlVector]))
 
-(struct/kw: planet-terrain planet-geometry
-            ([tile : tile-terrain-data]
-             [corner : corner-terrain-data]))
+(struct/kw planet-terrain planet-geometry
+           ([tile : tile-terrain-data]
+            [corner : corner-terrain-data]))
 
 (direct-access planet-terrain tile tile-terrain-data
                ([elevation Float]))

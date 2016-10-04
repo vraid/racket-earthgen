@@ -1,12 +1,11 @@
-#lang racket
+#lang typed/racket
 
 (provide (all-defined-out))
 
-(require vraid/array
-         ffi/unsafe)
+(require vraid/struct)
 
-(struct-array tile-terrain-data
-              ([elevation _float]))
+(vector-struct tile-terrain-data
+               ([elevation : Float]))
 
-(struct-array corner-terrain-data
-              ([elevation _float]))
+(vector-struct corner-terrain-data
+               ([elevation : Float]))

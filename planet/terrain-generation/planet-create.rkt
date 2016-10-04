@@ -4,7 +4,7 @@
 (provide (all-defined-out))
 
 (require vraid/math
-         vraid/typed-array
+         vraid/struct
          vraid/util
          "../grid.rkt"
          "../heightmap.rkt"
@@ -12,6 +12,11 @@
          "../terrain.rkt"
          "../water.rkt"
          racket/flonum)
+
+(: init-array (Integer -> ((Integer Float -> Void) (Integer -> Float) -> Void)))
+(define ((init-array count) set get)
+  (for ([n count])
+    (set n (get n))))
 
 (define tile-init
   (lambda ([grid : grid])
@@ -24,6 +29,29 @@
 (define edge-init
   (lambda ([grid : grid])
     (init-array (edge-count grid))))
+
+(struct (A) get/set
+  ([get : (Integer -> A)]
+   [set : (Integer A -> Void)]))
+
+(: get/set-flvector (Integer -> (get/set Flonum)))
+(define (get/set-flvector count)
+  (let ([v (make-flvector count 0.0)])
+    (get/set (lambda ([n : Integer]) (flvector-ref v n))
+             (lambda ([n : Integer]
+                      [value : Float]) (flvector-set! v n value)))))
+
+(: make-tile-terrain-data (Integer -> tile-terrain-data))
+(define (make-tile-terrain-data n)
+  (let ([elevation (get/set-flvector n)])
+    (tile-terrain-data/kw #:elevation (get/set-get elevation)
+                          #:elevation-set! (get/set-set elevation))))
+
+(: make-corner-terrain-data (Integer -> corner-terrain-data))
+(define (make-corner-terrain-data n)
+  (let ([elevation (get/set-flvector n)])
+    (corner-terrain-data/kw #:elevation (get/set-get elevation)
+                            #:elevation-set! (get/set-set elevation))))
 
 (: planet/sea-level (Float planet-terrain -> planet-water))
 (define (planet/sea-level sea-level p)
@@ -39,7 +67,9 @@
      #:tile (tile-water-data (lambda ([n : Integer]) sea-level)
                              void-fl-set!)
      #:corner (corner-water-data (lambda ([n : Integer]) -1)
-                                 void-int-set!)
+                                 (lambda ([n : Integer]
+                                          [a : (Option Integer)])
+                                   (void)))
      #:rivers '())))
 
 (: copy-planet-geography (planet-terrain -> planet-terrain))

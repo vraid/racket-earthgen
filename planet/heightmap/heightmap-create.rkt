@@ -14,12 +14,12 @@
 
 (define-type heightmap-function (grid-list -> heightmap))
 
-(struct/kw: heightmap-parameters
-            ([seed : String]
-             [base-level : Integer]
-             [amplitude : Float]
-             [persistence : Float])
-            #:transparent)
+(struct/kw heightmap-parameters
+           ([seed : String]
+            [base-level : Integer]
+            [amplitude : Float]
+            [persistence : Float])
+           #:transparent)
 
 (define inexact-corner-edge-count
   (exact->inexact corner-edge-count))

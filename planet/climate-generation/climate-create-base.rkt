@@ -5,7 +5,6 @@
 (require vraid/flow
          vraid/math
          vraid/util
-         vraid/typed-array
          math/flonum
          "../grid.rkt"
          "../geometry.rkt"
@@ -64,7 +63,6 @@
 (define (set-wind! p)
   (let* ([tropical-equator (* 0.5 (planet-solar-equator p))]
          [edge-wind (make-flvector (edge-count p) 0.0)]
-         [init-edge-array (init-array (edge-count p))]
          [add (lambda ([n : Integer]
                        [a : Float])
                 (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))]
@@ -95,9 +93,8 @@
             (add e (* 0.5
                       (tile-edge-sign p n i)
                       (tile-wind i)))))))
-    (init-edge-array (edge-climate-data-air-flow-set! (planet-climate-edge p))
-                     (lambda ([n : Integer])
-                       (flvector-ref edge-wind n)))))
+    (for ([n (edge-count p)])
+      ((edge-climate-data-air-flow-set! (planet-climate-edge p)) n (flvector-ref edge-wind n)))))
 
 (: set-river-flow! (planet-climate -> Void))
 (define (set-river-flow! planet)

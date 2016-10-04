@@ -9,10 +9,7 @@
 
 (: corner-river-direction (planet-water Integer -> (Option Integer)))
 (define (corner-river-direction planet n)
-  (let ([direction ((corner-water-data-river-direction (planet-water-corner planet)) n)])
-    (if (<= 0 direction)
-        direction
-        #f)))
+  ((corner-water-data-river-direction (planet-water-corner planet)) n))
 
 (: corner-river-destination (planet-water Integer -> (Option Integer)))
 (define (corner-river-destination planet n)

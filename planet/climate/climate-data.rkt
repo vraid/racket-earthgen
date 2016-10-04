@@ -1,21 +1,20 @@
-#lang racket
+#lang typed/racket
 
 (provide (all-defined-out))
 
-(require vraid/array
-         ffi/unsafe)
+(require vraid/struct)
 
-(struct-array tile-climate-data
-              ([snow _float]
-               [sunlight _float]
-               [temperature _float]
-               [humidity _float]
-               [precipitation _float]
-               [leaf-area-index _float]))
+(vector-struct tile-climate-data
+               ([snow : Float]
+                [sunlight : Float]
+                [temperature : Float]
+                [humidity : Float]
+                [precipitation : Float]
+                [leaf-area-index : Float]))
 
-(struct-array corner-climate-data
-              ([river-flow _float]))
+(vector-struct corner-climate-data
+               ([river-flow : Float]))
 
-(struct-array edge-climate-data
-              ([river-flow _float]
-               [air-flow _float]))
+(vector-struct edge-climate-data
+               ([river-flow : Float]
+                [air-flow : Float]))

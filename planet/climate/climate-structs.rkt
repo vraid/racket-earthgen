@@ -8,17 +8,17 @@
          "../water/water-structs.rkt"
          "../direct-access.rkt")
 
-(require/provide "climate-data-structs.rkt")
+(require/provide "climate-data.rkt")
 
 (provide (all-defined-out))
 
-(struct/kw: climate-parameters
-            ([axial-tilt : Float]
-             [seasons-per-cycle : Positive-Integer]
-             [acceptable-delta : Float]
-             [precipitation-factor : Float]
-             [humidity-half-life-days : Float])
-            #:transparent)
+(struct/kw climate-parameters
+           ([axial-tilt : Float]
+            [seasons-per-cycle : Positive-Integer]
+            [acceptable-delta : Float]
+            [precipitation-factor : Float]
+            [humidity-half-life-days : Float])
+           #:transparent)
 
 (: default-climate-parameters (-> climate-parameters))
 (define (default-climate-parameters)
@@ -39,12 +39,12 @@
   (* (sin (* tau (planet-time-of-year planet)))
      (climate-parameters-axial-tilt (planet-climate-parameters planet))))
 
-(struct/kw: planet-climate planet-water
-            ([parameters : climate-parameters]
-             [season : Integer]
-             [tile : tile-climate-data]
-             [corner : corner-climate-data]
-             [edge : edge-climate-data]))
+(struct/kw planet-climate planet-water
+           ([parameters : climate-parameters]
+            [season : Integer]
+            [tile : tile-climate-data]
+            [corner : corner-climate-data]
+            [edge : edge-climate-data]))
 
 (direct-access planet-climate tile tile-climate-data
                ([snow Float]

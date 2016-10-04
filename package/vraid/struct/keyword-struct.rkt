@@ -4,16 +4,16 @@
                      racket/list
                      racket/struct-info))
 
-(provide struct/kw:)
+(provide struct/kw)
 
 (begin-for-syntax
   (define (syntax->keyword stx)
     (string->keyword (symbol->string (syntax->datum stx)))))
 
-(define-syntax (struct/kw: stx)
+(define-syntax (struct/kw stx)
   (syntax-case stx ()
     [(_ id ([field : type] ...) opt ...)
-     (with-syntax ([kw-ctor (format-id stx "~a/kw" #'id)]
+     (with-syntax ([kw-ctor (format-id #'id "~a/kw" #'id)]
                    [(kw+type ...) (append*
                                    (map (lambda (fld type)
                                           (list (syntax->keyword fld)
@@ -33,7 +33,7 @@
                     (id field ...))
                   (kw+type ... -> id)))))]
     [(_ id super-id ([field : type] ...) opt ...)
-     (with-syntax ([kw-ctor (format-id stx "~a/kw" #'id)]
+     (with-syntax ([kw-ctor (format-id #'id "~a/kw" #'id)]
                    [(kw+type ...) (append*
                                    (map (lambda (fld type)
                                           (list (syntax->keyword fld)

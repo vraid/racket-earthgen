@@ -11,10 +11,10 @@
 (struct: tile-geometry-data
   ([area : float-get]))
 
-(struct/kw: planet-geometry grid
-            ([axis : FlVector]
-             [radius : Float]
-             [tile : tile-geometry-data]))
+(struct/kw planet-geometry grid
+           ([axis : FlVector]
+            [radius : Float]
+            [tile : tile-geometry-data]))
 
 (define default-radius 6371000.0)
 (define default-axis (flvector 0.0 0.0 1.0))

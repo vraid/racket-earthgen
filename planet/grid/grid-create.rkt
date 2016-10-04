@@ -2,7 +2,6 @@
 
 (require racket/flonum
          vraid/types
-         vraid/typed-array
          vraid/math
          "grid-structs.rkt"
          "grid-functions.rkt")
@@ -24,6 +23,15 @@
    [grid : grid]))
 
 (define-type flvector-vector (Vectorof FlVector))
+
+(: make-vector-get/set (Integer -> (Values (Integer -> Integer) (Integer Integer -> Void))))
+(define (make-vector-get/set length)
+  (let ([v (make-vector length 0)])
+    (values (lambda ([n : Integer])
+              (vector-ref v n))
+            (lambda ([n : Integer]
+                     [a : Integer])
+              (vector-set! v n a)))))
 
 (: 0-grid-coordinates flvector-vector)
 (define 0-grid-coordinates
@@ -92,14 +100,14 @@
          [corner-set! (curry fixed-set! 3)]
          [edge-set! (curry fixed-set! 2)])
     (let-values
-        ([(tile-tile tile-tile-set!) (make-int-array (* 6 tile-count))]
-         [(tile-corner tile-corner-set!) (make-int-array (* 6 tile-count))]
-         [(tile-edge tile-edge-set!) (make-int-array (* 6 tile-count))]
-         [(corner-tile corner-tile-set!) (make-int-array (* 3 corner-count))]
-         [(corner-corner corner-corner-set!) (make-int-array (* 3 corner-count))]
-         [(corner-edge corner-edge-set!) (make-int-array (* 3 corner-count))]
-         [(edge-tile edge-tile-set!) (make-int-array (* 2 edge-count))]
-         [(edge-corner edge-corner-set!) (make-int-array (* 2 edge-count))])
+        ([(tile-tile tile-tile-set!) (make-vector-get/set (* 6 tile-count))]
+         [(tile-corner tile-corner-set!) (make-vector-get/set (* 6 tile-count))]
+         [(tile-edge tile-edge-set!) (make-vector-get/set (* 6 tile-count))]
+         [(corner-tile corner-tile-set!) (make-vector-get/set (* 3 corner-count))]
+         [(corner-corner corner-corner-set!) (make-vector-get/set (* 3 corner-count))]
+         [(corner-edge corner-edge-set!) (make-vector-get/set (* 3 corner-count))]
+         [(edge-tile edge-tile-set!) (make-vector-get/set (* 2 edge-count))]
+         [(edge-corner edge-corner-set!) (make-vector-get/set (* 2 edge-count))])
       (for ([n (* 6 tile-count)])
         (tile-corner-set! n -1)
         (tile-edge-set! n -1))

@@ -1,12 +1,11 @@
-#lang racket
+#lang typed/racket
 
 (provide (all-defined-out))
 
-(require vraid/array
-         ffi/unsafe)
+(require vraid/struct)
 
-(struct-array tile-water-data
-              ([water-level _float]))
+(vector-struct tile-water-data
+               ([water-level : Float]))
 
-(struct-array corner-water-data
-              ([river-direction _int]))
+(vector-struct corner-water-data
+               ([river-direction : (Option Integer)]))

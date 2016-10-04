@@ -26,3 +26,22 @@
 (: vector-take-at-most (All (a) ((Vectorof a) Integer -> (Vectorof a))))
 (define (vector-take-at-most vec n)
   (vector-take vec (min n (vector-length vec))))
+
+(struct (A) vector-accessor
+  ([get : (Integer -> A)]
+   [set : (Integer A -> Void)]))
+
+(: make-vector-accessor (All (A) ((Vectorof A) -> (vector-accessor A))))
+(define (make-vector-accessor v)
+  (vector-accessor (lambda ([n : Integer])
+                   (vector-ref v n))
+                 (lambda ([n : Integer]
+                          [a : A])
+                   (vector-set! v n a))))
+
+(: make-flvector-accessor (FlVector -> (vector-accessor Float)))
+(define (make-flvector-accessor v)
+  (vector-accessor (curry flvector-ref v)
+                 (lambda ([n : Integer]
+                          [a : Float])
+                   (flvector-set! v n a))))

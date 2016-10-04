@@ -3,6 +3,7 @@
 (provide planet/rivers)
 
 (require racket/promise
+         racket/flonum
          vraid/flow
          vraid/types
          vraid/sorted-tree
@@ -135,6 +136,23 @@
          '()
          (range (corner-count planet))))
 
+(: make-tile-water-data (Integer -> tile-water-data))
+(define (make-tile-water-data n)
+  (let ([v (make-flvector n 0.0)])
+    (tile-water-data/kw #:water-level (curry flvector-ref v)
+                        #:water-level-set! (lambda ([n : Integer]
+                                                    [a : Flonum])
+                                             (flvector-set! v n a)))))
+
+(: make-corner-water-data (Integer -> corner-water-data))
+(define (make-corner-water-data n)
+  (let ([direction : (Vectorof (Option Integer)) (make-vector n #f)])
+    (corner-water-data/kw #:river-direction (lambda ([n : Integer])
+                                              (vector-ref direction n))
+                          #:river-direction-set! (lambda ([n : Integer]
+                                                          [a : (Option Integer)])
+                                                   (vector-set! direction n a)))))
+
 (: planet/rivers (planet-water -> planet-water))
 (define (planet/rivers p)
   (let* ([tiles (make-tile-water-data (tile-count p))]
@@ -143,9 +161,6 @@
               ((tile-init p) (tile-water-data-water-level-set! tiles)
                              (lambda ([n : Integer])
                                (planet-sea-level p)))
-              ((corner-init p) (corner-water-data-river-direction-set! corners)
-                               (lambda ([n : Integer])
-                                 -1))
               (planet-water/kw
                #:planet-terrain (copy-planet-geography p)
                #:sea-level (planet-sea-level p)

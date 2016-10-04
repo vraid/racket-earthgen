@@ -8,7 +8,6 @@
          default-wind)
 
 (require math/flonum
-         vraid/typed-array
          vraid/util
          "../grid.rkt"
          "../geometry.rkt"
@@ -17,6 +16,35 @@
          "../terrain-generation/planet-create.rkt"
          "climate-create-base.rkt"
          "../terrain-generation/river-generation.rkt")
+
+(: new-flvector-accessor (Integer -> (vector-accessor Float)))
+(define (new-flvector-accessor count)
+  (make-flvector-accessor
+   (make-flvector count 0.0)))
+
+(: make-tile-climate-data (Integer -> tile-climate-data))
+(define (make-tile-climate-data tile-count)
+  (let ([new-flvector (thunk (new-flvector-accessor tile-count))])
+    (tile-climate-data/accessors
+     #:snow (new-flvector)
+     #:sunlight (new-flvector)
+     #:temperature (new-flvector)
+     #:humidity (new-flvector)
+     #:precipitation (new-flvector)
+     #:leaf-area-index (new-flvector))))
+
+(: make-corner-climate-data (Integer -> corner-climate-data))
+(define (make-corner-climate-data corner-count)
+  (let ([new-flvector (thunk (new-flvector-accessor corner-count))])
+    (corner-climate-data/accessors
+     #:river-flow (new-flvector))))
+
+(: make-edge-climate-data (Integer -> edge-climate-data))
+(define (make-edge-climate-data edge-count)
+  (let ([new-flvector (thunk (new-flvector-accessor edge-count))])
+    (edge-climate-data/accessors
+     #:river-flow (new-flvector)
+     #:air-flow (new-flvector))))
 
 (: singular-climate (climate-parameters planet-water (String -> Any) -> planet-climate))
 (define (singular-climate param planet feedback)
