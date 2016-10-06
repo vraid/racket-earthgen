@@ -2,15 +2,13 @@
 
 (require (for-syntax racket/syntax
                      racket/list)
-         racket/flonum
+         "../syntax/util.rkt")
+
+(require racket/flonum
          "keyword-struct.rkt"
          "../util/vector-util.rkt")
 
 (provide vector-struct)
-
-(begin-for-syntax
-  (define (syntax->keyword stx)
-    (string->keyword (symbol->string (syntax->datum stx)))))
 
 (define-syntax (vector-struct stx)
   (syntax-case stx ()
