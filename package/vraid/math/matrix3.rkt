@@ -9,44 +9,42 @@
          matrix3*
          matrix3-vector3*)
 
-(define-type matrix3 FlVector)
-
-(: matrix3-identity (-> matrix3))
+(: matrix3-identity (-> FlVector))
 (define (matrix3-identity)
   (vector->flvector
    (vector 1 0 0
            0 1 0
            0 0 1)))
 
-(: matrix3-zero (-> matrix3))
+(: matrix3-zero (-> FlVector))
 (define (matrix3-zero)
   (vector->flvector
    (make-vector 9 0)))
 
-(: matrix3+ (matrix3 * -> matrix3))
+(: matrix3+ (FlVector * -> FlVector))
 (define (matrix3+ . ms)
   (foldl flvector+ (matrix3-zero) ms))
 
-(: matrix3- (matrix3 matrix3 * -> matrix3))
+(: matrix3- (FlVector FlVector * -> FlVector))
 (define (matrix3- a . ms)
   (if (empty? ms)
       (flvector- a)
-      (foldl (lambda: ([a : matrix3]
-                       [b : matrix3])
+      (foldl (lambda: ([a : FlVector]
+                       [b : FlVector])
                (flvector- b a))
              a ms)))
 
-(: matrix3-element (matrix3 Integer Integer -> Float))
+(: matrix3-element (FlVector Integer Integer -> Float))
 (define (matrix3-element m i j)
   (flvector-ref m (+ i (* 3 j))))
 
-(: matrix3-row (matrix3 Integer -> FlVector))
+(: matrix3-row (FlVector Integer -> FlVector))
 (define (matrix3-row m r)
   (let ([el (lambda: ([c : Integer])
               (matrix3-element m r c))])
     (flvector (el 0) (el 1) (el 2))))
 
-(: matrix3-column (matrix3 Integer -> FlVector))
+(: matrix3-column (FlVector Integer -> FlVector))
 (define (matrix3-column m c)
   (let ([el (lambda: ([r : Integer])
               (matrix3-element m r c))])
@@ -56,7 +54,7 @@
 (define (element-sum v)
   (foldl + 0.0 (flvector->list v)))
 
-(: matrix3-single* (matrix3 matrix3 -> matrix3))
+(: matrix3-single* (FlVector FlVector -> FlVector))
 (define (matrix3-single* a b)
   (let ([m (lambda: ([r : Integer]
                      [c : Integer])
@@ -68,11 +66,11 @@
               (m 1 0) (m 1 1) (m 1 2)
               (m 2 0) (m 2 1) (m 2 2))))
 
-(: matrix3* (matrix3 * -> matrix3))
+(: matrix3* (FlVector * -> FlVector))
 (define (matrix3* . ms)
   (foldl matrix3-single* (matrix3-identity) ms))
 
-(: matrix3-vector3* (matrix3 FlVector -> FlVector))
+(: matrix3-vector3* (FlVector FlVector -> FlVector))
 (define (matrix3-vector3* a v)
   (let ([m (lambda: ([r : Integer])
              (element-sum
