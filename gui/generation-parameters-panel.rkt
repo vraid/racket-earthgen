@@ -38,6 +38,10 @@
     (define (read-only parent caption converter get-value)
       ((read-only-panel parent control-height label-width) caption (convert-to-string converter) get-value))
     (define terrain-panel (new-panel))
+    (define seed-edit (edit terrain-panel
+                            "seed"
+                            format-string
+                            (thunk "")))
     (define grid-size-edit (edit terrain-panel
                                  "grid size"
                                  format-integer
@@ -104,6 +108,7 @@
         (send axis-edit update/value selected-axis)))
     (define/public (terrain-parameters)
       (terrain-parameters/kw
+       #:seed (send seed-edit get-value)
        #:grid-size (let ([size (send grid-size-edit get-value)])
                      (if (and (integer? size) (<= 0 size))
                          (inexact->exact size)

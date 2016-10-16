@@ -10,7 +10,8 @@
 (provide (all-defined-out))
 
 (struct/kw terrain-parameters
-           ([grid-size : Integer]
+           ([seed : String]
+            [grid-size : Integer]
             [radius : Float]
             [sea-level : Float]
             [axis : FlVector]))

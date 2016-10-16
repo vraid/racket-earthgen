@@ -7,9 +7,9 @@
          "mouse-input-handler.rkt"
          "planet-canvas.rkt"
          "point.rkt"
-         "load-terrain.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
+         "terrain-dsl.rkt"
          "map-mode.rkt"
          "map-modes.rkt"
          "gui/map-mode-panel.rkt"
@@ -51,17 +51,23 @@
 (define (generate-terrain/current-parameters)
   (generate-terrain (send generation-panel terrain-parameters)))
 
+(define (on-fail a)
+  #f)
+
 (define (generate-terrain parameters)
   (let* ([size (terrain-parameters-grid-size parameters)]
          [radius (terrain-parameters-radius parameters)]
+         [seed (terrain-parameters-seed parameters)]
          [sea-level (terrain-parameters-sea-level parameters)]
          [axis (terrain-parameters-axis parameters)]
-         [grids (send grid-handler get-grids size)])
+         [grids (send grid-handler get-grids size)]
+         [algorithm (thunk ((eval-terrain-function (file->value "terrain-gen.rkt")) seed))])
     (send planet-handler
           generate
           "generating terrain"
-          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((load-terrain) grids) radius axis)))
-          (thunk* (set-color-mode topography-map-mode)))))
+          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((algorithm) grids) radius axis)))
+          (thunk* (set-color-mode topography-map-mode))
+          on-fail)))
 
 (define (generate-climate)
   (and-let* ([terrain (send planet-handler current)]
@@ -73,7 +79,8 @@
                       generate
                       "generating climate"
                       climate-func
-                      (thunk* (set-color-mode landscape-map-mode))))))))
+                      (thunk* (set-color-mode landscape-map-mode))
+                      on-fail))))))
 
 (define (set-color-mode mode)
   (set! color-mode mode))
@@ -247,6 +254,7 @@
                     [planet current-planet]))))
 
 (generate-terrain (terrain-parameters/kw
+                   #:seed "hi"
                    #:grid-size 5
                    #:radius default-radius
                    #:sea-level 0.0

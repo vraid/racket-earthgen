@@ -45,6 +45,12 @@
   ([to-string : ((Option a) -> String)]
    [from-string : (String -> (Option a))]))
 
+(define format-string
+  (convert (lambda ([a : (Option String)])
+             (if a a ""))
+           (lambda ([s : String])
+             s)))
+
 (define format-exponential
   (convert float->exponential
            string->float))

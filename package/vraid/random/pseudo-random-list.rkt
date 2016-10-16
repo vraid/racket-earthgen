@@ -1,13 +1,14 @@
 #lang typed/racket
 
-(provide pseudo-random-list
-         pseudo-random-list?
-         pseudo-random-list-numbers
+(require math/flonum)
+
+(provide (struct-out pseudo-random-list)
+         (struct-out seed)
+         make-seed
+         string->seed
          pseudo-random-list-next
          pseudo-random-list-rest
          make-pseudo-random-list)
-
-(require math/flonum)
 
 (define-type state-vector
   (Vector Positive-Integer
@@ -16,6 +17,9 @@
           Positive-Integer
           Positive-Integer
           Positive-Integer))
+
+(struct: seed
+  ([value : Positive-Integer]))
 
 (: char-max (Integer -> Integer))
 (define (char-max byte-length)
@@ -29,8 +33,12 @@
                        #x80000000))
    (- byte-length 1)))
 
-(: seed-max Integer)
-(define seed-max (- (expt 2 31) 1))
+(: seed-max Positive-Integer)
+(define seed-max (max 1 (- (expt 2 31) 1)))
+
+(: make-seed (Integer -> seed))
+(define (make-seed n)
+  (seed (+ 1 (modulo n seed-max))))
 
 (: string->seed (String -> Positive-Integer))
 (define (string->seed s)
@@ -45,7 +53,6 @@
                    seed-max))
              (rest chars))))
   (+ (sum 0 (string->list s)) 1))
-
 
 (struct: pseudo-random-list
   ([numbers : FlVector]
@@ -71,9 +78,9 @@
    (flvector)
    (pseudo-random-list-state r)))
 
-(: make-pseudo-random-list (String -> pseudo-random-list))
+(: make-pseudo-random-list (seed -> pseudo-random-list))
 (define (make-pseudo-random-list seed)
-  (random-seed (string->seed seed))
+  (random-seed (seed-value seed))
   (pseudo-random-list
    (flvector)
    (pseudo-random-generator->vector

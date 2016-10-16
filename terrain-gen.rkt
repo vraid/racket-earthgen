@@ -1,67 +1,55 @@
-(let* ([continent (heightmap-map
-                   (lambda (a)
-                     (if (< 0 a)
-                         a
-                         (* 2.0 a)))
-                   (heightmap-create
-                    (heightmap-parameters/kw
-                     #:seed "kcusi"
-                     #:base-level 2
-                     #:amplitude 800.0
-                     #:persistence 0.65)))]
-       [snakey (let ([width 0.3])
-                 (heightmap-map
+(let ([continent (map
                   (lambda (a)
-                    (sqrt
-                     (/ (- width
-                           (min width
-                                (abs a)))
-                        width)))
-                  (heightmap-create
-                   (heightmap-parameters/kw
-                    #:seed "jredr"
-                    #:base-level 2
-                    #:amplitude 1.0
-                    #:persistence 0.0))))]
-       [mountain-mod
-        (heightmap-map*
-         (lambda (a b . n)
-           (max a b 0.0))
-         (heightmap-raise 600.0
-         (heightmap-create
-          (heightmap-parameters/kw
-           #:seed "vrgs"
-           #:base-level 3
-           #:amplitude 3000.0
-           #:persistence 0.7)))
-         (heightmap-raise 400.0
-         (heightmap-create
-          (heightmap-parameters/kw
-           #:seed "tewss"
-           #:base-level 2
-           #:amplitude 2000.0
-           #:persistence 0.7))))]
-       [mountains
-        (heightmap-map*
-         (lambda (a b . n)
-           (* a b))
-         mountain-mod
-         snakey)])
-  (heightmap-lower
+                    (if (< 0 a)
+                        a
+                        (* 2.0 a)))
+                  (heightmap
+                   [seed (seed 0)]
+                   [base-level 2]
+                   [amplitude 800.0]
+                   [persistence 0.65]))]
+      [snakey (let ([width 0.3])
+                (map
+                 (lambda (a)
+                   (sqrt
+                    (/ (- width
+                          (min width
+                               (abs a)))
+                       width)))
+                 (heightmap
+                  [seed (seed 1)]
+                  [base-level 2]
+                  [amplitude 1.0]
+                  [persistence 0.0])))]
+      [mountain-mod
+       (map
+        (lambda (a b)
+          (max a b 0.0))
+        (raise 600.0
+               (heightmap
+                [seed (seed 2)]
+                [base-level 3]
+                [amplitude 3000.0]
+                [persistence 0.7]))
+        (raise 400.0
+               (heightmap
+                [seed (seed 3)]
+                [base-level 2]
+                [amplitude 2000.0]
+                [persistence 0.7])))]
+      [mountains
+       (map
+        *
+        mountain-mod
+        snakey)])
+  (lower
    100.0
-   (heightmap-map*
-    (lambda (a b . n)
-      (let* ([max-scale (* 10 a)]
-             [total (+ a (* b (sgn a)))])
+   (map
+    (lambda (a b)
+      (let ([max-scale (* 10 a)]
+            [total (+ a (* b (sign a)))])
         (if (< (abs max-scale) (abs total))
             max-scale
             total)))
     continent
-    mountains))
-  #;(heightmap-combine
-   continent
-   (heightmap-map*
-    (lambda (a b . ns)
-      (* (max 0.0 a) b))
-    mountain-mod
-    snakey)))
+    mountains)))
