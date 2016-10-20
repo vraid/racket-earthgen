@@ -1,11 +1,8 @@
 #lang typed/racket
 
 (require vraid/struct
-         vraid/require
          "../direct-access.rkt"
          "../geometry/geometry-structs.rkt")
-
-(require/provide "terrain-data.rkt")
 
 (provide (all-defined-out))
 
@@ -16,6 +13,12 @@
             [radius : Float]
             [sea-level : Float]
             [axis : FlVector]))
+
+(vector-struct tile-terrain-data
+               ([elevation : Float]))
+
+(vector-struct corner-terrain-data
+               ([elevation : Float]))
 
 (struct/kw planet-terrain planet-geometry
            ([tile : tile-terrain-data]

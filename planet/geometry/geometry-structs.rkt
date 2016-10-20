@@ -6,9 +6,9 @@
          vraid/types
          math/flonum
          "../direct-access.rkt"
-         "../grid.rkt")
+         "../grid/grid-structs.rkt")
 
-(struct: tile-geometry-data
+(struct tile-geometry-data
   ([area : float-get]))
 
 (struct/kw planet-geometry grid
@@ -18,15 +18,6 @@
 
 (define default-radius 6371000.0)
 (define default-axis (flvector 0.0 0.0 1.0))
-
-(define empty-planet-geometry
-  (planet-geometry/kw
-   #:grid (n-grid 0)
-   #:axis default-axis
-   #:radius 0.0
-   #:tile (tile-geometry-data
-           (lambda ([n : Integer])
-             0.0))))
 
 (define planet-axis planet-geometry-axis)
 

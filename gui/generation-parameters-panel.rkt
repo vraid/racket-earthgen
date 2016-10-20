@@ -4,7 +4,6 @@
 
 (require racket/gui/base
          vraid/flow
-         vraid/struct
          "edit-panel.rkt"
          "data-format.rkt"
          "custom-choice.rkt"

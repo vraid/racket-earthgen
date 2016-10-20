@@ -3,12 +3,8 @@
 (require vraid/struct
          vraid/math
          math/flonum
-         vraid/require
-         "../geometry/time.rkt"
          "../water/water-structs.rkt"
          "../direct-access.rkt")
-
-(require/provide "climate-data.rkt")
 
 (provide (all-defined-out))
 
@@ -38,6 +34,21 @@
 (define (planet-solar-equator planet)
   (* (sin (* tau (planet-time-of-year planet)))
      (climate-parameters-axial-tilt (planet-climate-parameters planet))))
+
+(vector-struct tile-climate-data
+               ([snow : Float]
+                [sunlight : Float]
+                [temperature : Float]
+                [humidity : Float]
+                [precipitation : Float]
+                [leaf-area-index : Float]))
+
+(vector-struct corner-climate-data
+               ([river-flow : Float]))
+
+(vector-struct edge-climate-data
+               ([river-flow : Float]
+                [air-flow : Float]))
 
 (struct/kw planet-climate planet-water
            ([parameters : climate-parameters]

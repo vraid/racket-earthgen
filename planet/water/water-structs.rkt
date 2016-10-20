@@ -1,11 +1,8 @@
 #lang typed/racket
 
 (require vraid/struct
-         vraid/require
          "../direct-access.rkt"
          "../terrain/terrain-structs.rkt")
-
-(require/provide "water-data.rkt")
 
 (provide (all-defined-out))
 
@@ -15,6 +12,12 @@
            #:transparent)
 
 (define-type river-list (Listof river))
+
+(vector-struct tile-water-data
+               ([water-level : Float]))
+
+(vector-struct corner-water-data
+               ([river-direction : (Option Integer)]))
 
 (struct/kw planet-water planet-terrain
            ([sea-level : Float]

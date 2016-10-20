@@ -5,7 +5,7 @@
 (define-type get-grid-flvector3 (Integer -> FlVector))
 (define-type get-grid-integer (Integer Integer -> Integer))
 
-(struct: grid
+(struct grid
   ([subdivision-level : Natural]
    [tile-coordinates : get-grid-flvector3]
    [corner-coordinates : get-grid-flvector3]

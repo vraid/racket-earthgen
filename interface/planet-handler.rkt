@@ -4,7 +4,7 @@
 
 (require typed/racket/class
          "../planet/grid-base.rkt"
-         "../planet/geometry-base.rkt")
+         "../planet/geometry.rkt")
 
 (define planet-handler%
   (class object%
