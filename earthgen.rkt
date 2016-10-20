@@ -9,6 +9,7 @@
          "point.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
+         "terrain-gen.rkt"
          "terrain-dsl.rkt"
          "map-mode.rkt"
          "map-modes.rkt"
@@ -52,7 +53,18 @@
   (generate-terrain (send generation-panel terrain-parameters)))
 
 (define (on-fail a)
-  #f)
+  (displayln a))
+
+(define last-seed "")
+
+(define (set-terrain-algorithms algorithms)
+  (send generation-panel set-algorithms algorithms))
+
+(define (reload-terrain-algorithms)
+  (with-handlers
+      ([pair? (lambda (a) (displayln a))])
+    (let* ([algorithms (load-algorithms "terrain-generation")])
+      (send generation-panel set-algorithms algorithms))))
 
 (define (generate-terrain parameters)
   (let* ([size (terrain-parameters-grid-size parameters)]
@@ -61,11 +73,12 @@
          [sea-level (terrain-parameters-sea-level parameters)]
          [axis (terrain-parameters-axis parameters)]
          [grids (send grid-handler get-grids size)]
-         [algorithm (thunk ((eval-terrain-function (file->value "terrain-gen.rkt")) seed))])
+         [algorithm (eval-terrain-function (terrain-parameters-algorithm parameters))])
+    (set! last-seed seed)
     (send planet-handler
           generate
           "generating terrain"
-          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((algorithm) grids) radius axis)))
+          (thunk (planet/sea-level sea-level ((heightmap->planet (first grids)) ((algorithm seed) grids) radius axis)))
           (thunk* (set-color-mode topography-map-mode))
           on-fail)))
 
@@ -165,6 +178,7 @@
        [parent no-frame]
        [stretchable-height #f]
        [current-planet current-planet]
+       [current-seed (thunk last-seed)]
        [generate-terrain (lambda (b e)
                            (generate-terrain/current-parameters))]
        [generate-climate (lambda (b e)
@@ -253,9 +267,15 @@
         (thunk (new planet-renderer%
                     [planet current-planet]))))
 
-(generate-terrain (terrain-parameters/kw
-                   #:seed "hi"
-                   #:grid-size 5
-                   #:radius default-radius
-                   #:sea-level 0.0
-                   #:axis default-axis))
+(with-handlers
+    ([pair? (lambda (a) (displayln a))])
+  (let* ([algorithms (load-algorithms "terrain-generation")])
+    (set-terrain-algorithms algorithms)
+    (unless (hash-empty? algorithms)
+      (generate-terrain (terrain-parameters/kw
+                         #:algorithm (send generation-panel current-algorithm)
+                         #:seed "hi"
+                         #:grid-size 5
+                         #:radius default-radius
+                         #:sea-level 0.0
+                         #:axis default-axis)))))

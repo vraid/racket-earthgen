@@ -1,55 +1,26 @@
-(let ([continent (map
-                  (lambda (a)
-                    (if (< 0 a)
-                        a
-                        (* 2.0 a)))
-                  (heightmap
-                   [seed (seed 0)]
-                   [base-level 2]
-                   [amplitude 800.0]
-                   [persistence 0.65]))]
-      [snakey (let ([width 0.3])
-                (map
-                 (lambda (a)
-                   (sqrt
-                    (/ (- width
-                          (min width
-                               (abs a)))
-                       width)))
-                 (heightmap
-                  [seed (seed 1)]
-                  [base-level 2]
-                  [amplitude 1.0]
-                  [persistence 0.0])))]
-      [mountain-mod
-       (map
-        (lambda (a b)
-          (max a b 0.0))
-        (raise 600.0
-               (heightmap
-                [seed (seed 2)]
-                [base-level 3]
-                [amplitude 3000.0]
-                [persistence 0.7]))
-        (raise 400.0
-               (heightmap
-                [seed (seed 3)]
-                [base-level 2]
-                [amplitude 2000.0]
-                [persistence 0.7])))]
-      [mountains
-       (map
-        *
-        mountain-mod
-        snakey)])
-  (lower
-   100.0
-   (map
-    (lambda (a b)
-      (let ([max-scale (* 10 a)]
-            [total (+ a (* b (sign a)))])
-        (if (< (abs max-scale) (abs total))
-            max-scale
-            total)))
-    continent
-    mountains)))
+#lang racket
+
+(require "planet/grid.rkt"
+         "terrain-dsl.rkt")
+
+(provide file->algorithm
+         load-algorithms)
+
+(define (any? a)
+  #t)
+
+(define (file->algorithm file)
+  (let* ([value (file->value file)])
+    ; ensures that the algorithm is valid
+    (((eval-terrain-function value) "") 0-grid-list)
+    value))
+
+(define (load-algorithms directory)
+  (let ([files (directory-list directory)])
+    (foldl (lambda (file hash)
+             (let* ([name (string->symbol (first (string-split (path->string file) ".")))]
+                    [path (build-path directory file)]
+                    [value (file->algorithm path)])
+               (hash-set hash name value)))
+           #hash()
+           files)))

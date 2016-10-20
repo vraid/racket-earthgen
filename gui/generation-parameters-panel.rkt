@@ -7,6 +7,7 @@
          vraid/struct
          "edit-panel.rkt"
          "data-format.rkt"
+         "custom-choice.rkt"
          "../planet/grid-base.rkt"
          "../planet/geometry-base.rkt"
          "../planet/terrain-base.rkt"
@@ -17,10 +18,17 @@
   (class vertical-panel%
     (super-new)
     (init-field current-planet
+                current-seed
                 generate-terrain
                 generate-climate
                 [control-height 30]
                 [label-width 120])
+    (define selected-algorithm #f)
+    (define/public (current-algorithm)
+      selected-algorithm)
+    (define (select-algorithm n)
+      (set! selected-algorithm (vector-ref algorithms n)))
+    (define algorithms (vector))
     (define selected-axis #f)
     (define (new-panel)
       (new vertical-panel%
@@ -38,10 +46,29 @@
     (define (read-only parent caption converter get-value)
       ((read-only-panel parent control-height label-width) caption (convert-to-string converter) get-value))
     (define terrain-panel (new-panel))
+    (define algorithm-choice
+      (new custom-choice%
+           [label "algorithm"]
+           [stretchable-width #t]
+           [choices '()]
+           [parent terrain-panel]
+           [callback (lambda (c e)
+                       (select-algorithm (send c get-selection)))]))
+    (define/public (set-algorithms h)
+      (let* ([keys (hash-keys h)]
+             [algs (list->vector (map (lambda (key)
+                                        (hash-ref h key))
+                                      keys))])
+        (set! algorithms algs)
+        (send algorithm-choice set-choices (map symbol->string keys))
+        (unless (empty? keys)
+          (begin
+            (send algorithm-choice set-selection 0)
+            (select-algorithm 0)))))
     (define seed-edit (edit terrain-panel
                             "seed"
                             format-string
-                            (thunk "")))
+                            current-seed))
     (define grid-size-edit (edit terrain-panel
                                  "grid size"
                                  format-integer
@@ -50,12 +77,12 @@
                               "radius"
                               format-positional
                               (thunk (and-let* ([planet (current-terrain)])
-                                       (planet-radius planet)))))
+                                               (planet-radius planet)))))
     (define sea-level-edit (edit terrain-panel
                                  "sea level"
                                  format-positional
                                  (thunk (and-let* ([planet (current-terrain)])
-                                          (planet-water-sea-level planet)))))
+                                                  (planet-water-sea-level planet)))))
     (define axis-edit (read-only terrain-panel
                                  "axis"
                                  format-flvector
@@ -108,6 +135,7 @@
         (send axis-edit update/value selected-axis)))
     (define/public (terrain-parameters)
       (terrain-parameters/kw
+       #:algorithm (current-algorithm)
        #:seed (send seed-edit get-value)
        #:grid-size (let ([size (send grid-size-edit get-value)])
                      (if (and (integer? size) (<= 0 size))
