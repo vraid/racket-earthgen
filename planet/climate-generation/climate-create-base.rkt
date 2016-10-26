@@ -6,9 +6,9 @@
          vraid/math
          vraid/util
          math/flonum
-         "../grid.rkt"
+         "../grid-base.rkt"
          "../geometry.rkt"
-         "../terrain.rkt"
+         "../terrain-base.rkt"
          "../water.rkt"
          "../climate.rkt")
 

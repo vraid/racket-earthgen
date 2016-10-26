@@ -9,12 +9,12 @@
 
 (require math/flonum
          vraid/util
-         "../grid.rkt"
+         "../grid-base.rkt"
          "../geometry.rkt"
          "../water.rkt"
          "../climate.rkt"
-         "../terrain-generation/planet-create.rkt"
          "climate-create-base.rkt"
+         "../terrain-generation/planet-create.rkt"
          "../terrain-generation/river-generation.rkt")
 
 (: new-flvector-accessor (Integer -> (vector-accessor Float)))

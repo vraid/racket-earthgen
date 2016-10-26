@@ -1,13 +1,14 @@
-(let ([continent (map
-                  (lambda (a)
-                    (if (< 0 a)
-                        a
-                        (* 2.0 a)))
-                  (heightmap
-                   [seed (seed 0)]
-                   [base-level 2]
-                   [amplitude 800.0]
-                   [persistence 0.65]))]
+(let ([continent (lower 300.0
+                        (map
+                         (lambda (a)
+                           (if (< 0 a)
+                               a
+                               (* 3.0 a)))
+                         (heightmap
+                          [seed (seed 0)]
+                          [base-level 2]
+                          [amplitude 1600.0]
+                          [divergence 2.8])))]
       [ridge (let ([width 0.3])
                (map
                 (lambda (a)
@@ -16,40 +17,20 @@
                          (min width
                               (abs a)))
                       width)))
-                (heightmap
+                (noise
                  [seed (seed 1)]
-                 [base-level 2]
-                 [amplitude 1.0]
+                 [base-level 4]
                  [persistence 0.0])))]
-      [mountain-mod
-       (map
-        (lambda (a b)
-          (max a b 0.0))
-        (raise 600.0
-               (heightmap
-                [seed (seed 2)]
-                [base-level 3]
-                [amplitude 3000.0]
-                [persistence 0.7]))
-        (raise 400.0
-               (heightmap
-                [seed (seed 3)]
-                [base-level 2]
-                [amplitude 2000.0]
-                [persistence 0.7])))]
+      [mtn (map (lambda (a)
+                  (max a 0.0))
+                (noise
+                 [seed (seed 2)]
+                 [base-level 3]
+                 [persistence 0.1]))]
       [mountains
-       (map
-        *
-        mountain-mod
-        ridge)])
-  (lower
-   100.0
-   (map
-    (lambda (a b)
-      (let ([max-scale (* 10 a)]
-            [total (+ a (* b (sign a)))])
-        (if (< (abs max-scale) (abs total))
-            max-scale
-            total)))
-    continent
-    mountains)))
+       (scale 3000.0
+              (map
+               *
+               mtn
+               ridge))])
+  (map + continent mountains))

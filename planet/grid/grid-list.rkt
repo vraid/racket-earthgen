@@ -3,11 +3,7 @@
 (require "grid-structs.rkt"
          "grid-create.rkt")
 
-(provide grid-list
-         0-grid-list
-         n-grid-list)
-
-(define-type grid-list (Listof grid))
+(provide (all-defined-out))
 
 (define 0-grid-list (list (n-grid 0)))
 

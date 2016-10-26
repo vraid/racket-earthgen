@@ -1,9 +1,10 @@
 #lang typed/racket
 
-(provide new-grid-handler)
-
 (require typed/racket/class
-         "../planet/grid.rkt")
+         "../planet/grid-base.rkt"
+         "../planet/grid-create.rkt")
+
+(provide new-grid-handler)
 
 (define-type grid-handler-class (Class [get-grids (Integer -> grid-list)]
                                        [get-grid (Integer -> grid)]))

@@ -18,3 +18,5 @@
    [edge-tile : get-grid-integer]
    [edge-corner : get-grid-integer])
   #:transparent)
+
+(define-type grid-list (Listof grid))

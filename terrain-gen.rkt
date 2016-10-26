@@ -1,6 +1,6 @@
 #lang racket
 
-(require "planet/grid.rkt"
+(require "planet/grid-create.rkt"
          "terrain-dsl.rkt")
 
 (provide file->algorithm
@@ -16,7 +16,11 @@
     value))
 
 (define (load-algorithms directory)
-  (let ([files (directory-list directory)])
+  (let ([files (filter (lambda (s)
+                         (let ([split (string-split (path->string s) ".")])
+                           (and (= 2 (length split))
+                                (string=? "txt" (second split)))))
+                       (directory-list directory))])
     (foldl (lambda (file hash)
              (let* ([name (string->symbol (first (string-split (path->string file) ".")))]
                     [path (build-path directory file)]

@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(require "../grid.rkt"
+(require "../grid-base.rkt"
          "heightmap-structs.rkt"
          "heightmap-create.rkt"
          math/flonum)

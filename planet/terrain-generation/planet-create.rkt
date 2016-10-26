@@ -4,13 +4,12 @@
 (provide (all-defined-out))
 
 (require vraid/math
-         vraid/struct
          vraid/util
-         "../grid.rkt"
-         "../heightmap.rkt"
+         "../grid-base.rkt"
+         "../heightmap-base.rkt"
          "../geometry.rkt"
-         "../terrain.rkt"
-         "../water.rkt"
+         "../terrain-base.rkt"
+         "../water-base.rkt"
          racket/flonum)
 
 (: init-array (Integer -> ((Integer Float -> Void) (Integer -> Float) -> Void)))

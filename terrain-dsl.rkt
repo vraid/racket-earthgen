@@ -1,9 +1,7 @@
 #lang racket
 
-(require vraid/flow
-         vraid/random
-         "planet/heightmap.rkt"
-         "planet/grid.rkt")
+(require vraid/random
+         "planet/heightmap.rkt")
 
 (provide eval-terrain-function)
 
@@ -29,13 +27,15 @@
 (struct binding
   (name value))
 
-(define (create-heightmap seed base-level amplitude persistence)
+(define (create-heightmap seed base-level amplitude alpha beta beta-change)
   (heightmap-create
    (heightmap-parameters/kw
     #:seed seed
     #:base-level base-level
     #:amplitude amplitude
-    #:persistence persistence)))
+    #:alpha alpha
+    #:beta beta
+    #:beta-change beta-change)))
 
 (define (error msg stx)
   (raise (cons msg stx)))
@@ -108,6 +108,9 @@
                              values)])
     (eval environment body)))
 
+(define (eval-quote environment syntax)
+  syntax)
+
 (define (eval-if environment syntax)
   (check-length 3 syntax)
   (let* ([condition (eval environment (first syntax))])
@@ -128,28 +131,52 @@
           (apply heightmap-map call arguments)
           (apply heightmap-map* call arguments)))))
 
-(define (eval-heightmap environment syntax)
-  (let* ([bindings syntax]
-         [names (map first bindings)]
-         [values (map second bindings)]
-         [h (foldl (lambda (name value h)
-                     (hash-set h name (eval environment value)))
-                   #hash()
-                   names
-                   values)]
-         [parameters '(seed base-level amplitude persistence)])
-    (unless (= (length (hash-keys h)) (length parameters))
-      (error "bad parameters to heightmap" syntax))
-    (for ([par parameters])
-      (unless (hash-has-key? h par)
-        (error (string-append "missing parameter: " (symbol->string par)) syntax)))
-    (let* ([arguments (map (lambda (name)
-                             (hash-ref h name))
-                           '(seed 
-                             base-level
-                             amplitude
-                             persistence))])
-      (apply create-heightmap arguments))))
+(define (eval-noisemap name parameters function)
+  (lambda (environment syntax)
+    (let* ([bindings syntax]
+           [names (map first bindings)]
+           [values (map second bindings)]
+           [h (foldl (lambda (name value h)
+                       (hash-set h name (eval environment value)))
+                     #hash()
+                     names
+                     values)])
+      (unless (= (length (hash-keys h)) (length parameters))
+        (error (string-append "bad parameters to " name) syntax))
+      (for ([par parameters])
+        (unless (hash-has-key? h par)
+          (error (string-append "missing parameter: " (symbol->string par)) syntax)))
+      (let* ([arguments (map (lambda (name)
+                               (hash-ref h name))
+                             parameters)])
+        (apply function arguments)))))
+
+(define eval-heightmap
+  (eval-noisemap "heightmap"
+                 '(seed base-level amplitude divergence)
+                 (lambda (seed base-level amplitude divergence)
+                   (let ([beta-change (- 1.0 (/ 1.0 divergence))])
+                     (heightmap-create
+                      (heightmap-parameters/kw
+                       #:seed seed
+                       #:base-level base-level
+                       #:amplitude amplitude
+                       #:alpha 1.0
+                       #:beta 1.0
+                       #:beta-change beta-change))))))
+
+(define eval-noise
+  (eval-noisemap "noise"
+                 '(seed base-level persistence)
+                 (lambda (seed base-level persistence)
+                   (heightmap-create
+                    (heightmap-parameters/kw
+                     #:seed seed
+                     #:base-level base-level
+                     #:amplitude 1.0
+                     #:alpha (- 1.0 persistence)
+                     #:beta persistence
+                     #:beta-change 1.0)))))
 
 (define (call-function function . args)
   (let* ([environment (extend-environment (function-environment function)
@@ -165,16 +192,20 @@
     (apply heightmap-map (function value) (rest args))))
 
 (define eval-raise (map-shorthand (curry +)))
-(define eval-lower (map-shorthand (curry -)))
+(define eval-lower (map-shorthand (curryr -)))
+(define eval-scale (map-shorthand (curry *)))
 
 (define base-environment
   (list (binding 'heightmap (syntax eval-heightmap))
+        (binding 'noise (syntax eval-noise))
         (binding 'lambda (syntax eval-lambda))
         (binding 'let (syntax eval-let))
+        (binding 'quote (syntax eval-quote))
         (binding 'if (syntax eval-if))
         (binding 'map (syntax eval-map))
         (binding 'raise (syntax eval-raise))
         (binding 'lower (syntax eval-lower))
+        (binding 'scale (syntax eval-scale))
         (binding '= (primitive =))
         (binding '< (primitive <))
         (binding '<= (primitive <=))

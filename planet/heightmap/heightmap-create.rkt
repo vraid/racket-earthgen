@@ -1,16 +1,15 @@
 #lang typed/racket
 
+(require vraid/random
+         vraid/struct
+         "../grid-base.rkt"
+         "heightmap-structs.rkt"
+         math/flonum)
+
 (provide heightmap-create
          heightmap-function
          (struct-out heightmap-parameters)
          heightmap-parameters/kw)
-
-(require vraid/types
-         vraid/random
-         vraid/struct
-         "../grid.rkt"
-         "heightmap-structs.rkt"
-         math/flonum)
 
 (define-type heightmap-function (grid-list -> heightmap))
 
@@ -18,7 +17,9 @@
            ([seed : seed]
             [base-level : Integer]
             [amplitude : Float]
-            [persistence : Float])
+            [alpha : Float]
+            [beta : Float]
+            [beta-change : Float])
            #:transparent)
 
 (define inexact-corner-edge-count
@@ -32,29 +33,35 @@
                    (flvector-ref tile-elevation (f corner 2))))
          inexact-corner-edge-count)))
 
-(: elevation-from-number (Float Float -> Float))
-(define (elevation-from-number number scale)
-  (fl* 2.0 (fl* (fl- number 0.5) scale)))
+(: rescale (heightmap-parameters -> (FlVector -> FlVector)))
+(define ((rescale p) numbers)
+  (flvector-map (rescale-number p) numbers))
 
-(: elevation-from (FlVector Float Integer -> Float))
-(define (elevation-from numbers scale n)
-  (elevation-from-number (flvector-ref numbers n) scale))
+(: rescale-number (heightmap-parameters -> (Float -> Float)))
+(define (rescale-number p)
+  (let ([amp (heightmap-parameters-amplitude p)])
+    (lambda ([a : Float])
+      (* 2.0 amp (- a 0.5)))))
+
+(: rescaled-numbers (heightmap-parameters -> (pseudo-random-list -> (Integer -> Float))))
+(define ((rescaled-numbers p) random-gen)
+  (let* ([rescaled ((rescale p) (pseudo-random-list-numbers random-gen))])
+    (lambda ([n : Integer])
+      (flvector-ref rescaled n))))
 
 (: heightmap-all-random (heightmap-parameters grid -> (List heightmap pseudo-random-list)))
 (define (heightmap-all-random parameters grid)
-  (let* ([tile-count (grid-tile-count grid)]
+  (let* ([rescale (lambda ([random-gen : pseudo-random-list])
+                    ((rescale parameters) (pseudo-random-list-numbers random-gen)))]
+         [tile-count (grid-tile-count grid)]
          [tile-gen (pseudo-random-list-next
                     tile-count
                     (make-pseudo-random-list (heightmap-parameters-seed parameters)))]
          [corner-gen (pseudo-random-list-next
                       (grid-corner-count grid)
                       (pseudo-random-list-rest tile-gen))]
-         [tile-elevation (flvector-map (lambda: ([number : Float])
-                                         (elevation-from-number number (heightmap-parameters-amplitude parameters)))
-                                       (pseudo-random-list-numbers tile-gen))]
-         [corner-elevation (flvector-map (lambda: ([number : Float])
-                                           (elevation-from-number number (heightmap-parameters-amplitude parameters)))
-                                         (pseudo-random-list-numbers corner-gen))])
+         [tile-elevation (rescale tile-gen)]
+         [corner-elevation (rescale corner-gen)])
     (list
      (heightmap
       tile-elevation
@@ -63,55 +70,59 @@
 
 (: heightmap-create (heightmap-parameters -> heightmap-function))
 (define (heightmap-create parameters)
-  (lambda: ([grids : grid-list])
-    (: create (grid-list -> (List heightmap pseudo-random-list)))
-    (define (create grids)
-      (let* ([grid (first grids)]
-             [level (- (grid-subdivision-level grid) (heightmap-parameters-base-level parameters))]
-             [scale (fl* (heightmap-parameters-amplitude parameters)
-                         (flexpt (heightmap-parameters-persistence parameters) (exact->inexact (+ 1 level))))])
-        (if (negative? level)
-            (heightmap-all-random parameters grid)
-            (if (zero? level)
-                (let* ([random-gen (pseudo-random-list-next
-                                    (+ (grid-tile-count grid) (grid-corner-count grid))
-                                    (make-pseudo-random-list (heightmap-parameters-seed parameters)))]
-                       [numbers (pseudo-random-list-numbers random-gen)]
-                       [tile-elevation (build-flvector (grid-tile-count grid)
-                                                      (lambda: ([t : Integer])
-                                                        (elevation-from numbers (heightmap-parameters-amplitude parameters) t)))]
-                       [corner-elevation (build-flvector (grid-corner-count grid)
-                                                        (lambda: ([c : Integer])
-                                                          (fl+ (average-elevation grid tile-elevation c)
-                                                               (elevation-from numbers scale (+ c (grid-tile-count grid))))))])
-                  (list
-                   (heightmap
-                    tile-elevation
-                    corner-elevation)
-                   (pseudo-random-list-rest random-gen)))
-                (let* ([flvector-append (lambda: ([a : FlVector]
-                                                  [b : FlVector])
-                                          (let ([a-length (flvector-length a)])
-                                            (build-flvector (+ a-length (flvector-length b))
-                                                            (lambda: ([n : Integer])
-                                                              (if (< n a-length)
-                                                                  (flvector-ref a n)
-                                                                  (flvector-ref b (- n a-length)))))))]
-                       [previous (create (rest grids))]
-                       [previous-terrain (first previous)]
-                       [random-gen (pseudo-random-list-next (grid-corner-count grid)
-                                                            (second previous))]
-                       [numbers (pseudo-random-list-numbers random-gen)]
-                       [tile-elevation (flvector-append
-                                        (heightmap-tiles previous-terrain)
-                                        (heightmap-corners previous-terrain))]
-                       [corner-elevation (build-flvector (grid-corner-count grid)
-                                                         (lambda: ([c : Integer])
-                                                           (fl+ (average-elevation grid tile-elevation c)
-                                                                (elevation-from numbers scale c))))])
-                  (list
-                   (heightmap
-                    tile-elevation
-                    corner-elevation)
-                   (pseudo-random-list-rest random-gen)))))))
-    (first (create grids))))
+  (let* ([rescale (rescaled-numbers parameters)])
+    (lambda: ([grids : grid-list])
+      (: create (grid-list -> (List heightmap pseudo-random-list)))
+      (define (create grids)
+        (let* ([grid (first grids)]
+               [level (- (grid-subdivision-level grid) (heightmap-parameters-base-level parameters))]
+               [smooth (let* ([alpha (heightmap-parameters-alpha parameters)]
+                              [beta (heightmap-parameters-beta parameters)]
+                              [beta-change (heightmap-parameters-beta-change parameters)])
+                         (lambda ([a : Float]
+                                  [b : Float])
+                           (+ (* a alpha) (* b beta (flexpt beta-change (+ 1.0 level))))))])
+          (if (negative? level)
+              (heightmap-all-random parameters grid)
+              (if (zero? level)
+                  (let* ([random-gen (pseudo-random-list-next
+                                      (+ (grid-tile-count grid) (grid-corner-count grid))
+                                      (make-pseudo-random-list (heightmap-parameters-seed parameters)))]
+                         [number (rescale random-gen)]
+                         [tile-elevation (build-flvector (grid-tile-count grid)
+                                                         number)]
+                         [corner-elevation (build-flvector (grid-corner-count grid)
+                                                           (lambda: ([c : Integer])
+                                                             (smooth (average-elevation grid tile-elevation c)
+                                                                     (number (+ c (grid-tile-count grid))))))])
+                    (list
+                     (heightmap
+                      tile-elevation
+                      corner-elevation)
+                     (pseudo-random-list-rest random-gen)))
+                  (let* ([flvector-append (lambda: ([a : FlVector]
+                                                    [b : FlVector])
+                                            (let ([a-length (flvector-length a)])
+                                              (build-flvector (+ a-length (flvector-length b))
+                                                              (lambda: ([n : Integer])
+                                                                (if (< n a-length)
+                                                                    (flvector-ref a n)
+                                                                    (flvector-ref b (- n a-length)))))))]
+                         [previous (create (rest grids))]
+                         [previous-terrain (first previous)]
+                         [random-gen (pseudo-random-list-next (grid-corner-count grid)
+                                                              (second previous))]
+                         [number (rescale random-gen)]
+                         [tile-elevation (flvector-append
+                                          (heightmap-tiles previous-terrain)
+                                          (heightmap-corners previous-terrain))]
+                         [corner-elevation (build-flvector (grid-corner-count grid)
+                                                           (lambda: ([c : Integer])
+                                                             (smooth (average-elevation grid tile-elevation c)
+                                                                     (number c))))])
+                    (list
+                     (heightmap
+                      tile-elevation
+                      corner-elevation)
+                     (pseudo-random-list-rest random-gen)))))))
+      (first (create grids)))))

@@ -2,13 +2,11 @@
 
 (provide planet/rivers)
 
-(require racket/promise
-         racket/flonum
+(require racket/flonum
          vraid/flow
-         vraid/types
          vraid/sorted-tree
-         "../grid.rkt"
-         "../terrain.rkt"
+         "../grid-base.rkt"
+         "../terrain-base.rkt"
          "../water.rkt"
          "planet-create.rkt")
 

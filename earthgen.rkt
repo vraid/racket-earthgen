@@ -274,7 +274,7 @@
     (unless (hash-empty? algorithms)
       (generate-terrain (terrain-parameters/kw
                          #:algorithm (send generation-panel current-algorithm)
-                         #:seed "hi"
+                         #:seed "skd"
                          #:grid-size 5
                          #:radius default-radius
                          #:sea-level 0.0
