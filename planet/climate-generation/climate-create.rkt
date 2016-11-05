@@ -154,10 +154,14 @@
                                                  (= n (wind-origin (edge-wind e)))))]
              [total-wind (lambda ([ls : (Listof wind)])
                            (foldl + 0.0 (map wind-scale ls)))]
-             [total-incoming-wind (lambda ([n : Integer])
-                                    (total-wind (incoming-winds n)))]
-             [total-outgoing-wind (lambda ([n : Integer])
-                                    (total-wind (outgoing-winds n)))]
+             [total-incoming-wind (build-flvector-ref
+                                   (tile-count p)
+                                   (lambda ([n : Integer])
+                                     (total-wind (incoming-winds n))))]
+             [total-outgoing-wind (build-flvector-ref
+                                   (tile-count p)
+                                   (lambda ([n : Integer])
+                                     (total-wind (outgoing-winds n))))]
              [tile-precipitation-rate (build-flvector-ref (tile-count p)
                                                           (lambda ([n : Integer])
                                                             (let* ([outgoing-wind (total-outgoing-wind n)]
@@ -201,7 +205,7 @@
                          [preliminary-humidity (if water?
                                                    saturation-humidity
                                                    (if (zero? outgoing-wind)
-                                                       saturation-humidity
+                                                       (+ saturation-humidity incoming-humidity)
                                                        (/ incoming-humidity
                                                           outgoing-wind)))]
                          [traversal-precipitation (* preliminary-humidity
@@ -211,7 +215,7 @@
                                                       0.0
                                                       (max traversal-precipitation
                                                            saturation-precipitation))]
-                         [precipitation (/ (* precipitation-factor 0.2 humidity->precipitation outgoing-wind)
+                         [precipitation (/ (* precipitation-factor 0.2 humidity->precipitation (max (- incoming-wind outgoing-wind) outgoing-wind))
                                            (tile-area p n))]
                          [humidity (- preliminary-humidity humidity->precipitation)])
                     (set-humidity! n humidity)
