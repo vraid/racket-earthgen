@@ -19,7 +19,7 @@
          [scale (let ([s (flsqrt (- 1.0 (flexpt (quaternion-a q) 2.0)))])
                   (lambda: ([el : quaternion-index])
                     (fl/ (el q) s)))]
-         [axis (if (= 1 angle)
+         [axis (if (zero? angle)
                    (flvector 1.0 0.0 0.0)
                    (flvector (scale i)
                              (scale j)
