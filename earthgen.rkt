@@ -86,15 +86,15 @@
 (define (generate-climate)
   (and-let* ([terrain (send planet-handler current)]
              [_ (planet-terrain? terrain)])
-            (thread
-             (thunk
-              (let* ([climate-func (thunk (singular-climate (send generation-panel climate-parameters) terrain set-status-message!))])
-                (send planet-handler
-                      generate
-                      "generating climate"
-                      climate-func
-                      (thunk* (set-color-mode landscape-map-mode))
-                      on-fail))))))
+    (thread
+     (thunk
+      (let* ([climate-func (thunk (singular-climate (send generation-panel climate-parameters) terrain set-status-message!))])
+        (send planet-handler
+              generate
+              "generating climate"
+              climate-func
+              (thunk* (set-color-mode landscape-map-mode))
+              on-fail))))))
 
 (define (set-color-mode mode)
   (set! color-mode mode))
@@ -108,7 +108,7 @@
   (when ((map-mode-condition color-mode) (current-planet))
     (send map-mode-panel select-mode color-mode) 
     (send canvas with-gl-context
-          (thunk (send planet-renderer update/planet (map-mode-function color-mode))))
+          (thunk (send planet-renderer update/planet (current-planet) (map-mode-function color-mode))))
     (repaint!)))
 
 (define-values
@@ -224,10 +224,10 @@
                    (and-let* ([planet (current-planet)]
                               [coordinates (send control get-coordinates planet (point-x position) (point-y position))]
                               [tile (grid-closest-tile planet coordinates)])
-                             (begin
-                               (send generation-panel select-axis coordinates)
-                               (send tile-panel update/tile tile)
-                               (send canvas force-repaint))))]
+                     (begin
+                       (send generation-panel select-axis coordinates)
+                       (send tile-panel update/tile tile)
+                       (send canvas force-repaint))))]
        [on-drag (lambda (from to)
                   (send control mouse-drag from to)
                   (repaint!))]))
@@ -256,7 +256,7 @@
        [paint (thunk
                (send control set-projection)
                (gl-rotate (send control rotation-list (current-planet)))
-               (send planet-renderer render))]))
+               (send planet-renderer render (current-planet)))]))
 
 (init-info-panel)
 (send frame maximize #t)
@@ -265,8 +265,7 @@
 
 (define planet-renderer
   (send canvas with-gl-context
-        (thunk (new planet-renderer%
-                    [planet current-planet]))))
+        (thunk (new planet-renderer%))))
 
 (with-handlers
     ([pair? (lambda (a) (displayln a))])

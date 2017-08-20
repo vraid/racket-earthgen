@@ -2,7 +2,8 @@
 
 (provide river-renderer%)
 
-(require vraid/math
+(require vraid/flow
+         vraid/math
          vraid/typed-gl
          vraid/color
          vraid/util
@@ -18,25 +19,26 @@
 (define river-renderer%
   (class object%
     (super-new)
-    (init-field [planet : (-> planet-climate)])
     (: buffer-tile-count Integer)
     (define buffer-tile-count 0)
     (: buffer gl-buffer)
     (define buffer (make-gl-buffer 0 0))
-    (: resize-buffer? (-> Boolean))
-    (define (resize-buffer?)
-      (not (= buffer-tile-count (tile-count (planet)))))
-    (: resize-buffer (-> Void))
-    (define/public (resize-buffer)
-      (when (resize-buffer?)
-        (let* ([tile-count (tile-count (planet))]
+    (: resize-buffer? (grid -> Boolean))
+    (define (resize-buffer? grid)
+      (not (= buffer-tile-count (tile-count grid))))
+    (: resize-buffer (grid -> Void))
+    (define/public (resize-buffer grid)
+      (when (resize-buffer? grid)
+        (let* ([tile-count (tile-count grid)]
                [buf (make-gl-buffer (* 24 tile-count) (* 36 tile-count))])
           (set! buffer-tile-count tile-count)
-          (set! buffer buf)
-          (init-buffer (planet) buffer))))
-    (: remake-buffer (-> Void))
-    (define/public (remake-buffer)
-      (update-buffer (planet) buffer)
+          (set! buffer buf))))
+    (: set-shapes (planet-climate -> Void))
+    (define/public (set-shapes planet)
+      (init-buffer planet buffer))
+    (: set-colors (planet-climate -> Void))
+    (define/public (set-colors planet)
+      (update-buffer planet buffer)
       ((gl-buffer-bind buffer)))
     (: render (-> Void))
     (define/public (render)

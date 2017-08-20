@@ -10,21 +10,19 @@
 (define planet-renderer%
   (class object%
     (super-new)
-    (init-field planet)
-    (define tile-renderer
-      (new tile-renderer%
-           [planet planet]))
-    (define river-renderer
-      (new river-renderer%
-           [planet planet]))
-    (define/public (update/planet color-function)
-      (send tile-renderer resize-buffer)
-      (send tile-renderer remake-buffer color-function)
-      (when (planet-climate? (planet))
-        (send river-renderer resize-buffer)
-        (send river-renderer remake-buffer)))
-    (define/public (render)
+    (define current-planet #f)
+    (define tile-renderer (new tile-renderer%))
+    (define river-renderer (new river-renderer%))
+    (define/public (update/planet planet color-function)
+      (send tile-renderer resize-buffer planet)
+      (send tile-renderer set-shapes planet)
+      (send tile-renderer set-colors planet color-function)
+      (send river-renderer resize-buffer planet)
+      (when (planet-climate? planet)
+        (send river-renderer set-shapes planet)
+        (send river-renderer set-colors planet)))
+    (define/public (render planet)
       (gl-clear (list 0.0 0.0 0.0 0.0))
       (send tile-renderer render)
-      (when (planet-climate? (planet))
+      (when (planet-climate? planet)
         (send river-renderer render)))))
