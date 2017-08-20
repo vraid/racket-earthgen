@@ -3,6 +3,7 @@
 (require racket/gui/base
          vraid/flow
          vraid/opengl
+         vraid/build
          "key-input-handler.rkt"
          "mouse-input-handler.rkt"
          "planet-canvas.rkt"
