@@ -10,14 +10,17 @@
          "point.rkt"
          "planet/planet.rkt"
          "planet/planet-generation.rkt"
+         "planet/math/projection.rkt"
          "terrain-gen.rkt"
          "terrain-dsl.rkt"
          "map-mode.rkt"
          "map-modes.rkt"
+         "projections.rkt"
          "gui/map-mode-panel.rkt"
          "gui/generation-parameters-panel.rkt"
          "gui/tile-data-panel.rkt"
          "interface/fixed-axis-control.rkt"
+         "interface/2d-control.rkt"
          "interface/grid-handler.rkt"
          "interface/planet-handler.rkt"
          "interface/planet-renderer.rkt")
@@ -30,7 +33,7 @@
   (send status-message set-label str))
 
 (define (on-planet-change planet)
-  (send map-mode-panel enable-modes planet)
+  (send map-mode-panel enable-color-modes planet)
   (recolor/repaint)
   (send generation-panel update/planet planet)
   (send generation-panel enable-buttons #t)
@@ -46,6 +49,14 @@
 
 (define (current-planet)
   (send planet-handler current))
+
+(define projection #f)
+
+(define (current-projection)
+  projection)
+
+(define (current-transform)
+  (projection-spherical->projected (current-projection)))
 
 (define grid-handler (new-grid-handler))
 (define color-mode topography-map-mode)
@@ -104,12 +115,52 @@
     (set-color-mode mode)
     (recolor/repaint)))
 
+(define (set-projection proj)
+  (set! control (hash-ref controls proj))
+  (set! projection (hash-ref projection-hash proj)))
+
+(define (set-projection/repaint proj)
+  (set-projection proj)
+  (repaint/f (thunk (send planet-renderer set-shapes (current-planet) (current-transform)))))
+
+(define (repaint!)
+  (send canvas force-repaint)
+  (void))
+
+(define controls
+  (hash 'orthographic
+        (new fixed-axis-control%
+             [viewport-width 800]
+             [viewport-height 800]
+             [scale 1.0]
+             [scale-min 0.1]
+             [scale-max 100.0]
+             [on-update repaint!]
+             [set-ortho-projection set-gl-ortho-projection])
+        'hammer
+        (new 2d-control%
+             [viewport-width 800]
+             [viewport-height 800]
+             [scale 1.0]
+             [scale-min 0.1]
+             [scale-max 100.0]
+             [on-update repaint!]
+             [spherical->projected (projection-spherical->projected hammer-projection)]
+             [projected->spherical (projection-projected->spherical hammer-projection)]
+             [set-ortho-projection set-gl-ortho-projection])))
+
+(define control #f)
+
+(set-projection 'orthographic)
+
+(define (repaint/f f)
+  (send canvas with-gl-context f)
+  (repaint!))
+
 (define (recolor/repaint)
   (when ((map-mode-condition color-mode) (current-planet))
-    (send map-mode-panel select-mode color-mode) 
-    (send canvas with-gl-context
-          (thunk (send planet-renderer update/planet (current-planet) (map-mode-function color-mode))))
-    (repaint!)))
+    (send map-mode-panel select-color-mode color-mode) 
+    (repaint/f (thunk (send planet-renderer update/planet (current-planet) (current-transform) (map-mode-function color-mode))))))
 
 (define-values
   (window-width window-height)
@@ -156,11 +207,13 @@
        [parent left-panel]
        [min-height 60]
        [stretchable-height #f]
-       [on-select set-color-mode/repaint]
-       [modes (list->vector
-               (append
-                terrain-map-modes
-                climate-map-modes))]))
+       [projections projection-list]
+       [on-projection-select set-projection/repaint]
+       [on-color-select set-color-mode/repaint]
+       [color-modes (list->vector
+                     (append
+                      terrain-map-modes
+                      climate-map-modes))]))
 
 (define status-panel
   (new panel%
@@ -204,18 +257,6 @@
   (send info-panel set (map tab-choice-label (vector->list info-panel-tabs)))
   (send info-panel set-tab 0))
 
-(define (repaint!)
-  (send canvas force-repaint)
-  (void))
-
-(define control (new fixed-axis-control%
-                     [viewport-width 800]
-                     [viewport-height 800]
-                     [scale 1.0]
-                     [scale-min 0.1]
-                     [scale-max 100.0]
-                     [on-update repaint!]))
-
 (define mouse-input-handler
   (new mouse-input-handler%
        [on-down (lambda (position)
@@ -252,7 +293,8 @@
        [on-mouse-event (lambda (event)
                          (send mouse-input-handler mouse-event event))]
        [resize-viewport (lambda (width height)
-                          (send control resize-viewport width height))]
+                          (send control resize-viewport width height)
+                          (send canvas force-repaint))]
        [paint (thunk
                (send control set-projection)
                (gl-rotate (send control rotation-list (current-planet)))

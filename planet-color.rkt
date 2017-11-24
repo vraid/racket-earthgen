@@ -74,10 +74,10 @@
 (define snow-color (flcolor3 0.9 0.9 0.9))
 
 (define water-surface
+  (flcolor3 0.11372549019607843 0.3058823529411765 0.5686274509803921))
+(define water-mid
   (flcolor3 0.06862745098039216 0.17450980392156862 0.37058823529411766))
 (define water-deep
-  (flcolor3 0.0 0.01568627450980392 0.06274509803921569))
-(define water-mid
   (flcolor3 0.03137254901960784 0.0784313725490196 0.19215686274509802))
 (define barren-land-low
   (flcolor3 0.6588235294117647 0.5686274509803921 0.4196078431372549))
@@ -89,8 +89,9 @@
 
 (define vegetation-topography-intervals/colors
   (list -10000.0 water-deep
-        -2000.0 water-deep
-        -800.0 water-mid
+        -3500.0 water-deep
+        -1500.0 water-mid
+        -200.0 water-surface
         0.0 water-surface
         0.0 barren-land-low
         2000.0 barren-land-high
