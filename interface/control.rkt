@@ -4,14 +4,13 @@
 
 (require racket/class
          vraid/math
-         math/flonum
-         "../point.rkt")
+         math/flonum)
 
 (define planet-control%
   (class object%
     (super-new)
     (field [wheel-delta 0.0]
-           [mouse-down-position origin])
+           [mouse-down-position (vector 0 0)])
     (init-field on-update
                 set-ortho-projection
                 viewport-width

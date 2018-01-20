@@ -6,7 +6,6 @@
          vraid/math
          math/flonum
          "control.rkt"
-         "../point.rkt"
          "../planet/math/projection.rkt"
          "../planet/geometry-base.rkt")
 
@@ -62,14 +61,14 @@
       (set! mouse-down-latitude latitude)
       (set! mouse-down-longitude longitude))
     (define/override (mouse-drag from to)
-      (let ([delta (point-subtract to mouse-down-position)])
+      (let ([delta (vector-map - mouse-down-position to)])
         (set! longitude
               (fl+ mouse-down-longitude
-                   (fl* (fl (point-x delta))
+                   (fl* (fl (vector-ref delta 0))
                         (fl/ pi (* scale -900.0)))))
         (set! latitude
               (max (fl/ pi -2.0)
                    (min (fl/ pi 2.0)
                         (fl+ mouse-down-latitude
-                             (fl* (fl (point-y delta))
+                             (fl* (fl (vector-ref delta 1))
                                   (fl/ pi (* scale -740.0)))))))))))

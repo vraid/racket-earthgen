@@ -3,7 +3,6 @@
 (require vraid/flow
          vraid/opengl
          racket/gui/base
-         "point.rkt"
          "map-mode.rkt"
          "map-modes.rkt"
          "gui/map-mode-panel.rkt"
@@ -77,7 +76,7 @@
                    [on-down (λ (position)
                               (send control mouse-down position))]
                    [on-click (λ (position)
-                               (and-let* ([coordinates (send control get-coordinates planet (point-x position) (point-y position))]
+                               (and-let* ([coordinates (send control get-coordinates planet (vector-ref position 0) (vector-ref position 1))]
                                           [tile (grid-closest-tile planet coordinates)])
                                          (begin
                                            (send tile-panel update/tile tile)

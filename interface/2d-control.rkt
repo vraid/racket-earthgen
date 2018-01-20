@@ -4,7 +4,6 @@
          vraid/math
          math/flonum
          "control.rkt"
-         "../point.rkt"
          "../planet/geometry-base.rkt"
          "../planet/math/projection.rkt")
 
@@ -59,6 +58,6 @@
       (set! mouse-down-x x)
       (set! mouse-down-y y))
     (define/override (mouse-drag from to)
-      (let ([delta (point-subtract to mouse-down-position)])
-        (set! x (+ mouse-down-x (/ (point-x delta) scale)))
-        (set! y (+ mouse-down-y (/ (point-y delta) scale)))))))
+      (let ([delta (vector-map - mouse-down-position to)])
+        (set! x (+ mouse-down-x (/ (vector-ref delta 0) scale)))
+        (set! y (+ mouse-down-y (/ (vector-ref delta 1) scale)))))))

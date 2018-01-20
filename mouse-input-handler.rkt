@@ -2,15 +2,16 @@
 
 (provide mouse-input-handler%)
 
-(require "point.rkt"
-         typed/racket/gui)
+(require typed/racket/gui)
+
+(define-type point (Vector Integer Integer))
 
 (define mouse-input-handler%
   (class object%
     (super-new)
     (field [left-down? : Boolean #f]
            [dragging? : Boolean #f]
-           [last-position : point origin])
+           [last-position : point (vector 0 0)])
     [init-field [on-down : (point -> Any)]
                 [on-click : (point -> Any)]
                 [on-drag : (point point -> Any)]]
@@ -18,7 +19,7 @@
     (define/public (mouse-event event)
       (let* ([x (send event get-x)]
              [y (send event get-y)]
-             [position (point x y)])
+             [position (vector x y)])
         (begin
           (cond
             [(send event button-changed? 'left)
