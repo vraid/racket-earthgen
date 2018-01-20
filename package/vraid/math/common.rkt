@@ -4,12 +4,6 @@
 
 (require "constants.rkt")
 
-(: negative (case-> (Float -> Float)
-                    (Integer -> Integer)
-                    (Number -> Number)))
-(define (negative a)
-  (- a))
-
 (: nonzero? (Number -> Boolean))
 (define (nonzero? a)
   (not (zero? a)))
@@ -19,27 +13,10 @@
   (cond
     [(= a b) 0.0]
     [(or (zero? a) (zero? b)) +inf.0]
-    [else (subtract-by 1.0
-                       (if (> a b)
-                           (/ a b)
-                           (/ b a)))]))
-
-(: divide-by (case-> (Float Float -> Float)
-                     (Number Zero -> Zero)
-                     (Integer Integer -> Exact-Rational)
-                     (Number Number -> Number)))
-(define (divide-by a b)
-  (/ b a))
-
-(: subtract-by (case-> (Float Float -> Float)
-                       (Integer Integer -> Integer)
-                       (Number Number -> Number)))
-(define (subtract-by a b)
-  (- b a))
-
-(define sum +)
-
-(define product *)
+    [else (+ -1.0
+             (if (> a b)
+                 (/ a b)
+                 (/ b a)))]))
 
 (define-type maybe-minmax ((Option Real) -> (Real -> Real)))
 (: maybe-max maybe-minmax)

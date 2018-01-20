@@ -3,7 +3,6 @@
 (provide (all-defined-out))
 
 (require "flvector3-local.rkt"
-         "common.rkt"
          math/flonum)
 
 (: flvector3-zero (-> FlVector))
@@ -42,8 +41,7 @@
 
 (: flvector3-scale-to (Float FlVector -> FlVector))
 (define (flvector3-scale-to a v)
-  (flvector3-scale (divide-by (flvector3-length v)
-                              a)
+  (flvector3-scale (/ a (flvector3-length v))
                    v))
 
 (: flvector3-normal (FlVector -> FlVector))
