@@ -43,3 +43,18 @@
 
 (define ((generate-climate parameters) planet)
   ((singular-climate parameters (thunk* #f)) planet))
+
+(define default-planet
+  (let ([climate-parameters
+         (climate-parameters/kw
+          #:axial-tilt 0.0
+          #:acceptable-delta 0.05
+          #:precipitation-factor 1.0
+          #:humidity-half-life-days 5.0
+          #:seasons-per-cycle 16)])
+    (compose
+     (generate-climate climate-parameters)
+     (planet/sea-level 0.0)
+     (heightmap->planet 6000.0 (flvector 1.0 0.0 0.0))
+     (heightmap (algorithm 'default) "")
+     grids)))
