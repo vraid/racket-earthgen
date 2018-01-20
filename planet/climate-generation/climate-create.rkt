@@ -46,8 +46,8 @@
      #:river-flow (new-flvector)
      #:air-flow (new-flvector))))
 
-(: singular-climate (climate-parameters planet-water (String -> Any) -> planet-climate))
-(define (singular-climate param planet feedback)
+(: singular-climate (climate-parameters (String -> Any) -> (planet-water -> planet-climate)))
+(define ((singular-climate param feedback) planet)
   (let* ([planet/rivers (planet/rivers planet)]
          [initial ((climate/closed-season param planet/rivers feedback) 0)]
          [p ((climate/closed-season param planet/rivers feedback) 0)])

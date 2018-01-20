@@ -11,40 +11,19 @@
 (define map-mode-panel%
   (class vertical-panel%
     (super-new)
-    (init-field projections
-                on-projection-select
-                color-modes
+    (init-field color-modes
                 on-color-select)
-    (define projection-choices (list->vector projections))
-    (define projection-choice
-      (new custom-choice%
-           [label "projection"]
-           [stretchable-width #t]
-           [choices (map symbol->string projections)]
-           [parent this]
-           [callback (λ (c e)
-                       (let ([choice (vector-ref projection-choices (send c get-selection))])
-                         (on-projection-select choice)))]))
-    (define/public (select-projection proj)
-      (when-let ([index (vector-member proj projection-choices)])
-                (send projection-choice set-selection index)))
-    (define current-color-mode-choices (vector))
+    (define vec (list->vector color-modes))
     (define color-mode-choice
       (new custom-choice%
            [label "map mode"]
            [stretchable-width #t]
-           [choices '()]
+           [choices (map (compose symbol->string map-mode-name)
+                         color-modes)]
            [parent this]
            [callback (λ (c e)
-                       (let ([current-choice (vector-ref current-color-mode-choices (send c get-selection))])
+                       (let ([current-choice (vector-ref vec (send c get-selection))])
                          (on-color-select current-choice)))]))
     (define/public (select-color-mode mode)
-      (when-let ([index (vector-member mode current-color-mode-choices)])
-                (send color-mode-choice set-selection index)))
-    (define/public (enable-color-modes planet)
-      (set! current-color-mode-choices (vector-filter (lambda (m)
-                                                        ((map-mode-condition m) planet))
-                                                      color-modes))
-      (send color-mode-choice set-choices (map (lambda (m)
-                                               (symbol->string (map-mode-name m)))
-                                             (vector->list current-color-mode-choices))))))
+      (when-let ([index (vector-member mode vec)])
+                (send color-mode-choice set-selection index)))))

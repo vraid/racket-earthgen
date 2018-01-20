@@ -12,7 +12,7 @@
 (define (file->algorithm file)
   (let* ([value (file->value file)])
     ; ensures that the algorithm is valid
-    (((eval-terrain-function value) "") 0-grid-list)
+    (((eval-terrain-function value) "") (list (n-grid 0)))
     value))
 
 (define (load-algorithms directory)

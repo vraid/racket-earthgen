@@ -2,5 +2,4 @@
 
 (require vraid/require)
 
-(require/provide "grid/grid-create.rkt"
-                 "grid/grid-list.rkt")
+(require/provide "grid/grid-create.rkt")
