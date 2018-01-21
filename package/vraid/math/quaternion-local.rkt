@@ -48,11 +48,7 @@
 
 (: quaternion-scale (quaternion Float -> quaternion))
 (define (quaternion-scale q scale)
-  (quaternion
-   (* scale (a q))
-   (* scale (i q))
-   (* scale (j q))
-   (* scale (k q))))
+  (quaternion-map (curry * scale) q))
 
 (: quaternion-sum (quaternion -> Float))
 (define (quaternion-sum q)
@@ -77,8 +73,8 @@
         [b : quaternion-index-vector (vector i j k)]
         [c : quaternion-index-vector (vector j k i)]
         [d : quaternion-index-vector (vector k i j)])
-    (lambda ([q : quaternion]
-             [r : quaternion])
+    (λ ([q : quaternion]
+        [r : quaternion])
       (fl->vector->quaternion 
        (quaternion-row-sum q r)
        (flvector3-sum (col q a r b)
@@ -88,13 +84,17 @@
 
 (: remap-to-vector (quaternion quaternion-index-vector -> FlVector))
 (define (remap-to-vector q m)
-  (let ([elm (lambda: ([q : quaternion]
-                       [m : quaternion-index-vector]
-                       [i : Integer])
+  (let ([elm (λ ([i : Integer])
                ((vector-ref m i) q))])
-    (flvector (elm q m 0) 
-              (elm q m 1) 
-              (elm q m 2))))
+    (apply flvector (map elm (range 3)))))
+
+(: flvector3-map-mult (FlVector * -> FlVector))
+(define (flvector3-map-mult . vecs)
+  (foldl (λ ([v : FlVector]
+             [u : FlVector])
+           (flvector-map * v u))
+         (flvector 1.0 1.0 1.0)
+         vecs))
 
 (: col (quaternion quaternion-index-vector quaternion quaternion-index-vector -> FlVector))
 (define (col q m r n)

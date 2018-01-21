@@ -12,9 +12,9 @@
 
 (: remap (FlVector (Vectorof Integer) -> FlVector))
 (define (remap v m)
-  (let ([elm (lambda: ([v : FlVector]
-                       [m : (Vectorof Integer)]
-                       [i : Integer])
+  (let ([elm (λ ([v : FlVector]
+                 [m : (Vectorof Integer)]
+                 [i : Integer])
                (flvector-ref v (vector-ref m i)))])
     (flvector (elm v m 0)
               (elm v m 1) 

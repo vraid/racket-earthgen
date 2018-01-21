@@ -29,11 +29,11 @@
 
 (: flvector3-distance-squared (FlVector FlVector -> Float))
 (define (flvector3-distance-squared u v)
-  (flvector3-length-squared (flvector3-subtract u v)))
+  (flvector3-length-squared (flvector- v u)))
 
 (: flvector3-distance (FlVector FlVector -> Float))
 (define (flvector3-distance u v)
-  (flvector3-length (flvector3-subtract u v)))
+  (flvector3-length (flvector- v u)))
 
 (: flvector3-scale (Float FlVector -> FlVector))
 (define (flvector3-scale a v)
@@ -57,14 +57,11 @@
 
 (: flvector3-subtract (FlVector FlVector -> FlVector))
 (define (flvector3-subtract a b)
-  (flvector- b a))
+  (flvector- a b))
 
-(: flvector3-map-mult (FlVector * -> FlVector))
-(define (flvector3-map-mult . vecs)
-  (foldl (lambda: ([v : FlVector]
-                   [u : FlVector])
-           (flvector-map * v u))
-         (flvector 1.0 1.0 1.0) vecs))
+(: flvector3-subtract-by (FlVector FlVector -> FlVector))
+(define (flvector3-subtract-by a b)
+  (flvector- b a))
 
 (: flvector3-dot-product (FlVector FlVector -> Float))
 (define (flvector3-dot-product u v)
@@ -75,8 +72,8 @@
 (define (flvector3-cross-product u v)
   (let* ([m (vector 1 2 0)]
          [n (vector 2 0 1)])
-    (flvector3-subtract (col u n v m)
-                        (col u m v n))))
+    (flvector- (col u m v n)
+               (col u n v m))))
 
 (: flvector3-angle (FlVector FlVector -> Float))
 (define (flvector3-angle a b)
@@ -91,7 +88,7 @@
 
 (: flvector3-rejection (FlVector FlVector -> FlVector))
 (define (flvector3-rejection rejector v)
-  (flvector3-subtract (flvector3-projection rejector v) v))
+  (flvector- v (flvector3-projection rejector v)))
 
 (: flvector3-parallel? (FlVector FlVector -> Boolean))
 (define (flvector3-parallel? u v)

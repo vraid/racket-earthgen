@@ -17,7 +17,7 @@
 (define (quaternion->axis-angle q)
   (let* ([angle (fl* 2.0 (flacos (quaternion-a q)))]
          [scale (let ([s (flsqrt (- 1.0 (flexpt (quaternion-a q) 2.0)))])
-                  (lambda: ([el : quaternion-index])
+                  (λ ([el : quaternion-index])
                     (fl/ (el q) s)))]
          [axis (if (zero? angle)
                    (flvector 1.0 0.0 0.0)
@@ -51,7 +51,7 @@
 
 (: quaternion-length-square (quaternion -> Float))
 (define (quaternion-length-square q)
-  (define square (lambda ([a : Float])
+  (define square (λ ([a : Float])
                    (* a a)))
   (quaternion-sum (quaternion-map square q)))
 
@@ -87,13 +87,13 @@
          [b (i q)]
          [c (j q)]
          [d (k q)]
-         [*2 (lambda: ([a : Float]
-                       [b : Float])
+         [*2 (λ ([a : Float]
+                 [b : Float])
                (* 2.0 (* a b)))]
-         [*-2 (lambda: ([a : Float]
-                        [b : Float])
+         [*-2 (λ ([a : Float]
+                  [b : Float])
                 (- (*2 a b)))])
-    (matrix3+
+    (matrix3-sum
      (matrix3-identity)
      (flvector (*-2 c c) (*2 b c) (*2 b d)
                (*2 b c) (*-2 b b) (*2 c d)
