@@ -39,14 +39,14 @@
 
 (: grid-edge-tile-sign (grid Integer Integer -> (U 0 1 -1)))
 (define (grid-edge-tile-sign g e t)
-  (cond [(eq? t ((grid-edge-tile g) e 0)) 1]
-        [(eq? t ((grid-edge-tile g) e 1)) -1]
+  (cond [(= t ((grid-edge-tile g) e 0)) 1]
+        [(= t ((grid-edge-tile g) e 1)) -1]
         [else 0]))
 
 (: grid-edge-corner-sign (grid Integer Integer -> (U 0 1 -1)))
 (define (grid-edge-corner-sign g e c)
-  (cond [(eq? c ((grid-edge-corner g) e 0)) 1]
-        [(eq? c ((grid-edge-corner g) e 1)) -1]
+  (cond [(= c ((grid-edge-corner g) e 0)) 1]
+        [(= c ((grid-edge-corner g) e 1)) -1]
         [else 0]))
 
 (: grid-access-position ((grid -> get-grid-integer) (Integer -> Integer) grid Integer Integer -> Integer))
@@ -55,11 +55,9 @@
         [f-g (f g)])
     (: iterate (Integer -> Integer))
     (define (iterate k)
-      (if (= k n-count)
-          -1
-          (if (= i (f-g n k))
-              k
-              (iterate (+ 1 k)))))
+      (cond [(= k n-count) -1]
+            [(= i (f-g n k)) k]
+            [else (iterate (+ 1 k))]))
     (iterate 0)))
 
 (: grid-access-list ((grid -> get-grid-integer) (Integer -> Integer) grid Integer -> integer-list))
@@ -79,11 +77,11 @@
 (define-syntax (grid-access stx)
   (syntax-case stx ()
     [(_ id count ([field] ...))
-     (let* ([field-access (lambda (f)
+     (let* ([field-access (λ (f)
                             (format-id stx "grid-~a-~a" #'id f))]
             [fields (syntax->list #'(field ...))]
-            [access-type (lambda (pattern)
-                           (lambda (field)
+            [access-type (λ (pattern)
+                           (λ (field)
                              (format-id stx pattern (field-access field))))])
        (with-syntax ([(access ...) (map field-access fields)]
                      [(access-list ...) (map (access-type "~a-list") fields)]
@@ -107,10 +105,10 @@
 (grid-access tile tile-edge-count
              ([tile] [corner] [edge]))
 
-(grid-access corner (lambda: ([n : Integer]) corner-edge-count)
+(grid-access corner (λ ([n : Integer]) corner-edge-count)
              ([tile] [corner] [edge]))
 
-(grid-access edge (lambda: ([n : Integer]) 2)
+(grid-access edge (λ ([n : Integer]) 2)
              ([tile] [corner]))
 
 (require (for-syntax racket/syntax))
@@ -118,10 +116,10 @@
 (define-syntax (planet-grid-access stx)
   (syntax-case stx ()
     [(_ struct ([field] ...))
-     (with-syntax ([(function ...) (map (lambda (field)
+     (with-syntax ([(function ...) (map (λ (field)
                                           (format-id stx "~a-~a" #'struct field))
                                         (syntax->list #'(field ...)))]
-                   [(struct-function ...) (map (lambda (field)
+                   [(struct-function ...) (map (λ (field)
                                                  (format-id stx "grid-~a-~a" #'struct field))
                                                (syntax->list #'(field ...)))])
        #'(begin

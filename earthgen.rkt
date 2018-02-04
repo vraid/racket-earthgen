@@ -3,12 +3,12 @@
 (require racket/flonum
          "planet-display.rkt"
          "planet/planet-generation.rkt"
-         "planet/grid-create.rkt"
+         "planet/grid/grid-create.rkt"
          "terrain-gen.rkt"
          "terrain-dsl.rkt")
 
 (define (algorithms)
-  (load-algorithms "terrain-generation"))
+  (load-algorithms (file->algorithm grids) "terrain-generation"))
 
 (define (available-algorithms)
   (hash-keys (algorithms)))

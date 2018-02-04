@@ -1,21 +1,16 @@
 #lang racket
 
-(require "planet/grid-create.rkt"
-         "terrain-dsl.rkt")
+(require "terrain-dsl.rkt")
 
-(provide file->algorithm
-         load-algorithms)
+(provide (all-defined-out))
 
-(define (any? a)
-  #t)
-
-(define (file->algorithm file)
+(define ((file->algorithm grids) file)
   (let* ([value (file->value file)])
     ; ensures that the algorithm is valid
-    (((eval-terrain-function value) "") (list (n-grid 0)))
+    (((eval-terrain-function value) "") (grids 0))
     value))
 
-(define (load-algorithms directory)
+(define (load-algorithms to-algorithm directory)
   (let ([files (filter (lambda (s)
                          (let ([split (string-split (path->string s) ".")])
                            (and (= 2 (length split))
@@ -24,7 +19,7 @@
     (foldl (lambda (file hash)
              (let* ([name (string->symbol (first (string-split (path->string file) ".")))]
                     [path (build-path directory file)]
-                    [value (file->algorithm path)])
+                    [value (to-algorithm path)])
                (hash-set hash name value)))
            #hash()
            files)))

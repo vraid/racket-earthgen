@@ -1,10 +1,10 @@
 #lang typed/racket
 
-(provide grid-closest-tile)
-
 (require vraid/math
          "grid-structs.rkt"
          "grid-functions.rkt")
+
+(provide grid-closest-tile)
 
 (: grid-tile-distance (grid FlVector -> (Integer -> Float)))
 (define ((grid-tile-distance grid v) n)
