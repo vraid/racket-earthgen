@@ -1,7 +1,8 @@
 #lang racket
 
 (require vraid/random
-         "planet/heightmap.rkt")
+         "planet/heightmap.rkt"
+         "planet/heightmap/heightmap-create.rkt")
 
 (provide eval-terrain-function)
 

@@ -4,5 +4,4 @@
 
 (struct: heightmap
   ([tiles : FlVector]
-   [corners : FlVector])
-  #:transparent)
+   [corners : FlVector]))

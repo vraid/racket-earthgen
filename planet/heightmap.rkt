@@ -2,5 +2,5 @@
 
 (require vraid/require)
 
-(require/provide "heightmap-base.rkt"
-                 "heightmap/heightmap-create.rkt")
+(require/provide "heightmap/heightmap-structs.rkt"
+                 "heightmap/heightmap-functions.rkt")

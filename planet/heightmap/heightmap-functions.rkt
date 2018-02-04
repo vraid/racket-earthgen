@@ -9,7 +9,7 @@
 
 (: heightmap-map ((Float -> Float) heightmap-function -> heightmap-function))
 (define (heightmap-map f h)
-  (lambda: ([grids : grid-list])
+  (λ ([grids : grid-list])
     (let ([hmap (h grids)])
       (heightmap
        (flvector-map f (heightmap-tiles hmap))
@@ -17,39 +17,35 @@
 
 (: heightmap-map* ((Float Float Float * -> Float) heightmap-function heightmap-function heightmap-function * -> heightmap-function))
 (define (heightmap-map* f h g . hs)
-  (lambda: ([grids : grid-list])
+  (λ ([grids : grid-list])
     (let ([hmap (h grids)]
           [gmap (g grids)]
-          [hmaps (map (lambda: ([h : heightmap-function])
-                        (h grids)) hs)])
+          [hmaps (map (λ ([h : heightmap-function]) (h grids))
+                      hs)])
       (heightmap
        (apply flvector-map f
               (heightmap-tiles hmap)
               (heightmap-tiles gmap)
-              (map (lambda: ([h : heightmap])
-                     (heightmap-tiles h)) hmaps))
+              (map heightmap-tiles hmaps))
        (apply flvector-map f
               (heightmap-corners hmap)
               (heightmap-corners gmap)
-              (map (lambda: ([h : heightmap])
-                     (heightmap-corners h)) hmaps))))))
+              (map heightmap-corners hmaps))))))
 
 (: heightmap-raise (Float heightmap-function -> heightmap-function))
 (define (heightmap-raise n h)
-  (lambda: ([grids : grid-list])
-    ((heightmap-map
-      (curry fl+ (exact->inexact n))
-      h)
+  (λ ([grids : grid-list])
+    ((heightmap-map (curry fl+ (exact->inexact n))
+                    h)
      grids)))
 
 (: heightmap-lower (Float heightmap-function -> heightmap-function))
 (define (heightmap-lower n h)
-  (lambda: ([grids : grid-list])
-    ((heightmap-raise (- n) h) grids)))
+  (heightmap-raise (- n) h))
 
 (: heightmap-add (heightmap-function heightmap-function -> heightmap-function))
 (define (heightmap-add a b)
-  (lambda: ([grids : grid-list])
+  (λ ([grids : grid-list])
     (let ([hmap-a (a grids)]
           [hmap-b (b grids)])
       (heightmap
@@ -58,9 +54,9 @@
 
 (: heightmap-combine (heightmap-function heightmap-function * -> heightmap-function))
 (define (heightmap-combine a . hs)
-  (lambda: ([grids : grid-list])
-    ((foldl (lambda: ([a : heightmap-function]
-                      [b : heightmap-function])
+  (λ ([grids : grid-list])
+    ((foldl (λ ([a : heightmap-function]
+                [b : heightmap-function])
               (heightmap-add a b))
             a hs)
      grids)))

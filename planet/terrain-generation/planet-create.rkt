@@ -5,7 +5,7 @@
 (require vraid/math
          vraid/util
          "../grid-base.rkt"
-         "../heightmap-base.rkt"
+         "../heightmap.rkt"
          "../geometry.rkt"
          "../terrain-base.rkt"
          "../water-base.rkt"
