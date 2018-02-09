@@ -36,19 +36,19 @@
      (climate-parameters-axial-tilt (planet-climate-parameters planet))))
 
 (vector-struct tile-climate-data
-               ([snow : Float]
-                [sunlight : Float]
-                [temperature : Float]
-                [humidity : Float]
-                [precipitation : Float]
-                [leaf-area-index : Float]))
+               ([snow : flvec Float]
+                [sunlight : flvec Float]
+                [temperature : flvec Float]
+                [humidity : flvec Float]
+                [precipitation : flvec Float]
+                [leaf-area-index : flvec Float]))
 
 (vector-struct corner-climate-data
-               ([river-flow : Float]))
+               ([river-flow : flvec Float]))
 
 (vector-struct edge-climate-data
-               ([river-flow : Float]
-                [air-flow : Float]))
+               ([river-flow : flvec Float]
+                [air-flow : flvec Float]))
 
 (struct/kw planet-climate planet-terrain
            ([parameters : climate-parameters]

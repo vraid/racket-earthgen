@@ -3,42 +3,9 @@
 (require vraid/flow
          vraid/sorted-tree
          "../grid-base.rkt"
-         "../terrain.rkt"
-         "terrain-data.rkt")
+         "../terrain.rkt")
 
 (provide planet/rivers)
-
-(: bad-river-end? (planet-terrain Integer -> Boolean))
-(define (bad-river-end? planet n)
-  (and (corner-land? planet n)
-       (not (corner-river-direction planet n))))
-
-(: has-bad-ends? (planet-terrain -> Boolean))
-(define (has-bad-ends? planet)
-  (ormap (curry bad-river-end? planet)
-         (range (corner-count planet))))
-
-(: lowest-nearby (planet-terrain Integer -> Float))
-(define (lowest-nearby planet n)
-  (foldl min
-         +inf.0
-         (map (curry corner-elevation planet)
-              (grid-corner-corner-list planet n))))
-
-(: highest-nearby (planet-terrain Integer -> Float))
-(define (highest-nearby planet n)
-  (foldl max
-         -inf.0
-         (map (curry corner-elevation planet)
-              (grid-corner-corner-list planet n))))
-
-(: elevate-ends! (planet-terrain -> Void))
-(define (elevate-ends! planet)
-  (for ([n (corner-count planet)])
-    (when (bad-river-end? planet n)
-      ((corner-terrain-data-elevation-set! (planet-terrain-corner planet))
-       n
-       (* 1.01 (highest-nearby planet n))))))
 
 (define-type corner-node (Pair Integer Float))
 
@@ -130,12 +97,12 @@
 
 (: planet/rivers (planet-terrain -> planet-terrain))
 (define (planet/rivers p)
-  (let* ([tiles (make-tile-terrain-data (tile-count p)
-                                        (curry tile-elevation p)
-                                        (curry tile-water-level p))]
-         [corners (make-corner-terrain-data (corner-count p)
-                                            (curry corner-elevation p)
-                                            (curry corner-river-direction p))]
+  (let* ([tiles ((build-tile-terrain-data (tile-count p))
+                 #:elevation (curry tile-elevation p)
+                 #:water-level (curry tile-water-level p))]
+         [corners ((build-corner-terrain-data (corner-count p))
+                   #:elevation (curry corner-elevation p)
+                   #:river-direction (curry corner-river-direction p))]
          [p (planet-terrain/kw
              #:planet-geometry p
              #:sea-level (planet-sea-level p)
@@ -145,18 +112,3 @@
     (set-directions/floodfill! p)
     (struct-copy planet-terrain p
                  [rivers (river-trees p)])))
-
-; direction is -1 if no neighbouring corner has lower elevation
-(: lowest-corner-direction (planet-terrain Integer -> Fixnum))
-(define (lowest-corner-direction planet n)
-  (let* ([elevation (λ ([n : Integer])
-                      (corner-elevation planet n))]
-         [index/elevation (λ ([i : Fixnum])
-                            (cons i (elevation
-                                     (corner-corner planet n i))))]
-         [indices/elevation (map index/elevation
-                                 '(0 1 2))])
-    (car (argmin (λ ([p : (Pair Fixnum Float)])
-                   (cdr p))
-                 (cons (cons -1 (elevation n))
-                       indices/elevation)))))

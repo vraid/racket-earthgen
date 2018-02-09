@@ -3,7 +3,6 @@
 (require vraid/math
          vraid/util
          math/flonum
-         "terrain-data.rkt"
          "../grid-base.rkt"
          "../heightmap.rkt"
          "../geometry.rkt"
@@ -19,13 +18,13 @@
 (define ((planet/sea-level sea-level) p)
   (let* ([tile-count (tile-count p)]
          [corner-count [corner-count p]]
-         [tile-data (make-tile-terrain-data tile-count
-                                            (curry tile-elevation p)
-                                            (λ ([n : Integer])
-                                              sea-level))]
-         [corner-data (make-corner-terrain-data corner-count
-                                                (curry corner-elevation p)
-                                                (curry corner-river-direction p))])
+         [tile-data ((build-tile-terrain-data tile-count)
+                     #:elevation (curry tile-elevation p)
+                     #:water-level (λ ([n : Integer])
+                                     sea-level))]
+         [corner-data ((build-corner-terrain-data corner-count)
+                       #:elevation (curry corner-elevation p)
+                       #:river-direction (curry corner-river-direction p))])
     (planet-terrain/kw
      #:planet-geometry p
      #:sea-level sea-level
@@ -38,24 +37,24 @@
   (planet-terrain/kw
    #:planet-geometry p
    #:sea-level (planet-sea-level p)
-   #:tile (make-tile-terrain-data (tile-count p)
-                                  (curry tile-elevation p)
-                                  (curry tile-water-level p))
-   #:corner (make-corner-terrain-data (corner-count p)
-                                      (curry corner-elevation p)
-                                      (curry corner-river-direction p))
+   #:tile ((build-tile-terrain-data (tile-count p))
+           #:elevation (curry tile-elevation p)
+           #:water-level (curry tile-water-level p))
+   #:corner ((build-corner-terrain-data (corner-count p))
+             #:elevation (curry corner-elevation p)
+             #:river-direction (curry corner-river-direction p))
    #:rivers (planet-rivers p)))
 
 (: heightmap->planet (Float FlVector -> (grid/heightmap -> planet-terrain)))
 (define ((heightmap->planet radius axis) gh)
   (let* ([grid (grid/heightmap-grid gh)]
          [h (grid/heightmap-heightmap gh)]
-         [tile (make-tile-terrain-data (tile-count grid)
-                                       (curry flvector-ref (heightmap-tiles h))
-                                       (λ ([n : Integer]) 0.0))]
-         [corner (make-corner-terrain-data (corner-count grid)
-                                           (curry flvector-ref (heightmap-corners h))
-                                           (λ ([n : Integer]) #f))])
+         [tile ((build-tile-terrain-data (tile-count grid))
+                #:elevation (curry flvector-ref (heightmap-tiles h))
+                #:water-level (λ ([n : Integer]) 0.0))]
+         [corner ((build-corner-terrain-data (corner-count grid))
+                  #:elevation (curry flvector-ref (heightmap-corners h))
+                  #:river-direction (λ ([n : Integer]) #f))])
     
     (planet-terrain/kw
      #:planet-geometry (planet-geometry/kw

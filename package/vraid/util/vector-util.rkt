@@ -1,8 +1,8 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require math/flonum)
+
+(provide (all-defined-out))
 
 (: vector-index (All (a) (a (Vectorof a) -> Integer)))
 (define (vector-index e v)
@@ -14,13 +14,13 @@
 (: build-vector-ref (All (a) (Integer (Integer -> a) -> (Integer -> a))))
 (define (build-vector-ref count f)
   (let ([v (build-vector count f)])
-    (lambda: ([n : Integer])
+    (λ ([n : Integer])
       (vector-ref v n))))
 
 (: build-flvector-ref (Integer (Integer -> Float) -> (Integer -> Float)))
 (define (build-flvector-ref count f)
   (let ([v (build-flvector count f)])
-    (lambda: ([n : Integer])
+    (λ ([n : Integer])
       (flvector-ref v n))))
 
 (: vector-take-at-most (All (a) ((Vectorof a) Integer -> (Vectorof a))))
@@ -31,17 +31,38 @@
   ([get : (Integer -> A)]
    [set : (Integer A -> Void)]))
 
+(: vector-get (All (A) ((Vectorof A) -> (Integer -> A))))
+(define ((vector-get v) n)
+  (vector-ref v n))
+
+(: vector-set (All (A) ((Vectorof A) -> (Integer A -> Void))))
+(define ((vector-set v) n value)
+  (vector-set! v n value))
+
+(: flvector-get (FlVector -> (Integer -> Float)))
+(define ((flvector-get v) n)
+  (flvector-ref v n))
+
+(: flvector-set (FlVector -> (Integer Float -> Void)))
+(define ((flvector-set v) n value)
+  (flvector-set! v n value))
+
 (: make-vector-accessor (All (A) ((Vectorof A) -> (vector-accessor A))))
 (define (make-vector-accessor v)
-  (vector-accessor (lambda ([n : Integer])
-                   (vector-ref v n))
-                 (lambda ([n : Integer]
-                          [a : A])
-                   (vector-set! v n a))))
+  (vector-accessor
+   (vector-get v)
+   (vector-set v)))
 
 (: make-flvector-accessor (FlVector -> (vector-accessor Float)))
 (define (make-flvector-accessor v)
-  (vector-accessor (curry flvector-ref v)
-                 (lambda ([n : Integer]
-                          [a : Float])
-                   (flvector-set! v n a))))
+  (vector-accessor
+   (flvector-get v)
+   (flvector-set v)))
+
+(: build-vector-accessor (All (A) (Integer (Integer -> A) -> (vector-accessor A))))
+(define (build-vector-accessor n get)
+  (make-vector-accessor (build-vector n get)))
+
+(: build-flvector-accessor (Integer (Integer -> Float) -> (vector-accessor Float)))
+(define (build-flvector-accessor n get)
+  (make-flvector-accessor (build-flvector n get)))

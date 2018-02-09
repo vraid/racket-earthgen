@@ -1,8 +1,6 @@
 #lang racket
 
-(require "struct/keyword-struct.rkt"
-         "struct/vector-struct.rkt")
+(require "require.rkt")
 
-(provide (all-from-out
-          "struct/keyword-struct.rkt"
-          "struct/vector-struct.rkt"))
+(require/provide "struct/keyword-struct.rkt"
+                 "struct/vector-struct.rkt")

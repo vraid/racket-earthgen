@@ -14,12 +14,12 @@
 (define-type river-list (Listof river))
 
 (vector-struct tile-terrain-data
-               ([elevation : Float]
-                [water-level : Float]))
+               ([elevation : flvec Float]
+                [water-level : flvec Float]))
 
 (vector-struct corner-terrain-data
-               ([elevation : Float]
-                [river-direction : (Option Integer)]))
+               ([elevation : flvec Float]
+                [river-direction : vec (Option Integer)]))
 
 (struct/kw planet-terrain planet-geometry
            ([sea-level : Float]
