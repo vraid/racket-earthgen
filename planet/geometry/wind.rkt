@@ -1,11 +1,11 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require "geometry-structs.rkt"
          "planet-rotation.rkt"
          "planet-geometry.rkt"
          vraid/math)
+
+(provide (all-defined-out))
 
 (define wind-speed-constant 4.0e3)
 

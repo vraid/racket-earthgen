@@ -3,7 +3,7 @@
 (require vraid/struct
          vraid/math
          math/flonum
-         "../water/water-structs.rkt"
+         "../terrain/terrain-structs.rkt"
          "../direct-access.rkt")
 
 (provide (all-defined-out))
@@ -50,7 +50,7 @@
                ([river-flow : Float]
                 [air-flow : Float]))
 
-(struct/kw planet-climate planet-water
+(struct/kw planet-climate planet-terrain
            ([parameters : climate-parameters]
             [season : Integer]
             [tile : tile-climate-data]

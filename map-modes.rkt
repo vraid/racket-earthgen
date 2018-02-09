@@ -4,10 +4,10 @@
 
 (require "map-mode.rkt"
          "planet-color.rkt"
-         "planet/water-base.rkt"
+         "planet/terrain-base.rkt"
          "planet/climate-base.rkt")
 
-(define-map-modes terrain planet-water?
+(define-map-modes terrain planet-terrain?
   (topography color-topography))
 
 (define-map-modes climate planet-climate?

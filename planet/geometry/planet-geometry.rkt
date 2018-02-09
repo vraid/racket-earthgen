@@ -1,11 +1,11 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require "geometry-structs.rkt"
          "../grid-base.rkt"
          vraid/math
          math/flonum)
+
+(provide (all-defined-out))
 
 (: coordinate-latitude (FlVector FlVector -> Float))
 (define (coordinate-latitude axis v)

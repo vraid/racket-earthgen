@@ -8,8 +8,7 @@
          math/flonum
          "../grid-base.rkt"
          "../geometry.rkt"
-         "../terrain-base.rkt"
-         "../water.rkt"
+         "../terrain.rkt"
          "../climate.rkt")
 
 (: default-temperature (planet-climate Integer -> Float))
@@ -63,24 +62,24 @@
 (define (set-wind! p)
   (let* ([tropical-equator (* 0.5 (planet-solar-equator p))]
          [edge-wind (make-flvector (edge-count p) 0.0)]
-         [add (lambda ([n : Integer]
-                       [a : Float])
+         [add (λ ([n : Integer]
+                  [a : Float])
                 (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))]
          [tile-edge-sign (let ([v (build-vector (* 6 (tile-count p))
-                                                (lambda ([n : Integer])
+                                                (λ ([n : Integer])
                                                   (let ([i (modulo n 6)]
                                                         [n (inexact->exact (floor (/ n 6)))])
                                                     (edge-tile-sign p (tile-edge p n i) n))))])
-                           (lambda ([p : planet-climate]
-                                    [n : Integer]
-                                    [i : Integer])
+                           (λ ([p : planet-climate]
+                               [n : Integer]
+                               [i : Integer])
                              (vector-ref v (+ i (* 6 n)))))])
     (for ([n (tile-count p)])
       (let* ([wind-vector (default-wind tropical-equator p n)]
              [tile-vector (tile-coordinates p n)]
              [negative-wind-vector (flvector3-negative wind-vector)]
              [tile-wind (build-flvector-ref (tile-edge-count n)
-                                            (lambda (i)
+                                            (λ (i)
                                               (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
                                                                                                              (tile-coordinates p (tile-tile p n i))))])
                                                 (* (flvector3-length (flvector3-projection neighbour-vector wind-vector))
@@ -100,7 +99,7 @@
 (define (set-river-flow! planet)
   (: river-outflow (Integer -> Float))
   (define river-outflow (build-flvector-ref (tile-count planet)
-                                            (lambda ([n : Integer])
+                                            (λ ([n : Integer])
                                               (/ (* (tile-area planet n)
                                                     (tile-precipitation planet n))
                                                  (tile-edge-count n)))))

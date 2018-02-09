@@ -1,26 +1,27 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
-(require "water-structs.rkt"
-         "tile-water.rkt"
+(require "terrain-structs.rkt"
+         "tile-terrain.rkt"
          "rivers.rkt"
          "../grid-base.rkt")
 
-(: edge-coast? (planet-water Integer -> Boolean))
+(provide (all-defined-out))
+
+(: edge-coast? (planet-terrain Integer -> Boolean))
 (define (edge-coast? planet n)
   (let ([tiles (grid-edge-tile-list planet n)])
     (= 1 (count (curry tile-land? planet) tiles))))
 
-(: edge-land? (planet-water Integer -> Boolean))
+(: edge-land? (planet-terrain Integer -> Boolean))
 (define (edge-land? planet n)
   (andmap (curry tile-land? planet)
           (grid-edge-tile-list planet n)))
 
-(: edge-has-river? (planet-water Integer -> Boolean))
+(: edge-has-river? (planet-terrain Integer -> Boolean))
 (define (edge-has-river? planet n)
   (and (edge-land? planet n)
        (let ([a ((grid-edge-corner planet) n 0)]
-             [b ((grid-edge-corner planet) n 1)])
-         (or ((river-flows-to? planet a) b)
-             ((river-flows-to? planet b) a)))))
+             [b ((grid-edge-corner planet) n 1)]
+             [flows-to? (curry river-flows-to? planet)])
+         (or ((flows-to? a) b)
+             ((flows-to? b) a)))))

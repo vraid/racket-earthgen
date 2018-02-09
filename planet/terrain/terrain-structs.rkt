@@ -6,26 +6,34 @@
 
 (provide (all-defined-out))
 
-(struct/kw terrain-parameters
-           ([algorithm : Any]
-            [seed : String]
-            [grid-size : Integer]
-            [radius : Float]
-            [sea-level : Float]
-            [axis : FlVector]))
+(struct/kw river
+           ([location : Integer]
+            [sources : river-list])
+           #:transparent)
+
+(define-type river-list (Listof river))
 
 (vector-struct tile-terrain-data
-               ([elevation : Float]))
+               ([elevation : Float]
+                [water-level : Float]))
 
 (vector-struct corner-terrain-data
-               ([elevation : Float]))
+               ([elevation : Float]
+                [river-direction : (Option Integer)]))
 
 (struct/kw planet-terrain planet-geometry
-           ([tile : tile-terrain-data]
-            [corner : corner-terrain-data]))
+           ([sea-level : Float]
+            [tile : tile-terrain-data]
+            [corner : corner-terrain-data]
+            [rivers : river-list]))
+
+(define planet-sea-level planet-terrain-sea-level)
+(define planet-rivers planet-terrain-rivers)
 
 (direct-access planet-terrain tile tile-terrain-data
-               ([elevation Float]))
+               ([elevation Float]
+                [water-level Float]))
 
 (direct-access planet-terrain corner corner-terrain-data
-               ([elevation Float]))
+               ([elevation Float]
+                [river-direction (Option Integer)]))

@@ -7,7 +7,7 @@
          math/flonum
          "../planet/grid-base.rkt"
          "../planet/geometry-base.rkt"
-         "../planet/water.rkt"
+         "../planet/terrain.rkt"
          "../planet/climate-base.rkt")
 
 (provide (all-defined-out))

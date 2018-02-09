@@ -63,7 +63,7 @@
   (filter-colors
    topography-intervals/colors))
 
-(: color-topography (planet-water Integer -> flcolor))
+(: color-topography (planet-terrain Integer -> flcolor))
 (define (color-topography p n)
   (find-color (if (tile-land? p n)
                   (- (tile-elevation p n) (planet-sea-level p))

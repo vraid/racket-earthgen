@@ -1,12 +1,12 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require vraid/struct
          vraid/types
          math/flonum
          "../direct-access.rkt"
          "../grid/grid-structs.rkt")
+
+(provide (all-defined-out))
 
 (struct tile-geometry-data
   ([area : float-get]))

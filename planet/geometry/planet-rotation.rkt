@@ -1,15 +1,14 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require "geometry-structs.rkt"
          "time.rkt"
-         vraid/math
          math/flonum)
+
+(provide (all-defined-out))
 
 (: planet-angular-velocity (planet-geometry -> Float))
 (define (planet-angular-velocity p)
-  (/ tau (planet-rotation-period p)))
+  (/ (* 2 pi) (planet-rotation-period p)))
 
 (: planet-equatorial-speed (planet-geometry -> Float))
 (define (planet-equatorial-speed p)

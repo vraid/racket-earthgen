@@ -1,43 +1,38 @@
 #lang typed/racket
 
-(provide planet/rivers)
-
-(require racket/flonum
-         vraid/flow
+(require vraid/flow
          vraid/sorted-tree
          "../grid-base.rkt"
-         "../terrain-base.rkt"
-         "../water.rkt"
-         "planet-create.rkt")
+         "../terrain.rkt"
+         "terrain-data.rkt")
 
-(: bad-river-end? (planet-water Integer -> Boolean))
+(provide planet/rivers)
+
+(: bad-river-end? (planet-terrain Integer -> Boolean))
 (define (bad-river-end? planet n)
   (and (corner-land? planet n)
        (not (corner-river-direction planet n))))
 
-(: has-bad-ends? (planet-water -> Boolean))
+(: has-bad-ends? (planet-terrain -> Boolean))
 (define (has-bad-ends? planet)
-  (ormap (lambda ([n : Integer])
-           (bad-river-end? planet n))
+  (ormap (curry bad-river-end? planet)
          (range (corner-count planet))))
 
-(: lowest-nearby (planet-water Integer -> Float))
+(: lowest-nearby (planet-terrain Integer -> Float))
 (define (lowest-nearby planet n)
   (foldl min
          +inf.0
-         (map (lambda ([n : Integer])
-                (corner-elevation planet n))
+         (map (curry corner-elevation planet)
               (grid-corner-corner-list planet n))))
 
 (: highest-nearby (planet-terrain Integer -> Float))
 (define (highest-nearby planet n)
   (foldl max
          -inf.0
-         (map (lambda ([n : Integer])
-                (corner-elevation planet n))
+         (map (curry corner-elevation planet)
               (grid-corner-corner-list planet n))))
 
-(: elevate-ends! (planet-water -> Void))
+(: elevate-ends! (planet-terrain -> Void))
 (define (elevate-ends! planet)
   (for ([n (corner-count planet)])
     (when (bad-river-end? planet n)
@@ -47,55 +42,55 @@
 
 (define-type corner-node (Pair Integer Float))
 
-(: set-directions/floodfill! (planet-water -> Void))
+(: ref (All (A) ((Vectorof A) -> (Integer -> A))))
+(define ((ref v) n)
+  (vector-ref v n))
+
+(: set-directions/floodfill! (planet-terrain -> Void))
 (define (set-directions/floodfill! planet)
   (let: ([tree : (sorted-tree corner-node) (make-sorted-tree
-                                            (lambda ([a : corner-node]
-                                                     [b : corner-node])
+                                            (λ ([a : corner-node]
+                                                [b : corner-node])
                                               (<= (cdr a) (cdr b))))])
-    (let* ([start : Integer (argmin (curry tile-elevation planet)
-                                    (range (tile-count planet)))]
+    (let* ([start (argmin (curry tile-elevation planet)
+                          (range (tile-count planet)))]
            [tile-visited : (Vectorof Boolean) (make-vector (tile-count planet) #f)]
-           [tile-visited? : (Integer -> Boolean) (lambda (n)
-                                                   (vector-ref tile-visited n))]
-           [tile-visit! : (Integer -> Void) (lambda (n)
-                                              (vector-set! tile-visited n #t))]
+           [tile-visited? (ref tile-visited)]
+           [tile-visit! (λ ([n : Integer])
+                          (vector-set! tile-visited n #t))]
            [corner-visited : (Vectorof Boolean) (make-vector (corner-count planet) #f)]
-           [corner-visited? : (Integer -> Boolean) (lambda (n)
-                                                     (vector-ref corner-visited n))]
-           [corner-visit! : (Integer -> Void) (lambda (n)
-                                                (vector-set! corner-visited n #t))]
+           [corner-visited? (ref corner-visited)]
+           [corner-visit! (λ ([n : Integer])
+                            (vector-set! corner-visited n #t))]
            [coast : (Vectorof Boolean) (make-vector (tile-count planet) #f)]
-           [coast? : (Integer -> Boolean) (lambda (n)
-                                            (vector-ref coast n))]
-           [set-coast! : (Integer -> Void) (lambda (n)
-                                             (vector-set! coast n #t))]
-           [check-tile-elevation : (Integer Float -> Void)
-                                 (lambda (n elevation)
+           [coast? (ref coast)]
+           [set-coast! (λ ([n : Integer])
+                         (vector-set! coast n #t))]
+           [check-tile-elevation (λ ([n : Integer]
+                                     [elevation : Float])
                                    (when (and (not (tile-visited? n))
                                               (< (tile-elevation planet n)
                                                  elevation))
                                      ((tile-terrain-data-elevation-set! (planet-terrain-tile planet)) n elevation)))]
-           [check-corner-elevation : (Integer Float -> Void)
-                                   (lambda (n elevation)
+           [check-corner-elevation (λ ([n : Integer]
+                                       [elevation : Float])
                                      (when (< (corner-elevation planet n)
                                               elevation)
                                        ((corner-terrain-data-elevation-set! (planet-terrain-corner planet)) n (* 1.001 elevation))))]
-           [visit/add! : (Integer -> Void)
-                       (lambda (n)
+           [visit/add! (λ ([n : Integer])
                          (let ([elevation (corner-elevation planet n)])
                            (for ([k (grid-corner-corner-list planet n)])
                              (unless (corner-visited? k)
                                (corner-visit! k)
                                (let ([prev-elevation (corner-elevation planet k)])
                                  (check-corner-elevation k elevation)
-                                 ((corner-water-data-river-direction-set! (planet-water-corner planet)) k (grid-corner-corner-position planet k n))
+                                 ((corner-terrain-data-river-direction-set! (planet-terrain-corner planet)) k (grid-corner-corner-position planet k n))
                                  (let ([new-elevation (corner-elevation planet k)])
                                    (sorted-tree-add! tree (cons k prev-elevation))
                                    (for ([t (grid-corner-tile-list planet k)])
                                      (check-tile-elevation t new-elevation))))))))])
       (letrec ([recuvisit : (Integer -> Void)
-                          (lambda (n)
+                          (λ (n)
                             (when (tile-water? planet n)
                               (unless (tile-visited? n)
                                 (tile-visit! n)
@@ -115,73 +110,53 @@
                                      (begin
                                        (visit/add! n)
                                        (make-next))))])
-        
         (recuvisit start)
         (make-next)
         (void)))))
 
-(: river-trees (planet-water -> river-list))
+(: river-trees (planet-terrain -> river-list))
 (define (river-trees planet)
   (: corner-node (Integer -> river))
   (define (corner-node n)
     (river n (map corner-node
                   (corner-river-sources planet n))))
-  (foldl (lambda ([n : Integer]
-                  [ls : river-list])
+  (foldl (λ ([n : Integer]
+             [ls : river-list])
            (if (corner-coast? planet n)
                (cons (corner-node n) ls)
                ls))
          '()
          (range (corner-count planet))))
 
-(: make-tile-water-data (Integer -> tile-water-data))
-(define (make-tile-water-data n)
-  (let ([v (make-flvector n 0.0)])
-    (tile-water-data/kw #:water-level (curry flvector-ref v)
-                        #:water-level-set! (lambda ([n : Integer]
-                                                    [a : Flonum])
-                                             (flvector-set! v n a)))))
-
-(: make-corner-water-data (Integer -> corner-water-data))
-(define (make-corner-water-data n)
-  (let ([direction : (Vectorof (Option Integer)) (make-vector n #f)])
-    (corner-water-data/kw #:river-direction (lambda ([n : Integer])
-                                              (vector-ref direction n))
-                          #:river-direction-set! (lambda ([n : Integer]
-                                                          [a : (Option Integer)])
-                                                   (vector-set! direction n a)))))
-
-(: planet/rivers (planet-water -> planet-water))
+(: planet/rivers (planet-terrain -> planet-terrain))
 (define (planet/rivers p)
-  (let* ([tiles (make-tile-water-data (tile-count p))]
-         [corners (make-corner-water-data (corner-count p))]
-         [p (begin
-              ((tile-init p) (tile-water-data-water-level-set! tiles)
-                             (lambda ([n : Integer])
-                               (planet-sea-level p)))
-              (planet-water/kw
-               #:planet-terrain (copy-planet-geography p)
-               #:sea-level (planet-sea-level p)
-               #:tile tiles
-               #:corner corners
-               #:rivers '()))])
+  (let* ([tiles (make-tile-terrain-data (tile-count p)
+                                        (curry tile-elevation p)
+                                        (curry tile-water-level p))]
+         [corners (make-corner-terrain-data (corner-count p)
+                                            (curry corner-elevation p)
+                                            (curry corner-river-direction p))]
+         [p (planet-terrain/kw
+             #:planet-geometry p
+             #:sea-level (planet-sea-level p)
+             #:tile tiles
+             #:corner corners
+             #:rivers '())])
     (set-directions/floodfill! p)
-    (struct-copy planet-water p
+    (struct-copy planet-terrain p
                  [rivers (river-trees p)])))
 
 ; direction is -1 if no neighbouring corner has lower elevation
 (: lowest-corner-direction (planet-terrain Integer -> Fixnum))
 (define (lowest-corner-direction planet n)
-  (let* ([elevation (lambda ([n : Integer])
+  (let* ([elevation (λ ([n : Integer])
                       (corner-elevation planet n))]
-         [index/elevation (lambda ([i : Fixnum])
+         [index/elevation (λ ([i : Fixnum])
                             (cons i (elevation
                                      (corner-corner planet n i))))]
          [indices/elevation (map index/elevation
                                  '(0 1 2))])
-    (car (argmin (lambda ([p : fix-float-pair])
+    (car (argmin (λ ([p : (Pair Fixnum Float)])
                    (cdr p))
                  (cons (cons -1 (elevation n))
                        indices/elevation)))))
-
-(define-type fix-float-pair (Pair Fixnum Float))
