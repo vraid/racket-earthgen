@@ -4,6 +4,7 @@
          "planet-display.rkt"
          "planet/planet-generation.rkt"
          "planet/grid/grid-create.rkt"
+         "planet/planet.rkt"
          "terrain-gen.rkt"
          "terrain-dsl.rkt")
 
@@ -36,10 +37,10 @@
     (λ (n)
       (reverse (stream-take grid-stream (+ n 1))))))
 
-(define ((heightmap algorithm seed) grids)
+(define ((heightmap f) grids)
   (grid/heightmap
    (first grids)
-   (((eval-terrain-function algorithm) seed) grids)))
+   (f grids)))
 
 (define ((generate-climate parameters) planet)
   ((singular-climate parameters (thunk* #f)) planet))
@@ -56,5 +57,5 @@
      (generate-climate climate-parameters)
      (planet/sea-level 0.0)
      (heightmap->planet 6000.0 (flvector 1.0 0.0 0.0))
-     (heightmap (algorithm 'default) "")
+     (heightmap ((eval-terrain-function (algorithm 'default)) ""))
      grids)))
