@@ -47,6 +47,10 @@
 (define ((flvector-set v) n value)
   (flvector-set! v n value))
 
+(: flvector-add! (FlVector Integer Float -> Void))
+(define (flvector-add! v n a)
+  (flvector-set! v n (fl+ a (flvector-ref v n))))
+
 (: make-vector-accessor (All (A) ((Vectorof A) -> (vector-accessor A))))
 (define (make-vector-accessor v)
   (vector-accessor
