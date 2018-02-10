@@ -6,8 +6,8 @@
          "../geometry.rkt"
          "../terrain.rkt"
          "../climate.rkt"
-         "climate-create-base.rkt"
-         "../terrain-generation/river-generation.rkt")
+         "../terrain-generation/river-generation.rkt"
+         "climate-create-base.rkt")
 
 (provide static-climate
          singular-climate
@@ -16,51 +16,9 @@
          default-climate-parameters
          default-wind)
 
-(: init-array (Integer -> ((Integer Float -> Void) (Integer -> Float) -> Void)))
-(define ((init-array count) set get)
-  (for ([n count])
-    (set n (get n))))
-
-(define tile-init
-  (λ ([grid : grid])
-    (init-array (tile-count grid))))
-
-(define corner-init
-  (λ ([grid : grid])
-    (init-array (corner-count grid))))
-
-(define edge-init
-  (λ ([grid : grid])
-    (init-array (edge-count grid))))
-
-(: new-flvector-accessor (Integer -> (vector-accessor Float)))
-(define (new-flvector-accessor count)
-  (make-flvector-accessor
-   (make-flvector count 0.0)))
-
-(: make-tile-climate-data (Integer -> tile-climate-data))
-(define (make-tile-climate-data tile-count)
-  (let ([new-flvector (thunk (new-flvector-accessor tile-count))])
-    (tile-climate-data/accessors
-     #:snow (new-flvector)
-     #:sunlight (new-flvector)
-     #:temperature (new-flvector)
-     #:humidity (new-flvector)
-     #:precipitation (new-flvector)
-     #:leaf-area-index (new-flvector))))
-
-(: make-corner-climate-data (Integer -> corner-climate-data))
-(define (make-corner-climate-data corner-count)
-  (let ([new-flvector (thunk (new-flvector-accessor corner-count))])
-    (corner-climate-data/accessors
-     #:river-flow (new-flvector))))
-
-(: make-edge-climate-data (Integer -> edge-climate-data))
-(define (make-edge-climate-data edge-count)
-  (let ([new-flvector (thunk (new-flvector-accessor edge-count))])
-    (edge-climate-data/accessors
-     #:river-flow (new-flvector)
-     #:air-flow (new-flvector))))
+[define zeros
+  (λ ([n : Integer])
+    (make-flvector-accessor (make-flvector n 0.0)))]
 
 (: singular-climate (climate-parameters (String -> Any) -> (planet-terrain -> planet-climate)))
 (define ((singular-climate param feedback) planet)
@@ -89,24 +47,42 @@
 
 (: climate/closed-season (climate-parameters planet-terrain (String -> Any) -> (Integer -> planet-climate)))
 (define ((climate/closed-season par planet feedback) season)
-  (let ([p (planet-climate/kw
-            #:planet-terrain planet
-            #:parameters par
-            #:season season
-            #:tile (make-tile-climate-data (tile-count planet))
-            #:corner (make-corner-climate-data (corner-count planet))
-            #:edge (make-edge-climate-data (edge-count planet)))])
-    (let ([init-tile-array (tile-init p)])
-      (init-tile-array (tile-climate-data-sunlight-set! (planet-climate-tile p))
-                       (λ ([n : Integer])
-                         (sunlight
-                          (planet-solar-equator p)
-                          (tile-latitude p n))))
-      (init-tile-array (tile-climate-data-temperature-set! (planet-climate-tile p))
-                       (curry default-temperature p))
-      (init-tile-array (tile-climate-data-snow-set! (planet-climate-tile p))
-                       (curry default-snow-cover p)))
-    p))
+  (let* ([tile-count (tile-count planet)]
+         [corner-count (corner-count planet)]
+         [edge-count (edge-count planet)]
+         [axial-tilt (climate-parameters-axial-tilt par)]
+         [tile-latitude (curry tile-latitude planet)]
+         [seasons-per-cycle (climate-parameters-seasons-per-cycle par)]
+         [time-of-year (time-of-year seasons-per-cycle season)]
+         [solar-equator (solar-equator axial-tilt time-of-year)]
+         [tile-sunlight (build-flvector-accessor
+                         tile-count
+                         (λ ([n : Integer])
+                           (sunlight
+                            solar-equator
+                            (tile-latitude n))))]
+         [tile-temperature (build-flvector-accessor
+                            tile-count
+                            (default-temperature planet (vector-accessor-get tile-sunlight)))]
+         [tile-snow-cover (build-flvector-accessor
+                           tile-count
+                           (default-snow-cover planet (vector-accessor-get tile-temperature)))])
+    (planet-climate/kw
+     #:planet-terrain planet
+     #:parameters par
+     #:season season
+     #:tile (tile-climate-data/accessors
+             #:sunlight tile-sunlight
+             #:temperature tile-temperature
+             #:humidity (zeros tile-count)
+             #:precipitation (zeros tile-count)
+             #:snow tile-snow-cover
+             #:leaf-area-index (zeros tile-count))
+     #:corner (corner-climate-data/accessors
+               #:river-flow (zeros corner-count))
+     #:edge (edge-climate-data/accessors
+             #:river-flow (zeros edge-count)
+             #:air-flow (zeros edge-count)))))
 
 (: climate-next (climate-parameters planet-climate (String -> Any) -> planet-climate))
 (define (climate-next par prev feedback)
@@ -131,21 +107,9 @@
          [humidity-half-life-days (climate-parameters-humidity-half-life-days par)]
          [humidity-half-life (* humidity-half-life-days seconds-per-day)]
          [humidity->precipitation-rate (/ (log 0.5) humidity-half-life)]
-         [tile-water? (let ([v (build-vector (tile-count p)
-                                             (λ ([n : Integer])
-                                               (tile-water? p n)))])
-                        (λ ([p : planet-climate]
-                            [n : Integer])
-                          (vector-ref v n)))]
-         [tile-land? (λ ([p : planet-climate]
-                         [n : Integer])
-                       (not (tile-water? p n)))]
+         [tile-water? (build-vector-ref (tile-count p) (curry tile-water? p))]
          [edge-length (build-flvector-ref (edge-count p) (curry edge-length p))]
-         [edge-tile-distances (build-flvector (edge-count p) (curry edge-tile-distance p))]
-         [tile-tile-distance (λ ([p : planet-climate]
-                                 [n : Integer]
-                                 [i : Integer])
-                               (flvector-ref edge-tile-distances (tile-edge p n i)))])
+         [edge-tile-distances (build-flvector (edge-count p) (curry edge-tile-distance p))])
     (define (climate-iterate!)
       (let* ([edge-wind (build-vector-ref
                          (edge-count p)
@@ -208,7 +172,7 @@
                      [tile-humidity (λ ([n : Integer])
                                       (flvector-ref (climate-data-tile-humidity from) n))])
                 (for ([n (tile-count p)])
-                  (let* ([water? (tile-water? p n)]
+                  (let* ([water? (tile-water? n)]
                          [outgoing-wind (total-outgoing-wind n)]
                          [incoming-wind (total-incoming-wind n)]
                          [max-wind (max outgoing-wind incoming-wind)]
@@ -250,7 +214,7 @@
                                                   (range (tile-count p))))))))
         (let ([from (make-climate-data p)])
           (for ([n (tile-count p)])
-            (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? p n)
+            (flvector-set! (climate-data-tile-humidity from) n (if (tile-water? n)
                                                                    (saturation-humidity (tile-temperature p n))
                                                                    0.0)))
           (let ([climate-values (iterate! (make-climate-data p)
@@ -274,20 +238,39 @@
 
 (: initial-values (climate-parameters planet-climate -> planet-climate))
 (define (initial-values par prev)
-  (let* ([p (struct-copy planet-climate prev
-                         [season (modulo (+ 1 (planet-climate-season prev))
-                                         (climate-parameters-seasons-per-cycle par))]
-                         [tile (make-tile-climate-data (tile-count prev))]
-                         [edge (make-edge-climate-data (edge-count prev))])]
-         [init-tile-array (init-array (tile-count p))]
-         [tile (planet-climate-tile p)])
-    (init-tile-array (tile-climate-data-sunlight-set! tile)
-                     (λ ([n : Integer])
-                       (sunlight
-                        (planet-solar-equator p)
-                        (tile-latitude p n))))
-    (init-tile-array (tile-climate-data-temperature-set! tile)
-                     (curry default-temperature p))
-    (init-tile-array (tile-climate-data-snow-set! tile)
-                     (curry default-snow-cover p))
-    p))
+  (let* ([tile-count (tile-count prev)]
+         [corner-count (corner-count prev)]
+         [edge-count (edge-count prev)]
+         [axial-tilt (climate-parameters-axial-tilt par)]
+         [tile-latitude (curry tile-latitude prev)]
+         [seasons-per-cycle (climate-parameters-seasons-per-cycle par)]
+         [season (modulo (+ 1 (planet-climate-season prev))
+                         (climate-parameters-seasons-per-cycle par))]
+         [time-of-year (time-of-year seasons-per-cycle season)]
+         [solar-equator (solar-equator axial-tilt time-of-year)]
+         [tile-sunlight (build-flvector-accessor
+                         tile-count
+                         (λ ([n : Integer])
+                           (sunlight
+                            solar-equator
+                            (tile-latitude n))))]
+         [tile-temperature (build-flvector-accessor
+                            tile-count
+                            (default-temperature prev (vector-accessor-get tile-sunlight)))]
+         [tile-snow-cover (build-flvector-accessor
+                           tile-count
+                           (default-snow-cover prev (vector-accessor-get tile-temperature)))])
+    (struct-copy planet-climate prev
+                 [season season]
+                 [tile (tile-climate-data/accessors
+                        #:sunlight tile-sunlight
+                        #:temperature tile-temperature
+                        #:humidity (zeros tile-count)
+                        #:precipitation (zeros tile-count)
+                        #:snow tile-snow-cover
+                        #:leaf-area-index (zeros tile-count))]
+                 [corner (corner-climate-data/accessors
+                          #:river-flow (zeros corner-count))]
+                 [edge (edge-climate-data/accessors
+                        #:river-flow (zeros edge-count)
+                        #:air-flow (zeros edge-count))])))

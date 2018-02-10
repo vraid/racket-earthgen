@@ -1,7 +1,5 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require vraid/flow
          vraid/math
          vraid/util
@@ -11,20 +9,22 @@
          "../terrain.rkt"
          "../climate.rkt")
 
-(: default-temperature (planet-climate Integer -> Float))
-(define (default-temperature p n)
+(provide (all-defined-out))
+
+(: default-temperature (planet-terrain (Integer -> Float) -> (Integer -> Float)))
+(define ((default-temperature p tile-sunlight) n)
   (-
    (+ 220.0
       (* (/ 110.0 solar-constant)
          (if (tile-land? p n)
-             (tile-sunlight p n)
+             (tile-sunlight n)
              (sunlight 0.0 (tile-latitude p n)))))
    (max 0.0
         (temperature-lapse (tile-elevation p n)))))
 
-(: default-snow-cover (planet-climate Integer -> Float))
-(define (default-snow-cover p n)
-  (let ([temperature (tile-temperature p n)])
+(: default-snow-cover (planet-terrain (Integer -> Float) -> (Integer -> Float)))
+(define ((default-snow-cover p tile-temperature) n)
+  (let ([temperature (tile-temperature n)])
     (if (tile-water? p n)
         0.0
         (if (below-freezing-temperature? temperature)
@@ -62,24 +62,21 @@
 (define (set-wind! p)
   (let* ([tropical-equator (* 0.5 (planet-solar-equator p))]
          [edge-wind (make-flvector (edge-count p) 0.0)]
-         [add (λ ([n : Integer]
-                  [a : Float])
-                (flvector-set! edge-wind n (+ a (flvector-ref edge-wind n))))]
-         [tile-edge-sign (let ([v (build-vector (* 6 (tile-count p))
-                                                (λ ([n : Integer])
-                                                  (let ([i (modulo n 6)]
-                                                        [n (inexact->exact (floor (/ n 6)))])
-                                                    (edge-tile-sign p (tile-edge p n i) n))))])
-                           (λ ([p : planet-climate]
-                               [n : Integer]
+         [add (curry flvector-add! edge-wind)]
+         [tile-edge-sign (let ([v (build-flvector (* 6 (tile-count p))
+                                                  (λ ([n : Integer])
+                                                    (let ([i (modulo n 6)]
+                                                          [n (inexact->exact (floor (/ n 6)))])
+                                                      (fl (edge-tile-sign p (tile-edge p n i) n)))))])
+                           (λ ([n : Integer]
                                [i : Integer])
-                             (vector-ref v (+ i (* 6 n)))))])
+                             (flvector-ref v (+ i (* 6 n)))))])
     (for ([n (tile-count p)])
       (let* ([wind-vector (default-wind tropical-equator p n)]
              [tile-vector (tile-coordinates p n)]
              [negative-wind-vector (flvector3-negative wind-vector)]
              [tile-wind (build-flvector-ref (tile-edge-count n)
-                                            (λ (i)
+                                            (λ ([i : Integer])
                                               (let ([neighbour-vector (flvector3-normal (flvector3-rejection tile-vector
                                                                                                              (tile-coordinates p (tile-tile p n i))))])
                                                 (* (flvector3-length (flvector3-projection neighbour-vector wind-vector))
@@ -90,7 +87,7 @@
         (for ([i (tile-edge-count n)])
           (let ([e (tile-edge p n i)])
             (add e (* 0.5
-                      (tile-edge-sign p n i)
+                      (tile-edge-sign n i)
                       (tile-wind i)))))))
     (for ([n (edge-count p)])
       ((edge-climate-data-air-flow-set! (planet-climate-edge p)) n (flvector-ref edge-wind n)))))

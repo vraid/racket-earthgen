@@ -25,22 +25,31 @@
    #:precipitation-factor 1.0
    #:humidity-half-life-days 5.0))
 
+(: time-of-year (Integer Integer -> Float))
+(define (time-of-year seasons-per-cycle season)
+  (fl (/ season seasons-per-cycle)))
+
+(: solar-equator (Float Float -> Float))
+(define (solar-equator axial-tilt time-of-year)
+  (* (sin (* tau time-of-year))
+     axial-tilt))
+
 (: planet-time-of-year (planet-climate -> Float))
 (define (planet-time-of-year planet)
-  (fl (/ (planet-climate-season planet)
-         (climate-parameters-seasons-per-cycle (planet-climate-parameters planet)))))
+  (time-of-year (climate-parameters-seasons-per-cycle (planet-climate-parameters planet))
+                (planet-climate-season planet)))
 
 (: planet-solar-equator (planet-climate -> Float))
 (define (planet-solar-equator planet)
-  (* (sin (* tau (planet-time-of-year planet)))
-     (climate-parameters-axial-tilt (planet-climate-parameters planet))))
+  (solar-equator (climate-parameters-axial-tilt (planet-climate-parameters planet))
+                 (planet-time-of-year planet)))
 
 (vector-struct tile-climate-data
-               ([snow : flvec Float]
-                [sunlight : flvec Float]
+               ([sunlight : flvec Float]
                 [temperature : flvec Float]
                 [humidity : flvec Float]
                 [precipitation : flvec Float]
+                [snow : flvec Float]
                 [leaf-area-index : flvec Float]))
 
 (vector-struct corner-climate-data
