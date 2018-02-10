@@ -7,6 +7,7 @@
          "../terrain.rkt"
          "../climate.rkt"
          "../terrain-generation/river-generation.rkt"
+         "defaults.rkt"
          "climate-create-base.rkt")
 
 (provide static-climate
