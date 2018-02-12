@@ -55,6 +55,7 @@
           #:seasons-per-cycle 16)])
     (compose
      (generate-climate climate-parameters)
+     planet/rivers
      (planet/sea-level 0.0)
      (heightmap->planet 6000.0 (flvector 1.0 0.0 0.0))
      (heightmap ((eval-terrain-function (algorithm 'default)) ""))
