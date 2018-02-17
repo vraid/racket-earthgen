@@ -1,17 +1,11 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require vraid/color
          math/flonum
          "color-base.rkt"
-         "planet/planet.rkt")
+         "../planet/planet.rkt")
 
-(define color-neutral
-  (flcolor3 0.95 0.95 0.85))
-
-(define color-neutral-water
-  (flcolor3 0.0 0.0 0.5))
+(provide (all-defined-out))
 
 (define-type flcolor-list (Listof flcolor))
 
@@ -70,8 +64,6 @@
                   (- (tile-water-depth p n)))
               topography-intervals
               topography-colors))
-
-(define snow-color (flcolor3 0.9 0.9 0.9))
 
 (define water-surface
   (flcolor3 0.11372549019607843 0.3058823529411765 0.5686274509803921))
@@ -220,9 +212,6 @@
                                        aridity-max
                                        (/ (- aridity 1.0)
                                           1.0))))))
-
-(define color-yellow (flcolor3 1.0 1.0 0.0))
-(define color-red (flcolor3 1.0 0.0 0.0))
 
 (define insolation-min color-neutral)
 (define insolation-medium color-yellow)

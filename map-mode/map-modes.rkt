@@ -1,11 +1,11 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require "map-mode.rkt"
          "planet-color.rkt"
-         "planet/terrain-base.rkt"
-         "planet/climate-base.rkt")
+         "../planet/terrain-base.rkt"
+         "../planet/climate-base.rkt")
+
+(provide (all-defined-out))
 
 (define-map-modes terrain planet-terrain?
   (topography color-topography))

@@ -1,10 +1,10 @@
 #lang racket
 
-(provide (all-defined-out))
-
 (require racket/class
          vraid/math
          math/flonum)
+
+(provide (all-defined-out))
 
 (define planet-control%
   (class object%

@@ -1,12 +1,11 @@
 #lang racket
 
-(provide (all-defined-out))
-
 (require racket/gui/base
          vraid/flow
          "custom-choice.rkt"
-         "../map-mode.rkt"
-         "../projections.rkt")
+         "../map-mode/map-mode.rkt")
+
+(provide (all-defined-out))
 
 (define map-mode-panel%
   (class vertical-panel%

@@ -1,9 +1,9 @@
 #lang typed/racket
 
-(provide (all-defined-out))
-
 (require vraid/flow
          math/flonum)
+
+(provide (all-defined-out))
 
 (: string->float (String -> (Option Float)))
 (define (string->float s)

@@ -1,9 +1,9 @@
 #lang racket
 
-(provide read-only-panel)
-
 (require racket/gui/base
          "edit-field.rkt")
+
+(provide read-only-panel)
 
 (define ((read-only-panel parent height label-width) label value->string get-value)
   (base-panel parent height label-width label value->string get-value))

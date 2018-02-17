@@ -1,13 +1,13 @@
 #lang racket
 
-(provide fixed-axis-control%)
-
 (require racket/class
          vraid/math
          math/flonum
          "control.rkt"
          "../planet/math/projection.rkt"
          "../planet/geometry-base.rkt")
+
+(provide fixed-axis-control%)
 
 (define fixed-axis-control%
   (class planet-control%

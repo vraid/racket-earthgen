@@ -1,8 +1,8 @@
 #lang racket
 
-(provide (all-defined-out))
-
 (require racket/gui/base)
+
+(provide (all-defined-out))
 
 (define custom-choice%
   (class choice%

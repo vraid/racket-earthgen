@@ -1,8 +1,8 @@
 #lang typed/racket
 
-(provide mouse-input-handler%)
-
 (require typed/racket/gui)
+
+(provide mouse-input-handler%)
 
 (define-type point (Vector Integer Integer))
 

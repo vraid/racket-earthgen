@@ -3,16 +3,15 @@
 (require vraid/flow
          vraid/opengl
          racket/gui/base
-         "map-mode.rkt"
-         "map-modes.rkt"
+         "planet-canvas.rkt"
+         "map-mode/map-mode.rkt"
+         "map-mode/map-modes.rkt"
          "gui/map-mode-panel.rkt"
          "gui/tile-data-panel.rkt"
-         "projections.rkt"
-         "key-input-handler.rkt"
-         "mouse-input-handler.rkt"
-         "planet-canvas.rkt"
          "interface/fixed-axis-control.rkt"
-         "interface/planet-renderer.rkt"
+         "interface/key-input-handler.rkt"
+         "interface/mouse-input-handler.rkt"
+         "renderer/planet-renderer.rkt"
          "planet/planet.rkt")
 
 (provide planet-display)

@@ -4,7 +4,7 @@
 
 (require vraid/color
          "color-base.rkt"
-         "planet/grid-base.rkt")
+         "../planet/grid-base.rkt")
 
 (struct map-mode
   ([name : Symbol]

@@ -1,13 +1,12 @@
 #lang racket
 
-(provide tile-data-panel%)
-
-(require vraid/flow
-         vraid/math
+(require vraid/math
          racket/gui/base
          "data-format.rkt"
          "edit-panel.rkt"
          "../planet/planet.rkt")
+
+(provide tile-data-panel%)
 
 (define no-frame
   (new frame%

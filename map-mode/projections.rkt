@@ -1,7 +1,6 @@
 #lang typed/racket
 
-(require "planet/math/projection.rkt"
-         racket/flonum)
+(require "../planet/math/projection.rkt")
 
 (provide (all-defined-out))
 

@@ -3,9 +3,7 @@
 (require racket/class
          vraid/math
          math/flonum
-         "control.rkt"
-         "../planet/geometry-base.rkt"
-         "../planet/math/projection.rkt")
+         "control.rkt")
 
 (provide 2d-control%)
 
