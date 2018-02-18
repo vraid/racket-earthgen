@@ -3,9 +3,7 @@
 (require racket/class
          vraid/math
          math/flonum
-         "control.rkt"
-         "../planet/math/projection.rkt"
-         "../planet/geometry-base.rkt")
+         "control.rkt")
 
 (provide fixed-axis-control%)
 
@@ -22,7 +20,10 @@
                    on-update)
     (field [mouse-down-latitude 0.0]
            [mouse-down-longitude 0.0])
-    (init-field [latitude 0.0]
+    (init-field orthographic->spherical
+                default-axis
+                planet-axis
+                [latitude 0.0]
                 [longitude 0.0])
     (define/override (rotation-list planet)
       (let* ([a (quaternion->axis-angle (rotation planet))])
@@ -32,11 +33,10 @@
       (lambda (planet)
         (let ([q axis-angle->quaternion])
           (quaternion-product
-           (let ([axis (planet-axis planet)])
-             (q (if (flvector3-parallel? default-axis axis)
+           (q (if (flvector3-parallel? default-axis planet-axis)
                     (flvector 1.0 0.0 0.0)
-                    (flvector3-cross-product axis default-axis))
-                (flvector3-angle default-axis axis)))
+                    (flvector3-cross-product planet-axis default-axis))
+                (flvector3-angle default-axis planet-axis))
            (q (flvector 0.0 0.0 1.0) longitude)
            (q (flvector 0.0 1.0 0.0) latitude)
            (q (flvector 0.0 0.0 -1.0) (/ pi 2))

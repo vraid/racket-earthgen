@@ -1,20 +1,26 @@
-#lang typed/racket
+#lang racket
 
-(require "map-mode.rkt"
-         "planet-color.rkt"
-         "../planet/terrain-base.rkt"
-         "../planet/climate-base.rkt")
+(require "planet-color.rkt")
 
 (provide (all-defined-out))
 
-(define-map-modes terrain planet-terrain?
-  (topography color-topography))
+(struct map-mode
+  (name function)
+  #:transparent)
 
-(define-map-modes climate planet-climate?
-  (landscape color-landscape)
-  (vegetation color-leaf-area-index)
-  (temperature color-temperature)
-  (insolation color-insolation)
-  (aridity color-aridity)
-  (humidity color-humidity)
-  (precipitation color-precipitation))
+(define terrain-map-modes
+  (list
+   (map-mode 'topography color-topography)))
+
+(define landscape-map-mode
+  (map-mode 'landscape color-landscape))
+
+(define climate-map-modes
+  (list
+   landscape-map-mode
+   (map-mode 'vegetation color-leaf-area-index)
+   (map-mode 'temperature color-temperature)
+   (map-mode 'insolation color-insolation)
+   (map-mode 'aridity color-aridity)
+   (map-mode 'humidity color-humidity)
+   (map-mode 'precipitation color-precipitation)))

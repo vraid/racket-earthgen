@@ -1,30 +1,32 @@
 #lang racket
 
-(require vraid/math
-         racket/gui/base
+(require racket/gui/base
          "data-format.rkt"
-         "edit-panel.rkt"
-         "../planet/planet.rkt")
+         "edit-panel.rkt")
 
-(provide tile-data-panel%)
+(provide tile-data-panel)
 
 (define no-frame
   (new frame%
        [label ""]))
 
-(define tile-data-panel%
+(define (tile-data-panel
+         terrain
+         climate
+         tile-elevation
+         tile-temperature
+         tile-insolation
+         tile-aridity
+         tile-relative-humidity
+         tile-humidity
+         tile-precipitation)
   (class vertical-panel%
     (super-new)
-    (init-field planet
-                [control-height 30]
+    (init-field [control-height 30]
                 [label-width 120])
     (define tile #f)
-    (define ((planet-type type?))
-      (and (type? planet) planet))
-    (define terrain (planet-type planet-terrain?))
-    (define climate (planet-type planet-climate?))
     (define (update/maybe-tile tile)
-      (when (or (not tile) ((index-within-range? 0 (tile-count planet)) tile))
+      (when tile
         (update/tile tile)))
     (define (new-panel)
       (new vertical-panel%
@@ -38,7 +40,7 @@
       (read-only-edit parent
                       caption
                       converter
-                      (thunk (and tile (function planet tile)))))
+                      (thunk (and tile (function tile)))))
     (define terrain-edit (type-edit terrain-panel terrain))
     (define climate-edit (type-edit climate-panel climate))
     (define id-edit (read-only-edit general-panel "tile id" integer->string (thunk tile)))

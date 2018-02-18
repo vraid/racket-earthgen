@@ -4,7 +4,6 @@
          vraid/opengl
          racket/gui/base
          "planet-canvas.rkt"
-         "map-mode/map-mode.rkt"
          "map-mode/map-modes.rkt"
          "gui/map-mode-panel.rkt"
          "gui/tile-data-panel.rkt"
@@ -13,7 +12,9 @@
          "interface/mouse-input-handler.rkt"
          (prefix-in renderer: "renderer/planet-data.rkt")
          "renderer/planet-renderer.rkt"
-         "planet/planet.rkt")
+         "planet/planet.rkt"
+         "planet/geometry-base.rkt"
+         "planet/math/projection.rkt")
 
 (provide planet-display)
 
@@ -34,10 +35,18 @@
                [min-width 300]
                [stretchable-width #f])]
          [tile-panel
-          (new tile-data-panel%
+          (new (tile-data-panel
+                (and (planet-terrain? planet) planet)
+                (and (planet-climate? planet) planet)
+                (curry tile-elevation planet)
+                (curry tile-temperature planet)
+                (curry tile-insolation planet)
+                (curry tile-aridity planet)
+                (curry tile-relative-humidity planet)
+                (curry tile-humidity planet)
+                (curry tile-precipitation planet))
                [parent left-panel]
-               [stretchable-height #f]
-               [planet planet])]
+               [stretchable-height #f])]
          [filler-panel
           (new panel%
                [parent left-panel]
@@ -52,7 +61,7 @@
               (λ (map-mode)
                 (canvas-gl-context (thunk (send renderer set-colors (curry (map-mode-function map-mode) planet)))))]
              [map-mode-panel
-              (new map-mode-panel%
+              (new (map-mode-panel% map-mode-name)
                    [parent left-panel]
                    [min-height 60]
                    [stretchable-height #f]
@@ -60,8 +69,8 @@
                                       (set-color a)
                                       (repaint))]
                    [color-modes (append
-                                 terrain-map-modes
-                                 climate-map-modes)])]
+                                 (if (planet-terrain? planet) terrain-map-modes '())
+                                 (if (planet-climate? planet) climate-map-modes '()))])]
              [control
               (new fixed-axis-control%
                    [viewport-width width]
@@ -70,6 +79,9 @@
                    [scale-min 0.1]
                    [scale-max 100.0]
                    [on-update repaint]
+                   [orthographic->spherical orthographic->spherical]
+                   [default-axis default-axis]
+                   [planet-axis (planet-axis planet)]
                    [set-ortho-projection set-gl-ortho-projection])]
              [mouse-handler
               (new mouse-input-handler%
