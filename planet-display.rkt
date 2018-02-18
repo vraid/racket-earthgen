@@ -5,6 +5,7 @@
          racket/gui/base
          "planet-canvas.rkt"
          "map-mode/map-modes.rkt"
+         "map-projections/projection.rkt"
          "gui/map-mode-panel.rkt"
          "gui/tile-data-panel.rkt"
          "interface/fixed-axis-control.rkt"
@@ -13,8 +14,7 @@
          (prefix-in renderer: "renderer/planet-data.rkt")
          "renderer/planet-renderer.rkt"
          "planet/planet.rkt"
-         "planet/geometry-base.rkt"
-         "planet/math/projection.rkt")
+         "planet/geometry-base.rkt")
 
 (provide planet-display)
 

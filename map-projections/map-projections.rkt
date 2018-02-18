@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(require "../planet/math/projection.rkt")
+(require "projection.rkt")
 
 (provide (all-defined-out))
 
