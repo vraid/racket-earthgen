@@ -11,6 +11,7 @@
          "interface/fixed-axis-control.rkt"
          "interface/key-input-handler.rkt"
          "interface/mouse-input-handler.rkt"
+         (prefix-in renderer: "renderer/planet-data.rkt")
          "renderer/planet-renderer.rkt"
          "planet/planet.rkt")
 
@@ -49,7 +50,7 @@
                 (send canvas with-gl-context f))]
              [set-color
               (λ (map-mode)
-                (canvas-gl-context (thunk (send renderer set-colors (map-mode-function map-mode)))))]
+                (canvas-gl-context (thunk (send renderer set-colors (curry (map-mode-function map-mode) planet)))))]
              [map-mode-panel
               (new map-mode-panel%
                    [parent left-panel]
@@ -106,9 +107,20 @@
                            (send control set-projection)
                            (gl-rotate (send control rotation-list planet))
                            (send renderer render))])]
+             [renderer-data (renderer:planet-data
+                             (planet-radius planet)
+                             (tile-count planet)
+                             (grid-tile-coordinates planet)
+                             (grid-corner-coordinates planet)
+                             (grid-tile-corner planet)
+                             (grid-tile-edge planet)
+                             tile-edge-count
+                             (curry river-flows-to? planet)
+                             (curry corner-river-flow planet)
+                             (curry edge-river-flow planet))]
              [renderer
               (canvas-gl-context
-               (thunk ((planet-renderer (λ (a) identity)) planet)))])
+               (thunk ((planet-renderer (λ (a) identity)) renderer-data (planet-climate? planet))))])
       (set-color landscape-map-mode)
       (send frame show #t)
       (send canvas focus)

@@ -3,21 +3,21 @@
 (require vraid/opengl
          "tile-renderer.rkt"
          "river-renderer.rkt"
-         "../planet/climate-base.rkt")
+         "planet-data.rkt")
 
 (provide planet-renderer)
 
-(define ((planet-renderer transform) planet)
-  (let* ([tile-renderer ((tile-renderer transform) planet)]
-         [river-renderer ((river-renderer transform) planet)])
+(define ((planet-renderer transform) data climate?)
+  (let* ([tile-renderer ((tile-renderer transform) data)]
+         [river-renderer (if climate? ((river-renderer transform) data) #f)])
     (new (class object%
            (super-new)
            (define/public (set-colors color-function)
              (send tile-renderer set-colors color-function)
-             (when (planet-climate? planet)
+             (when climate?
                (send river-renderer update)))
            (define/public (render)
              (gl-clear (list 0.0 0.0 0.0 0.0))
              (send tile-renderer render)
-             (when (planet-climate? planet)
+             (when climate?
                (send river-renderer render)))))))

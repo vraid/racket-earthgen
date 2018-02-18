@@ -2,25 +2,31 @@
 
 (require vraid/typed-gl
          vraid/color
-         "../planet/grid-base.rkt")
+         "planet-data.rkt")
 
 (provide (all-defined-out))
 
-(: init-buffer (-> grid (-> FlVector (-> FlVector FlVector)) gl-buffer Void))
-(define (init-buffer grid transform buffer)
-  (let ([set-coord (gl-buffer-set-vertex-coord! buffer)]
-        [set-index (gl-buffer-set-index! buffer)])
-    (for ([n (tile-count grid)])
-      (let ([f (transform ((grid-tile-coordinates grid) n))])
-        (let ([k (* n 7)])
-          (set-coord k (f ((grid-tile-coordinates grid) n))))
-        (for ([i 6])
-          (let ([k (+ 1 i (* n 7))])
-            (set-coord k (f ((grid-corner-coordinates grid) ((grid-tile-corner grid) n i)))))
-          (let ([k (+ (* i 3) (* n 18))])
-            (set-index k (* n 7))
-            (set-index (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
-            (set-index (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7)))))))))
+(define init-buffer
+  (λ ([data : planet-data]
+      [transform : (FlVector -> (FlVector -> FlVector))]
+      [buffer : gl-buffer])
+    (let* ([tile-count (planet-data-tile-count data)]
+           [tile-coordinates (planet-data-tile-coordinates data)]
+           [corner-coordinates (planet-data-corner-coordinates data)]
+           [tile-corner (planet-data-tile-corner data)]
+           [set-coord (gl-buffer-set-vertex-coord! buffer)]
+           [set-index (gl-buffer-set-index! buffer)])
+      (for ([n tile-count])
+        (let ([f (transform (tile-coordinates n))])
+          (let ([k (* n 7)])
+            (set-coord k (f (tile-coordinates n))))
+          (for ([i 6])
+            (let ([k (+ 1 i (* n 7))])
+              (set-coord k (f (corner-coordinates (tile-corner n i)))))
+            (let ([k (+ (* i 3) (* n 18))])
+              (set-index k (* n 7))
+              (set-index (+ 1 k) (+ 1 (modulo i 6) (* n 7)))
+              (set-index (+ 2 k) (+ 1 (modulo (+ i 1) 6) (* n 7))))))))))
 
 (: update-vertices! (-> Integer gl-buffer (-> Integer flcolor) Void))
 (define (update-vertices! count buffer color-function)
