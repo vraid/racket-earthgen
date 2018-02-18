@@ -4,7 +4,7 @@
          vraid/opengl
          racket/gui/base
          "planet-canvas.rkt"
-         "map-mode/map-modes.rkt"
+         "map-modes.rkt"
          "map-projections/projection.rkt"
          "gui/map-mode-panel.rkt"
          "gui/tile-data-panel.rkt"
@@ -59,7 +59,7 @@
                 (send canvas with-gl-context f))]
              [set-color
               (λ (map-mode)
-                (canvas-gl-context (thunk (send renderer set-colors (curry (map-mode-function map-mode) planet)))))]
+                (canvas-gl-context (thunk (send renderer set-colors (map-mode-function map-mode)))))]
              [map-mode-panel
               (new (map-mode-panel% map-mode-name)
                    [parent left-panel]
@@ -69,8 +69,8 @@
                                       (set-color a)
                                       (repaint))]
                    [color-modes (append
-                                 (if (planet-terrain? planet) terrain-map-modes '())
-                                 (if (planet-climate? planet) climate-map-modes '()))])]
+                                 (if (planet-terrain? planet) (terrain-map-modes planet) '())
+                                 (if (planet-climate? planet) (climate-map-modes planet) '()))])]
              [control
               (new fixed-axis-control%
                    [viewport-width width]
@@ -133,7 +133,7 @@
              [renderer
               (canvas-gl-context
                (thunk ((planet-renderer (λ (a) identity)) renderer-data (planet-climate? planet))))])
-      (set-color landscape-map-mode)
+      (set-color (landscape-map-mode planet))
       (send frame show #t)
       (send canvas focus)
       canvas)))
